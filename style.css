@@ -1,30 +1,42 @@
-/* 引入 Google Fonts (可選，讓字體更美觀) */
+/* ====================================================================
+   步驟 4: 完整修正後的 style.css (最終佈局修復)
+   ==================================================================== */
+
+/* 引入 Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
 
-/* 全域樣式 */
-body {
-    font-family: 'Noto Sans TC', sans-serif;
+/* 全域樣式 - 確保 body 佔滿整個視窗高度並設為 Flex 容器 */
+html, body {
+    height: 100%;
     margin: 0;
     padding: 0;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
     background-color: #f4f7f6;
     color: #333;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    flex-direction: column; /* Header 在上，POS 內容在下 */
+    overflow: hidden; /* 確保整體視窗沒有滾動條 */
 }
 
 /* 隱藏/顯示輔助類 */
 .hidden {
     display: none !important;
 }
-.pos-container {
-    width: 100%;
-    max-width: 1400px; /* 寬螢幕適配 */
-    height: 100vh;
+
+/* POS 應用程式主容器 - 佔據 Header 以外的所有剩餘空間 */
+.pos-app {
+    flex-grow: 1; 
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* 允許內部內容垂直堆疊 */
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto; 
+    overflow: hidden; /* 確保 POS 核心區可以控制內部滾動 */
 }
+
 
 /* Header 樣式 */
 .pos-header {
@@ -32,28 +44,30 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
-    background-color: #2c3e50; /* 深藍色背景 */
+    background-color: #2c3e50; 
     color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 35px; 
+    flex-shrink: 0; /* 防止 Header 被壓縮 */
 }
 
-.header-left, .header-right {
+.employee-info, .utility-info {
     display: flex;
     align-items: center;
     gap: 15px;
 }
 
-.header-center h1 {
+.system-title {
     font-size: 1.5em;
+    font-weight: 700;
     margin: 0;
-    font-weight: 400;
+    color: #f39c12; 
 }
 
-/* 淡淡顯示的文字 */
-#designer-signature {
-    font-size: 0.8em;
-    opacity: 0.6; /* 淡淡地 */
-    margin-right: 15px;
+#current-employee-display {
+    font-weight: 700;
+    color: #f39c12; 
+    font-size: 1.0em;
 }
 
 #current-time {
@@ -61,58 +75,24 @@ body {
     opacity: 0.8; 
 }
 
-.employee-status {
-    font-weight: 700;
-    color: #f39c12; /* 黃色高亮 */
-    font-size: 1.1em;
-}
-
-/* Icon 按鈕樣式 */
-.icon-button {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 1.4em;
-    position: relative;
-    padding: 5px;
-}
-
-.badge {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    background-color: #e74c3c; /* 紅色 */
-    color: white;
-    border-radius: 50%;
-    padding: 2px 6px;
-    font-size: 0.7em;
-    line-height: 1;
-}
-
-/* Footer (左下角按鈕) 樣式 */
-.pos-footer {
-    padding: 10px 20px;
-    background-color: #ecf0f1;
-    border-top: 1px solid #ddd;
-}
-
-.footer-button {
-    background-color: #34495e; /* 深藍色，與 Header 呼應 */
+/* 後台按鈕樣式 */
+.backend-button {
+    background-color: #34495e; 
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 8px 15px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 1em;
     transition: background-color 0.2s;
 }
-.footer-button:hover {
+.backend-button:hover {
     background-color: #2c3e50;
 }
 
+
 /* 模態視窗樣式 - 員工選擇 */
-.modal-overlay {
+.modal { 
     position: fixed;
     top: 0;
     left: 0;
@@ -128,7 +108,7 @@ body {
     transition: opacity 0.3s, visibility 0.3s;
 }
 
-.modal-overlay.active {
+.modal.active {
     opacity: 1;
     visibility: visible;
 }
@@ -143,7 +123,7 @@ body {
     text-align: center;
 }
 
-.modal-content h2 {
+.modal-content h1 { 
     color: #2980b9;
     margin-top: 0;
 }
@@ -160,7 +140,7 @@ body {
 }
 
 .employee-button {
-    background-color: #3498db; /* 藍色按鈕 */
+    background-color: #3498db; 
     color: white;
     border: none;
     padding: 15px 10px;
@@ -183,4 +163,199 @@ body {
 }
 .loading-message .fa-spinner {
     margin-right: 8px;
+}
+/* ====================================================================
+   POS 核心介面樣式 
+   ==================================================================== */
+
+.pos-content {
+    flex-grow: 1; /* 佔據 POS 核心容器 (pos-app) 的所有剩餘垂直空間 */
+    display: flex; /* 啟用左右佈局 */
+    overflow: hidden; 
+    background-color: #ecf0f1; 
+}
+
+/* A. 商品選擇區 */
+.product-selection-area {
+    flex: 3; /* 約 65% 寬度 */
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    border-right: 1px solid #bdc3c7;
+    overflow: hidden;
+    min-height: 0; /* 關鍵：允許 Flex 子項正確計算高度 */
+}
+
+/* 商品分類 Tabs */
+.category-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    overflow-x: auto; 
+    padding-bottom: 5px;
+    border-bottom: 2px solid #bdc3c7;
+    flex-shrink: 0; 
+}
+
+/* 商品列表 Grid */
+.product-grid {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+    gap: 15px;
+    overflow-y: auto; 
+    padding-right: 5px; 
+    min-height: 0; /* 關鍵：確保商品列表可以滾動 */
+}
+
+/* 商品卡片 */
+.product-card {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+}
+
+.product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-card h3 {
+    font-size: 1em;
+    margin: 5px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-card .price {
+    font-weight: bold;
+    color: #27ae60; 
+    font-size: 1.1em;
+}
+
+.product-card .stock-status {
+    font-size: 0.8em;
+    color: #95a5a6;
+    margin-top: 5px;
+}
+
+.product-card.out-of-stock {
+    opacity: 0.5;
+    pointer-events: none; 
+}
+
+/* B. 訂單明細區 */
+.order-summary-area {
+    flex: 1.5; /* 約 35% 寬度 */
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    padding: 15px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0; 
+    min-height: 0; /* 關鍵：允許子項 (order-items-list) 正確滾動 */
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #34495e;
+    padding-bottom: 8px;
+    flex-shrink: 0; /* 防止被擠壓 */
+}
+
+.order-header h2 {
+    color: #34495e;
+    font-size: 1.3em;
+    margin: 0;
+}
+
+.clear-button {
+    background: none;
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+
+.clear-button:hover {
+    background-color: #e74c3c;
+    color: white;
+}
+
+/* 訂單列表 */
+.order-items-list {
+    flex-grow: 1;
+    overflow-y: auto; /* 允許訂單列表滾動 */
+    margin-bottom: 15px;
+    min-height: 0;
+}
+
+.empty-order-message {
+    text-align: center;
+    color: #95a5a6;
+    padding-top: 50px;
+}
+
+/* 訂單總計區 */
+.order-totals {
+    border-top: 1px dashed #bdc3c7;
+    padding-top: 10px;
+    margin-bottom: 15px;
+    flex-shrink: 0; /* 防止被擠壓 */
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 1.1em;
+}
+
+.final-total-row {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #c0392b; 
+    border-top: 2px solid #34495e;
+    margin-top: 5px;
+    padding-top: 8px;
+}
+
+.checkout-area {
+    text-align: center;
+    flex-shrink: 0; /* 防止被擠壓 */
+}
+
+.checkout-button {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.5em;
+    font-weight: bold;
+    background-color: #2ecc71; 
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.checkout-button:hover:not(:disabled) {
+    background-color: #27ae60;
+}
+
+.checkout-button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
 }

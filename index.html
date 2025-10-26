@@ -3,58 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>201 數實班專用 POS 系統</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <title>201實驗班專用POS系統</title> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <header class="pos-header">
+        <div class="employee-info">
+            <span id="current-employee-display">
+                <i class="fas fa-user-circle"></i> 請先選擇值班員工
+            </span>
+        </div>
 
-    <div id="employee-selection-modal" class="modal-overlay active">
-        <div class="modal-content">
-            <h2><i class="fas fa-user-check"></i> 員工身份選擇</h2>
-            <p>請選擇您的姓名或代碼以開始值班：</p>
-            <div id="employee-list" class="employee-grid">
+        <div class="system-title">
+            <i class="fas fa-cash-register"></i> 201實驗班專用POS系統
+        </div>
+
+        <div class="utility-info">
+            <span id="current-time"></span>
+            <button id="go-to-backend-btn" class="backend-button" title="後台管理">
+                <i class="fas fa-cog"></i> 後台
+            </button>
+        </div>
+    </header>
+
+    <div id="pos-main-app" class="pos-app hidden">
+        
+        <main class="pos-content">
+            
+            <section class="product-selection-area">
+                
+                <div id="category-tabs" class="category-tabs">
+                    </div>
+
+                <div id="product-list" class="product-grid">
+                    <p id="product-loading-message">
+                        <i class="fas fa-box-open"></i> 正在載入商品資料...
+                    </p>
+                    </div>
+
+            </section>
+
+            <section class="order-summary-area">
+                <div class="order-header">
+                    <h2><i class="fas fa-receipt"></i> 訂單明細</h2>
+                    <button id="clear-order-btn" class="clear-button" title="清空訂單">
+                        <i class="fas fa-trash-alt"></i> 清空
+                    </button>
                 </div>
+
+                <div id="order-items-list" class="order-items-list">
+                    <p class="empty-order-message">尚未加入商品</p>
+                    </div>
+
+                <div class="order-totals">
+                    <div class="total-row">
+                        <span>總數量:</span>
+                        <span id="order-item-count">0</span>
+                    </div>
+                    <div class="total-row">
+                        <span>小計:</span>
+                        <span id="order-subtotal">NT$ 0</span>
+                    </div>
+                    <div class="total-row discount-row">
+                        <span>折扣:</span>
+                        <span id="order-discount">NT$ 0</span>
+                    </div>
+                    <div class="total-row final-total-row">
+                        <span>**應付金額:**</span>
+                        <span id="order-final-total">**NT$ 0**</span>
+                    </div>
+                </div>
+                
+                <div class="checkout-area">
+                    <button id="checkout-btn" class="checkout-button" disabled>
+                        <i class="fas fa-cash-register"></i> 結帳 (NT$ 0)
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div> <div id="employee-selection-modal" class="modal">
+        <div class="modal-content">
+            <h1>請選擇值班員工</h1>
             <div id="loading-message" class="loading-message">
                 <i class="fas fa-spinner fa-spin"></i> 正在載入員工資料...
             </div>
+            <div id="employee-list" class="employee-grid">
+                </div>
         </div>
     </div>
 
-    <div id="pos-main-app" class="pos-container hidden">
-
-        <header class="pos-header">
-            <div class="header-left">
-                <span id="designer-signature">Website designed by Yang</span>
-                <span id="current-time" class="faded-text"></span>
-                <span id="current-employee-display" class="employee-status"></span>
-            </div>
-            
-            <div class="header-center">
-                <h1>201 數實班專用 POS 系統</h1>
-            </div>
-
-            <div class="header-right">
-                <button class="icon-button" id="stock-alert-button" title="庫存預警">
-                    <i class="fas fa-bell"></i>
-                    <span id="alert-count" class="badge hidden">0</span>
-                </button>
-            </div>
-        </header>
-
-        <main class="pos-content">
-            <p>主 POS 介面加載中...</p>
-        </main>
-
-        <footer class="pos-footer">
-            <button id="go-to-backend-btn" class="footer-button">
-                <i class="fas fa-cog"></i> 進入後台
-            </button>
-        </footer>
-
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
 </body>
 </html>
