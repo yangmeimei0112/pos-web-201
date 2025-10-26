@@ -1,0 +1,4 @@
+# .gitignore 檔案
+/node_modules
+.env
+.vercel
