@@ -1,0 +1,186 @@
+/* 引入 Google Fonts (可選，讓字體更美觀) */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
+
+/* 全域樣式 */
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* 隱藏/顯示輔助類 */
+.hidden {
+    display: none !important;
+}
+.pos-container {
+    width: 100%;
+    max-width: 1400px; /* 寬螢幕適配 */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header 樣式 */
+.pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #2c3e50; /* 深藍色背景 */
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-center h1 {
+    font-size: 1.5em;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* 淡淡顯示的文字 */
+#designer-signature {
+    font-size: 0.8em;
+    opacity: 0.6; /* 淡淡地 */
+    margin-right: 15px;
+}
+
+#current-time {
+    font-size: 0.9em;
+    opacity: 0.8; 
+}
+
+.employee-status {
+    font-weight: 700;
+    color: #f39c12; /* 黃色高亮 */
+    font-size: 1.1em;
+}
+
+/* Icon 按鈕樣式 */
+.icon-button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.4em;
+    position: relative;
+    padding: 5px;
+}
+
+.badge {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background-color: #e74c3c; /* 紅色 */
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.7em;
+    line-height: 1;
+}
+
+/* Footer (左下角按鈕) 樣式 */
+.pos-footer {
+    padding: 10px 20px;
+    background-color: #ecf0f1;
+    border-top: 1px solid #ddd;
+}
+
+.footer-button {
+    background-color: #34495e; /* 深藍色，與 Header 呼應 */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s;
+}
+.footer-button:hover {
+    background-color: #2c3e50;
+}
+
+/* 模態視窗樣式 - 員工選擇 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.modal-content h2 {
+    color: #2980b9;
+    margin-top: 0;
+}
+
+/* 員工選擇 Grid 樣式 */
+.employee-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.employee-button {
+    background-color: #3498db; /* 藍色按鈕 */
+    color: white;
+    border: none;
+    padding: 15px 10px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.employee-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+.loading-message {
+    margin-top: 20px;
+    color: #95a5a6;
+}
+.loading-message .fa-spinner {
+    margin-right: 8px;
+}
