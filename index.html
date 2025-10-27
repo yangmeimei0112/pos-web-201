@@ -2,98 +2,160 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>201實驗班專用POS系統</title> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>201實驗班專用POS系統</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <header class="pos-header">
         <div class="employee-info">
-            <span id="current-employee-display">
+            <small class="designer-note">Website designed by Yang</small>
+            <span id="current-employee-display" role="status" aria-live="polite">
                 <i class="fas fa-user-circle"></i> 請先選擇值班員工
             </span>
         </div>
 
-        <div class="system-title">
+        <h1 class="system-title">
             <i class="fas fa-cash-register"></i> 201實驗班專用POS系統
-        </div>
+        </h1>
 
         <div class="utility-info">
-            <span id="current-time"></span>
-            <button id="go-to-backend-btn" class="backend-button" title="後台管理">
-                <i class="fas fa-cog"></i> 後台
+            <time id="current-time"></time>
+            
+            <button id="go-to-backend-btn" class="backend-button" title="前往商品、庫存、員工管理介面" aria-label="後台管理介面">
+                <i class="fas fa-chart-line"></i> 後台管理
+            </button>
+            
+            <button id="change-employee-btn" class="backend-button" title="切換員工/登出" aria-label="切換員工">
+                <i class="fas fa-user-cog"></i> 切換員工
             </button>
         </div>
     </header>
 
     <div id="pos-main-app" class="pos-app hidden">
-        
         <main class="pos-content">
             
-            <section class="product-selection-area">
+            <section class="product-selection-area" aria-labelledby="product-list-heading">
                 
-                <div id="category-tabs" class="category-tabs">
-                    </div>
+                <div id="category-tabs" class="category-tabs" role="tablist">
+                </div>
 
-                <div id="product-list" class="product-grid">
-                    <p id="product-loading-message">
+                <div id="product-list" class="product-grid" role="list">
+                    <p id="product-loading-message" aria-live="polite">
                         <i class="fas fa-box-open"></i> 正在載入商品資料...
                     </p>
-                    </div>
+                </div>
 
             </section>
 
-            <section class="order-summary-area">
+            <aside class="order-summary-area"> 
                 <div class="order-header">
                     <h2><i class="fas fa-receipt"></i> 訂單明細</h2>
-                    <button id="clear-order-btn" class="clear-button" title="清空訂單">
+                    <button id="clear-order-btn" class="clear-button" title="清空訂單" aria-label="清空目前訂單">
                         <i class="fas fa-trash-alt"></i> 清空
                     </button>
                 </div>
 
-                <div id="order-items-list" class="order-items-list">
-                    <p class="empty-order-message">尚未加入商品</p>
-                    </div>
+                <div id="order-items-list-container" class="order-items-list-container" role="region" aria-label="訂單項目列表">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">品項</th>
+                                <th scope="col">單價</th>
+                                <th scope="col">數量</th>
+                                <th scope="col">總額</th>
+                                <th scope="col">移除</th> </tr>
+                        </thead>
+                        <tbody id="order-items-table-body">
+                            <tr>
+                                <td colspan="5" class="empty-order-message">尚未加入商品</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <div class="order-totals">
-                    <div class="total-row">
-                        <span>總數量:</span>
-                        <span id="order-item-count">0</span>
-                    </div>
-                    <div class="total-row">
-                        <span>小計:</span>
-                        <span id="order-subtotal">NT$ 0</span>
-                    </div>
-                    <div class="total-row discount-row">
-                        <span>折扣:</span>
-                        <span id="order-discount">NT$ 0</span>
-                    </div>
-                    <div class="total-row final-total-row">
-                        <span>**應付金額:**</span>
-                        <span id="order-final-total">**NT$ 0**</span>
-                    </div>
+                    <dl>
+                        <div class="total-row">
+                            <dt><strong>總數量:</strong></dt>
+                            <dd id="order-item-count">0</dd>
+                        </div>
+                        <div class="total-row">
+                            <dt><strong>小計:</strong></dt>
+                            <dd id="order-subtotal">NT$ 0</dd>
+                        </div>
+                        <div class="total-row discount-row">
+                            <dt><strong>折扣:</strong></dt>
+                            <dd id="order-discount">NT$ 0</dd>
+                        </div>
+                        <div class="total-row final-total-row">
+                            <dt>**應付金額:**</dt>
+                            <dd id="order-final-total">**NT$ 0**</dd>
+                        </div>
+                    </dl>
                 </div>
                 
                 <div class="checkout-area">
-                    <button id="checkout-btn" class="checkout-button" disabled>
-                        <i class="fas fa-cash-register"></i> 結帳 (NT$ 0)
+                    <button id="checkout-btn" class="checkout-button" disabled data-total="0" aria-label="結帳並進入付款流程">
+                        <i class="fas fa-coins"></i> 結帳 
                     </button>
                 </div>
-            </section>
+            </aside>
 
         </main>
-    </div> <div id="employee-selection-modal" class="modal">
+    </div> 
+
+    <div id="employee-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="employee-modal-title">
         <div class="modal-content">
-            <h1>請選擇值班員工</h1>
-            <div id="loading-message" class="loading-message">
+            <h1 id="employee-modal-title">請選擇值班員工</h1>
+            
+            <div id="loading-message" class="loading-message" role="status">
                 <i class="fas fa-spinner fa-spin"></i> 正在載入員工資料...
             </div>
+            
             <div id="employee-list" class="employee-grid">
-                </div>
+            </div> 
         </div>
     </div>
 
+    <div id="checkout-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title">
+        <div class="modal-content">
+            <button class="close-btn" id="close-checkout-modal" aria-label="關閉結帳視窗">&times;</button>
+            <h1 id="checkout-modal-title">結帳確認</h1>
+            
+            <div class="checkout-summary">
+                <div class="summary-row">
+                    <span>訂單總額 (應付):</span>
+                    <span id="summary-total-amount" class="text-large text-danger">NT$ 0</span>
+                </div>
+            </div>
+
+            <div class="payment-area">
+                <label for="paid-amount">客戶支付金額 (現金):</label>
+                <input type="number" id="paid-amount" value="0" min="0" step="1" required pattern="[0-9]*" inputmode="numeric" aria-required="true">
+            </div>
+            
+            <div class="change-display">
+                <div class="summary-row">
+                    <span>找零金額:</span>
+                    <span id="summary-change-amount" class="text-large text-success">NT$ 0</span>
+                </div>
+            </div>
+
+            <p id="checkout-error-message" class="text-danger hidden" role="alert">支付金額不足！</p>
+
+            <div class="checkout-actions">
+                <button id="final-confirm-btn" class="checkout-button" aria-label="確認結帳並將交易記錄入帳">
+                    <i class="fas fa-check"></i> 確認結帳並入帳
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>
