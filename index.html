@@ -15,7 +15,7 @@
         <div class="employee-info">
             <small class="designer-note">Website designed by Yang</small>
             <span id="current-employee-display" role="status" aria-live="polite">
-                <i class="fas fa-user-circle"></i> 請先選擇值班員工
+                <i class="fas fa-user-circle"></i> 請先選擇值班人員
             </span>
         </div>
 
@@ -56,7 +56,7 @@
                 <div class="order-header">
                     <h2><i class="fas fa-receipt"></i> 訂單明細</h2>
                     <button id="clear-order-btn" class="clear-button" title="清空訂單" aria-label="清空目前訂單">
-                        <i class="fas fa-trash-alt"></i> 清空
+                        <i class="fas fa-trash-alt"></i> 清空所有商品
                     </button>
                 </div>
 
@@ -93,8 +93,8 @@
                             <dd id="order-discount">NT$ 0</dd>
                         </div>
                         <div class="total-row final-total-row">
-                            <dt>**應付金額:**</dt>
-                            <dd id="order-final-total">**NT$ 0**</dd>
+                            <dt>【應付金額】:</dt>
+                            <dd id="order-final-total">NT$ 0</dd>
                         </div>
                     </dl>
                 </div>
@@ -111,7 +111,7 @@
 
     <div id="employee-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="employee-modal-title">
         <div class="modal-content">
-            <h1 id="employee-modal-title">請選擇值班員工</h1>
+            <h1 id="employee-modal-title">請選擇值班人員</h1>
             
             <div id="loading-message" class="loading-message" role="status">
                 <i class="fas fa-spinner fa-spin"></i> 正在載入員工資料...
@@ -135,7 +135,7 @@
             </div>
 
             <div class="payment-area">
-                <label for="paid-amount">客戶支付金額 (現金):</label>
+                <label for="paid-amount">顧客支付金額:</label>
                 <input type="number" id="paid-amount" value="0" min="0" step="1" required pattern="[0-9]*" inputmode="numeric" aria-required="true">
             </div>
             
@@ -150,7 +150,7 @@
 
             <div class="checkout-actions">
                 <button id="final-confirm-btn" class="checkout-button" aria-label="確認結帳並將交易記錄入帳">
-                    <i class="fas fa-check"></i> 確認結帳並入帳
+                    <i class="fas fa-check"></i> 確認結帳
                 </button>
             </div>
         </div>

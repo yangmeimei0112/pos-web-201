@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>後台管理 - 201S POS系統</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="backend.css">
+</head>
+<body>
+    <header class="pos-header">
+        <div class="employee-info">
+            <span class="system-title">201S 專用後台管理</span>
+        </div>
+        <div class="utility-info">
+            <button id="back-to-pos-btn" class="backend-button">返回前台</button>
+        </div>
+    </header>
+
+    <div class="backend-app">
+        <nav class="backend-nav">
+            <ul>
+                <li class="active"><a href="#">商品管理</a></li>
+                <li><a href="#">員工管理 (待實作)</a></li>
+                <li><a href="#">報表分析 (待實作)</a></li>
+                <li><a href="#">訂單查詢 (待實作)</a></li>
+            </ul>
+        </nav>
+
+        <main class="backend-content">
+            <div class="content-header">
+                <h1>商品與庫存管理</h1>
+                <button id="add-product-btn" class="btn-primary">＋ 新增商品</button>
+            </div>
+
+            <div class="table-container">
+                <table id="product-list-table">
+                    <thead>
+                        <tr>
+                            <th>商品ID</th>
+                            <th>名稱</th>
+                            <th>分類</th>
+                            <th>售價</th>
+                            <th>成本</th>
+                            <th>庫存</th>
+                            <th>預警門檻</th>
+                            <th>排序值</th>
+                            <th>狀態 (上下架)</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-list-tbody">
+                        <tr>
+                            <td colspan="10" class="loading-message">載入商品資料中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h1 id="modal-title">新增商品</h1>
+            <form id="product-form">
+                <input type="hidden" id="product-id" name="id">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="product-name">商品名稱*</label>
+                        <input type="text" id="product-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-category">分類*</label>
+                        <input type="text" id="product-category" name="category" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-price">售價*</label>
+                        <input type="number" id="product-price" name="price" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-cost">成本</label>
+                        <input type="number" id="product-cost" name="cost" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-stock">庫存*</label>
+                        <input type="number" id="product-stock" name="stock" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-warning-threshold">庫存預警門檻</label>
+                        <input type="number" id="product-warning-threshold" name="warning_threshold" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-sort-order">顯示排序值</label>
+                        <input type="number" id="product-sort-order" name="sort_order">
+                    </div>
+                    <div class="form-group form-group-checkbox">
+                        <input type="checkbox" id="product-is-active" name="is_active" checked>
+                        <label for="product-is-active">保持上架狀態 (勾選=上架, 取消=下架)</label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-btn" class="btn-secondary">取消</button>
+                    <button type="submit" id="save-btn" class="btn-primary">儲存</button>
+                </div>
+                <div id="form-error-message" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <script src="backend.js"></script>
+</body>
+</html>
