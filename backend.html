@@ -44,8 +44,8 @@
                             <th>成本</th>
                             <th>庫存</th>
                             <th>預警門檻</th>
-                            <th>排序值</th>
                             <th>狀態 (上下架)</th>
+                            <th class="col-sort">排序調整</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -91,10 +91,7 @@
                         <label for="product-warning-threshold">庫存預警門檻</label>
                         <input type="number" id="product-warning-threshold" name="warning_threshold" min="0">
                     </div>
-                    <div class="form-group">
-                        <label for="product-sort-order">顯示排序值</label>
-                        <input type="number" id="product-sort-order" name="sort_order">
-                    </div>
+                    
                     <div class="form-group form-group-checkbox">
                         <input type="checkbox" id="product-is-active" name="is_active" checked>
                         <label for="product-is-active">保持上架狀態 (勾選=上架, 取消=下架)</label>
@@ -111,7 +108,6 @@
     </div>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
     <script src="backend.js"></script>
 </body>
 </html>

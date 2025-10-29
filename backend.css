@@ -251,7 +251,7 @@ body {
 }
 
 
-/* [新增] 用於顯示上架/下架狀態的樣式 */
+/* 用於顯示上架/下架狀態的樣式 */
 .status-active {
     color: #27ae60; /* 綠色 */
     font-weight: 700;
@@ -260,4 +260,37 @@ body {
 .status-inactive {
     color: var(--danger-color); /* 紅色 */
     font-weight: 700;
+}
+
+
+/* [V4 新增] 排序調整欄位 */
+#product-list-table th.col-sort,
+#product-list-table td.product-sort {
+    text-align: center;
+    width: 100px; /* 固定寬度 */
+}
+
+.sort-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-color-dark);
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    font-size: 1.1em;
+    width: 40px; /* 寬度 */
+    padding: 2px 0;
+    margin: 0 3px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sort-btn:hover:not(:disabled) {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.sort-btn:disabled {
+    color: var(--border-color);
+    cursor: not-allowed;
+    background-color: #f9f9f9;
 }
