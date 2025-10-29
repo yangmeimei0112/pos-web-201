@@ -20,42 +20,76 @@
     <div class="backend-app">
         <nav class="backend-nav">
             <ul>
-                <li class="active"><a href="#">商品管理</a></li>
-                <li><a href="#">員工管理 (待實作)</a></li>
-                <li><a href="#">報表分析 (待實作)</a></li>
-                <li><a href="#">訂單查詢 (待實作)</a></li>
+                <li class="active" data-target="product-management-section"><a href="#">商品管理</a></li>
+                <li data-target="employee-management-section"><a href="#">員工管理</a></li>
+                <li data-target="reports-section"><a href="#">報表分析 (待實作)</a></li>
+                <li data-target="orders-section"><a href="#">訂單查詢 (待實作)</a></li>
             </ul>
         </nav>
 
         <main class="backend-content">
-            <div class="content-header">
-                <h1>商品與庫存管理</h1>
-                <button id="add-product-btn" class="btn-primary">＋ 新增商品</button>
-            </div>
+            <section id="product-management-section" class="management-section active">
+                <div class="content-header">
+                    <h1>商品與庫存管理</h1>
+                    <button id="add-product-btn" class="btn-primary">＋ 新增商品</button>
+                </div>
+                <div class="table-container">
+                    <table id="product-list-table">
+                        <thead>
+                            <tr>
+                                <th>商品ID</th>
+                                <th>名稱</th>
+                                <th>分類</th>
+                                <th>售價</th>
+                                <th>成本</th>
+                                <th>庫存</th>
+                                <th>預警門檻</th>
+                                <th>狀態 (上下架)</th>
+                                <th class="col-sort">排序調整</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-list-tbody">
+                            <tr>
+                                <td colspan="10" class="loading-message">載入商品資料中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-            <div class="table-container">
-                <table id="product-list-table">
-                    <thead>
-                        <tr>
-                            <th>商品ID</th>
-                            <th>名稱</th>
-                            <th>分類</th>
-                            <th>售價</th>
-                            <th>成本</th>
-                            <th>庫存</th>
-                            <th>預警門檻</th>
-                            <th>狀態 (上下架)</th>
-                            <th class="col-sort">排序調整</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="product-list-tbody">
-                        <tr>
-                            <td colspan="10" class="loading-message">載入商品資料中...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <section id="employee-management-section" class="management-section">
+                <div class="content-header">
+                    <h1>員工設定專區</h1>
+                    <button id="add-employee-btn" class="btn-primary">＋ 新增員工</button>
+                </div>
+                <div class="table-container">
+                    <table id="employee-list-table">
+                        <thead>
+                            <tr>
+                                <th>員工ID</th>
+                                <th>姓名</th>
+                                <th>代碼/座號</th>
+                                <th>狀態 (在職/停用)</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employee-list-tbody">
+                            <tr>
+                                <td colspan="5" class="loading-message">載入員工資料中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="reports-section" class="management-section">
+                <div class="content-header"><h1>報表分析 (待實作)</h1></div>
+            </section>
+            <section id="orders-section" class="management-section">
+                <div class="content-header"><h1>訂單查詢 (待實作)</h1></div>
+            </section>
+
         </main>
     </div>
 
@@ -65,7 +99,6 @@
             <h1 id="modal-title">新增商品</h1>
             <form id="product-form">
                 <input type="hidden" id="product-id" name="id">
-
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="product-name">商品名稱*</label>
@@ -91,21 +124,51 @@
                         <label for="product-warning-threshold">庫存預警門檻</label>
                         <input type="number" id="product-warning-threshold" name="warning_threshold" min="0">
                     </div>
-                    
                     <div class="form-group form-group-checkbox">
                         <input type="checkbox" id="product-is-active" name="is_active" checked>
                         <label for="product-is-active">保持上架狀態 (勾選=上架, 取消=下架)</label>
                     </div>
                 </div>
-
                 <div class="form-actions">
-                    <button type="button" id="cancel-btn" class="btn-secondary">取消</button>
-                    <button type="submit" id="save-btn" class="btn-primary">儲存</button>
+                    <button type="button" class="btn-secondary cancel-btn">取消</button>
+                    <button type="submit" id="save-product-btn" class="btn-primary">儲存</button>
                 </div>
-                <div id="form-error-message" class="error-message"></div>
+                <div id="product-form-error-message" class="error-message"></div>
             </form>
         </div>
     </div>
+
+    <div id="employee-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h1 id="employee-modal-title">新增員工</h1>
+            <form id="employee-form">
+                <input type="hidden" id="employee-id" name="id">
+                
+                <div class="form-grid form-grid-small">
+                    <div class="form-group">
+                        <label for="employee-name">員工姓名*</label>
+                        <input type="text" id="employee-name" name="employee_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="employee-code">代碼/座號*</label>
+                        <input type="text" id="employee-code" name="employee_code" required>
+                    </div>
+                    <div class="form-group form-group-checkbox">
+                        <input type="checkbox" id="employee-is-active" name="is_active" checked>
+                        <label for="employee-is-active">保持在職狀態 (勾選=在職, 取消=停用)</label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary cancel-btn">取消</button>
+                    <button type="submit" id="save-employee-btn" class="btn-primary">儲存</button>
+                </div>
+                <div id="employee-form-error-message" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="backend.js"></script>
