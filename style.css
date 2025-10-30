@@ -648,3 +648,77 @@ body {
     margin: 10px 0;
     text-align: center;
 }
+/* ====================================================================
+   V11: 前台訂單數量修改按鈕樣式
+   ==================================================================== */
+
+.item-quantity-control {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 讓按鈕和數字居中 */
+    gap: 8px; /* 按鈕和數字之間的間距 */
+}
+
+.quantity-btn {
+    background-color: var(--button-bg-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-color-dark);
+    font-weight: bold;
+    font-size: 1.1em;
+    cursor: pointer;
+    border-radius: 50%; /* 圓形按鈕 */
+    width: 28px; /* 固定寬度 */
+    height: 28px; /* 固定高度 */
+    line-height: 26px; /* 垂直居中文字 */
+    text-align: center;
+    padding: 0;
+    transition: background-color 0.2s, color 0.2s;
+    user-select: none; /* 防止選中文本 */
+}
+
+.quantity-btn:hover {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+    border-color: var(--primary-color-light);
+}
+
+.quantity-btn:active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* 當數量為 1 時，讓減號按鈕變灰且不可點 */
+.quantity-btn.decrease-btn[disabled] {
+    background-color: #f0f0f0;
+    color: #ccc;
+    cursor: not-allowed;
+    border-color: #eee;
+}
+
+.item-quantity-display {
+    font-weight: 700;
+    min-width: 20px; /* 給數字一個最小寬度 */
+    text-align: center;
+}
+/* ====================================================================
+   V12: 訂單數量手動輸入框樣式
+   ==================================================================== */
+
+.quantity-input {
+    width: 45px; /* 輸入框寬度 */
+    text-align: center;
+    font-weight: 700;
+    font-size: 1em;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 4px 2px;
+    /* 隱藏 Firefox 的上下箭頭 */
+    -moz-appearance: textfield;
+}
+
+/* 隱藏 Chrome, Safari, Edge, Opera 的上下箭頭 */
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
