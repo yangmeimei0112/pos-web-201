@@ -1,11 +1,11 @@
 ﻿/* ====================================================================
-   POS 系統樣式表 - 依功能區塊劃分與中文註記 (最終修復版 - 修正語法錯誤)
-   ==================================================================== */
+   POS 系統樣式表 - 依功能區塊劃分與中文註記 (V17.3)
+   ==================================================================== */
 
 
 /* -----------------------------------------------------------
-   區塊 1: 基礎設定與變數 (Imports, Fonts, Variables)
-   ----------------------------------------------------------- */
+   區塊 1: 基礎設定與變數 (Imports, Fonts, Variables)
+   ----------------------------------------------------------- */
 
 /* 引入 Google Fonts (中文字體) */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
@@ -20,6 +20,7 @@
     --secondary-color-light: #ecf0f1; /* 次要色調淺色 (用於背景、表頭背景) */
     --success-color: #2ecc71; /* 成功/結帳：綠色 */
     --danger-color: #e74c3c; /* 警告/移除/最終總計：紅色 */
+    --warning-color: #f39c12; /* [V17.2] 橘黃色 (同標題) */
     --text-color-dark: #333; /* 主要文字顏色 */
     --text-color-light: #95a5a6; /* 輔助文字顏色 (如庫存狀態) */
     --border-color: #bdc3c7; /* 邊框標準色 */
@@ -30,8 +31,8 @@
 }
 
 /* -----------------------------------------------------------
-   區塊 2: 全域佈局與應用程式主體 (.pos-app, body)
-   ----------------------------------------------------------- */
+   區塊 2: 全域佈局與應用程式主體 (.pos-app, body)
+   ----------------------------------------------------------- */
 
 /* 確保 body 佔滿整個視窗高度 */
 html, body {
@@ -74,8 +75,8 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 3: 頂部導航與標頭 (.pos-header)
-   ----------------------------------------------------------- */
+   區塊 3: 頂部導航與標頭 (.pos-header)
+   ----------------------------------------------------------- */
 
 .pos-header {
     display: flex;
@@ -95,7 +96,6 @@ body {
     gap: 15px; /* 元素間距 */
 }
 
-/* [新增樣式] 設計師備註樣式 - 實現淡化需求 */
 .designer-note {
     font-size: 0.8em; /* 較小字體 */
     opacity: 0.6; /* 關鍵：淡化顯示 */
@@ -107,12 +107,12 @@ body {
     font-size: 1.5em;
     font-weight: 700;
     margin: 0;
-    color: #f39c12; /* 系統標題使用橙色強調 */
+    color: var(--warning-color); /* 系統標題使用橙色強調 */
 }
 
 #current-employee-display {
     font-weight: 700;
-    color: #f39c12; /* 員工名稱強調 */
+    color: var(--warning-color); /* 員工名稱強調 */
     font-size: 1.0em;
 }
 
@@ -138,8 +138,8 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 4: 商品選擇區 (Product Selection)
-   ----------------------------------------------------------- */
+   區塊 4: 商品選擇區 (Product Selection)
+   ----------------------------------------------------------- */
 
 .product-selection-area {
     flex: 3; /* 佔據較大比例 (3/4.5) */
@@ -217,8 +217,8 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 5: 訂單總結區塊主體 (Order Summary Area)
-   ----------------------------------------------------------- */
+   區塊 5: 訂單總結區塊主體 (Order Summary Area)
+   ----------------------------------------------------------- */
 
 .order-summary-area {
     flex: 1.5; /* 佔據較小比例 (1.5/4.5) */
@@ -265,8 +265,8 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 6: 訂單明細表格 (Order Items Table) - 關鍵排版區
-   ----------------------------------------------------------- */
+   區塊 6: 訂單明細表格 (Order Items Table) - 關鍵排版區
+   ----------------------------------------------------------- */
 
 .order-items-list-container {
     flex-grow: 1;
@@ -365,8 +365,8 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 7: 數量控制元件 (Item Quantity Controls)
-   ----------------------------------------------------------- */
+   區塊 7: 數量控制元件 (Item Quantity Controls)
+   ----------------------------------------------------------- */
 
 /* 數量輸入控制項容器 - 緊湊設計，居中且不影響行高 */
 .item-controls {
@@ -450,8 +450,8 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 8: 訂單總計與結帳按鈕 (Totals & Checkout)
-   ----------------------------------------------------------- */
+   區塊 8: 訂單總計與結帳按鈕 (Totals & Checkout)
+   ----------------------------------------------------------- */
 
 /* 訂單總計區容器 */
 .order-totals {
@@ -464,6 +464,7 @@ body {
 .total-row {
     display: flex;
     justify-content: space-between; /* 項目名稱與金額左右對齊 */
+    align-items: center; /* [V17.3] 垂直居中 */
     padding: 5px 0;
     font-size: 1.1em;
 }
@@ -505,8 +506,8 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 9: 模態視窗 (Modals - Employee/Checkout)
-   ----------------------------------------------------------- */
+   區塊 9: 模態視窗 (Modals - Employee/Checkout)
+   ----------------------------------------------------------- */
 
 /* 通用 Modal 樣式 */
 .modal {
@@ -648,17 +649,17 @@ body {
     margin: 10px 0;
     text-align: center;
 }
+
 /* ====================================================================
-   V11: 前台訂單數量修改按鈕樣式
+   V11: 前台訂單數量修改按鈕樣式 (V17.3 需保留)
    ==================================================================== */
 
 .item-quantity-control {
     display: flex;
     align-items: center;
-    justify-content: center; /* 讓按鈕和數字居中 */
-    gap: 8px; /* 按鈕和數字之間的間距 */
+    justify-content: center;
+    gap: 8px;
 }
-
 .quantity-btn {
     background-color: var(--button-bg-light);
     border: 1px solid var(--border-color);
@@ -666,28 +667,24 @@ body {
     font-weight: bold;
     font-size: 1.1em;
     cursor: pointer;
-    border-radius: 50%; /* 圓形按鈕 */
-    width: 28px; /* 固定寬度 */
-    height: 28px; /* 固定高度 */
-    line-height: 26px; /* 垂直居中文字 */
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    line-height: 26px;
     text-align: center;
     padding: 0;
     transition: background-color 0.2s, color 0.2s;
-    user-select: none; /* 防止選中文本 */
+    user-select: none;
 }
-
 .quantity-btn:hover {
     background-color: var(--primary-color-light);
     color: var(--primary-color);
     border-color: var(--primary-color-light);
 }
-
 .quantity-btn:active {
     background-color: var(--primary-color);
     color: white;
 }
-
-/* 當數量為 1 時，讓減號按鈕變灰且不可點 */
 .quantity-btn.decrease-btn[disabled] {
     background-color: #f0f0f0;
     color: #ccc;
@@ -695,38 +692,29 @@ body {
     border-color: #eee;
 }
 
-.item-quantity-display {
-    font-weight: 700;
-    min-width: 20px; /* 給數字一個最小寬度 */
-    text-align: center;
-}
 /* ====================================================================
-   V12: 訂單數量手動輸入框樣式
+   V12: 訂單數量手動輸入框樣式 (V17.3 需保留)
    ==================================================================== */
 
 .quantity-input {
-    width: 45px; /* 輸入框寬度 */
+    width: 45px;
     text-align: center;
     font-weight: 700;
     font-size: 1em;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: 4px 2px;
-    /* 隱藏 Firefox 的上下箭頭 */
     -moz-appearance: textfield;
 }
-
-/* 隱藏 Chrome, Safari, Edge, Opera 的上下箭頭 */
 .quantity-input::-webkit-outer-spin-button,
 .quantity-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 /* ====================================================================
-   V14: 商品備註 (Note) 樣式
+   V14: 商品備註 (Note) 樣式 (V17.3 需保留)
    ==================================================================== */
 
-/* 備註按鈕 (新增/編輯) */
 .note-btn {
     background: none;
     border: none;
@@ -734,8 +722,8 @@ body {
     cursor: pointer;
     font-size: 0.9em;
     padding: 2px 5px;
-    margin-top: 4px; /* 與商品名稱保持一點距離 */
-    display: block; /* 讓它顯示在品名下方 */
+    margin-top: 4px;
+    display: block;
     transition: color 0.2s;
 }
 .note-btn:hover {
@@ -743,18 +731,48 @@ body {
     text-decoration: underline;
 }
 .note-btn i {
-    margin-right: 4px; /* 圖示與文字的距離 */
+    margin-right: 4px;
 }
-
-/* 已有備註的顯示樣式 */
 .item-note-display {
     font-size: 0.9em;
-    color: var(--danger-color); /* 用醒目的顏色顯示備註 */
+    color: var(--danger-color);
     font-weight: 700;
     margin-top: 4px;
     display: block;
-    max-width: 150px; /* 避免備註太長撐爆 */
+    max-width: 150px;
     overflow: hidden;
-    text-overflow: ellipsis; /* 超出部分顯示 ... */
-    white-space: nowrap; /* 不換行 */
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ====================================================================
+   V17.3: 折扣 (Discount) 下拉選單樣式 (修復 V17.2)
+   (取代 V15 / V17.1 / V17.2 的樣式)
+   ==================================================================== */
+   
+/* "折扣" 欄位 */
+.order-totals .discount-row {
+    /* (V-Old 預設使用 <dl>，樣式已由 .total-row 控制) */
+}
+
+/* [V17.3] 折扣下拉選單樣式 (顯眼的橘黃色 + 粗體 + 移除 max-width) */
+.discount-select {
+    font-size: 0.95em;
+    font-weight: 700; /* 粗體 */
+    padding: 5px 8px;
+    border-radius: var(--border-radius);
+    background-color: white;
+    cursor: pointer;
+    vertical-align: middle; 
+    
+    color: var(--warning-color); /* 橘黃色 */
+    border: 1px solid var(--warning-color); /* 橘黃色邊框 */
+    
+    /* [V17.3 修復] 移除 max-width，允許選單自動延展 */
+    /* max-width: 150px; */ 
+}
+.discount-select:focus {
+    outline: none;
+    border-color: var(--warning-color);
+    box-shadow: 0 0 5px rgba(243, 156, 18, 0.3); /* 橘黃色光暈 */
 }

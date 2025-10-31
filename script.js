@@ -1,10 +1,8 @@
 /* ====================================================================
-   POS 系統核心 JS 邏輯 - script.js (V14 - 商品備註版)
-   - [新增] 訂單明細項目可加入/編輯備註 (note)
-   - [修改] renderOrderItems() 顯示備註按鈕
-   - [修改] processCheckout() 將備註寫入 'order_items' 表
-   - [保留] V13.2 的 Enter 鍵功能
-   - [保留] V12 的手動輸入數量功能
+   POS 系統核心 JS 邏輯 - script.js (V17.2 - 折扣選單 Bug 修復版)
+   - [修復] V17.1 中，下拉選單無法選中的 Bug
+   - [修改] updateOrderTotals() 拆分為 updateDiscountDropdown() 和 updateFinalTotals()
+   - [保留] V14 (品項備註), V13.2 (Enter), V12 (手動数量)
    ==================================================================== */
 
 // ====================================================================
@@ -29,7 +27,10 @@ if (window.supabase) {
 let currentEmployee = null;
 let allProducts = []; 
 let activeCategory = 'ALL';
-let orderItems = []; // 當前訂單明細 (V14: 項目將包含 note)
+let orderItems = []; 
+let availableDiscounts = []; 
+let currentDiscountId = 0; 
+let currentDiscountAmount = 0; 
 
 
 // ===============================================
@@ -57,7 +58,7 @@ const clearOrderBtn = document.getElementById('clear-order-btn');
 const checkoutBtn = document.getElementById('checkout-btn');
 const orderItemCount = document.getElementById('order-item-count');
 const orderSubtotal = document.getElementById('order-subtotal');
-const orderDiscount = document.getElementById('order-discount');
+const orderDiscount = document.getElementById('order-discount'); // 這是 <dd> 標籤
 const orderFinalTotal = document.getElementById('order-final-total');
 // 結帳 Modal
 const checkoutModal = document.getElementById('checkout-modal');
@@ -81,7 +82,7 @@ const formatCurrency = (amount) => {
 };
 
 // ===============================================
-// 5. 員工與時鐘函數
+// 5. 員工、折扣、時鐘函數 - [V17]
 // ===============================================
 function updateClock() {
     const now = new Date();
@@ -92,6 +93,34 @@ function updateClock() {
     }
 }
 
+/**
+ * [V17] 載入可用的折扣選項
+ */
+async function loadDiscounts() {
+    try {
+        const { data, error } = await supabase
+            .from('discounts')
+            .select('id, name, amount')
+            .eq('is_active', true) 
+            .order('amount', { ascending: true }); 
+
+        if (error) throw error;
+        
+        availableDiscounts = data || [];
+        console.log('✅ 折扣載入成功:', availableDiscounts);
+        
+        updateOrderTotals(); // 渲染下拉選單
+
+    } catch (err) {
+        console.error('載入折扣時發生錯誤:', err);
+        availableDiscounts = [];
+        updateOrderTotals();
+    }
+}
+
+/**
+ * [V17] 登入
+ */
 function selectEmployee(id, name) {
     currentEmployee = { id, name };
     if (currentEmployeeDisplay) {
@@ -104,8 +133,12 @@ function selectEmployee(id, name) {
         posMainApp.classList.remove('hidden');
     }
     console.log(`✅ 員工 ${name} (ID: ${id}) 開始值班。`);
+    
     if (!allProducts || allProducts.length === 0) {
         loadProducts();
+    }
+    if (!availableDiscounts || availableDiscounts.length === 0) {
+        loadDiscounts(); 
     }
 }
 
@@ -271,59 +304,41 @@ function filterAndRenderProducts(category) {
 }
 
 // ===============================================
-// 7. 訂單處理核心函數 - [V14 修改]
+// 7. 訂單處理核心函數 - [V17.2 修改]
 // ===============================================
 function getProductStock(productId) {
     const product = allProducts.find(p => p.id === productId);
     return product ? product.stock : 0;
 }
 
-/**
- * [V14 修改] 新增商品到訂單 (加入 note 屬性)
- */
 function addItemToOrder(product) {
-    const existingItemIndex = orderItems.findIndex(item => item.product_id === product.id);
+    const existingItemIndex = orderItems.findIndex(item => item.product_id === product.id && !item.note); 
     const maxStock = getProductStock(product.id);
 
     if (existingItemIndex > -1) {
         const existingItem = orderItems[existingItemIndex];
-        // [V14] 檢查：如果已有備註，不合併，而是新增一條
-        if (existingItem.note) {
-             // 提示：已有備註，將新增為獨立項目 (或詢問用戶)
-             // 暫時簡化：不合併
-        } else {
-            // 沒有備註，可以合併
-            if (existingItem.quantity + 1 > maxStock) {
-                alert(`商品「${product.name}」庫存不足！\n目前庫存: ${maxStock}，無法再新增。`);
-                return;
-            }
-            existingItem.quantity += 1;
-            renderOrderItems();
-            updateOrderTotals();
-            return; // 合併完成，結束
+        if (existingItem.quantity + 1 > maxStock) {
+            alert(`商品「${product.name}」庫存不足！\n目前庫存: ${maxStock}，無法再新增。`);
+            return;
         }
+        existingItem.quantity += 1;
+    } else {
+        if (1 > maxStock) {
+            alert(`商品「${product.name}」庫存為 0，無法加入訂單。`);
+            return;
+        }
+        orderItems.push({
+            product_id: product.id,
+            name: product.name,
+            price: parseFloat(product.price),
+            quantity: 1,
+            note: "" 
+        });
     }
-
-    // 執行到這裡，代表是新商品，或是「有備註」的同款商品
-    if (1 > maxStock) {
-        alert(`商品「${product.name}」庫存為 0，無法加入訂單。`);
-        return;
-    }
-    orderItems.push({
-        product_id: product.id,
-        name: product.name,
-        price: parseFloat(product.price),
-        quantity: 1,
-        note: "" // [V14] 新增 note 屬性
-    });
-    
     renderOrderItems();
-    updateOrderTotals();
+    updateOrderTotals(); // [V17.2] 每次新增/移除都需重算折扣
 }
 
-/**
- * [V11] 增加訂單項目數量
- */
 function increaseItemQuantity(index) {
     const item = orderItems[index];
     if (!item) return;
@@ -335,12 +350,9 @@ function increaseItemQuantity(index) {
     }
     item.quantity += 1;
     renderOrderItems();
-    updateOrderTotals();
+    updateOrderTotals(); // [V17.2] 每次新增/移除都需重算折扣
 }
 
-/**
- * [V11] 減少訂單項目數量
- */
 function decreaseItemQuantity(index) {
     const item = orderItems[index];
     if (!item) return;
@@ -348,7 +360,7 @@ function decreaseItemQuantity(index) {
     if (item.quantity > 1) {
         item.quantity -= 1;
         renderOrderItems();
-        updateOrderTotals();
+        updateOrderTotals(); // [V17.2] 每次新增/移除都需重算折扣
     } else {
         if (confirm(`確定要將「${item.name}」${item.note ? `(備註: ${item.note})` : ''} 從訂單中移除嗎？`)) {
             removeItem(index);
@@ -358,9 +370,6 @@ function decreaseItemQuantity(index) {
     }
 }
 
-/**
- * [V12] 處理手動輸入數量
- */
 function handleQuantityChange(index, newQuantityStr) {
     const item = orderItems[index];
     if (!item) return;
@@ -379,63 +388,47 @@ function handleQuantityChange(index, newQuantityStr) {
 
     if (newQuantity > maxStock) {
         alert(`庫存不足！「${item.name}」僅剩 ${maxStock} 件。`);
-        newQuantity = maxStock; // 自動修正為最大庫存
+        newQuantity = maxStock; 
     }
 
     item.quantity = newQuantity;
     renderOrderItems(); 
-    updateOrderTotals();
+    updateOrderTotals(); // [V17.2] 每次新增/移除都需重算折扣
 }
 
-/**
- * [V14 新增] 處理新增/編輯備註
- */
 function handleEditNote(index) {
     const item = orderItems[index];
     if (!item) return;
-
-    // 使用 prompt 讓用戶輸入備註，並顯示當前備註
     const currentNote = item.note || "";
     const newNote = prompt(`請輸入「${item.name}」的備註：`, currentNote);
 
-    // newNote === null 代表用戶按了「取消」
     if (newNote !== null) {
-        item.note = newNote.trim(); // 儲存備註 (並去除前後空白)
+        item.note = newNote.trim(); 
         console.log(`項目 ${index} 的備註更新為: ${item.note}`);
-        renderOrderItems(); // 重新渲染以顯示備註
+        renderOrderItems(); 
     }
-    // 如果按取消，則不執行任何操作
 }
 
-
-/**
- * 移除訂單項目
- */
 function removeItem(index) {
     if (index >= 0 && index < orderItems.length) {
         orderItems.splice(index, 1);
         renderOrderItems();
-        updateOrderTotals();
+        updateOrderTotals(); // [V17.2] 每次新增/移除都需重算折扣
     } else {
         console.error("嘗試移除無效的訂單項目索引:", index);
     }
 }
 
-/**
- * [V14 修改] 訂單明細渲染 (加入備註按鈕和顯示)
- */
 function renderOrderItems() {
     if (!orderItemsTableBody) return;
     orderItemsTableBody.innerHTML = ''; 
 
     if (orderItems.length === 0) {
-        orderItemsContainer.classList.remove('has-items');
         orderItemsTableBody.innerHTML = `<tr><td colspan="5" class="empty-order-message">尚未加入商品</td></tr>`;
         if (checkoutBtn) checkoutBtn.disabled = true;
         return;
     }
 
-    orderItemsContainer.classList.add('has-items');
     if (checkoutBtn) checkoutBtn.disabled = false;
 
     orderItems.forEach((item, index) => {
@@ -445,22 +438,18 @@ function renderOrderItems() {
         row.className = 'order-item-row';
         row.dataset.index = index; 
 
-        // [V14] 產生備註按鈕或已儲存的備註
         let noteHtml;
         if (item.note) {
-            // 如果有備註，顯示備註並提供 "編輯" 按鈕
             noteHtml = `
                 <span class="item-note-display" title="${item.note}">${item.note}</span>
                 <button class="note-btn edit-note-btn" data-index="${index}"><i class="fas fa-pen"></i> 編輯備註</button>
             `;
         } else {
-            // 如果沒有備註，顯示 "新增" 按鈕
             noteHtml = `
                 <button class="note-btn add-note-btn" data-index="${index}"><i class="fas fa-plus"></i> 新增備註</button>
             `;
         }
 
-        // [V14] 修改品名欄位 (td.item-name) 以包含備註
         row.innerHTML = `
             <td class="item-name">
                 ${item.name}
@@ -484,6 +473,9 @@ function renderOrderItems() {
     });
 }
 
+/**
+ * [V17.2 Bug 修復] 拆分函數，避免下拉選單重繪
+ */
 function updateOrderTotals() {
     let subtotal = 0;
     let totalItems = 0;
@@ -492,13 +484,60 @@ function updateOrderTotals() {
         totalItems += item.quantity;
     });
 
-    const discount = 0; 
-    const finalTotal = subtotal - discount;
+    // 檢查目前選中的折扣是否仍然有效
+    if (currentDiscountAmount > subtotal && subtotal > 0) {
+        console.warn("折扣金額大於小計，自動重設折扣。");
+        currentDiscountId = 0;
+        currentDiscountAmount = 0;
+    }
 
     if (orderItemCount) orderItemCount.textContent = totalItems;
     if (orderSubtotal) orderSubtotal.textContent = formatCurrency(subtotal);
-    if (orderDiscount) orderDiscount.textContent = formatCurrency(discount); 
-    if (orderFinalTotal) orderFinalTotal.innerHTML = `<strong>${formatCurrency(finalTotal)}</strong>`;
+    
+    // [V17.2] 呼叫拆分出來的函數
+    renderDiscountDropdown(subtotal);
+    updateFinalTotalDisplay(subtotal);
+}
+
+/**
+ * [V17.2 新增] 僅更新下拉選單
+ */
+function renderDiscountDropdown(subtotal) {
+    if (orderDiscount) {
+        // [V17.2] 關鍵過濾：只顯示金額 <= 小計的折扣
+        const optionsHtml = availableDiscounts
+            .filter(d => d.amount <= subtotal || d.amount === 0) 
+            .map(d => `<option value="${d.id}_${d.amount}">${d.name} (-${formatCurrency(d.amount)})</option>`)
+            .join('');
+
+        // [V17.2] 插入 <select>
+        orderDiscount.innerHTML = `
+            <select id="discount-select" class="discount-select" ${orderItems.length === 0 ? 'disabled' : ''}>
+                <option value="0_0">無折扣</option>
+                ${optionsHtml}
+            </select>
+        `;
+        
+        // 保持選中
+        const selectEl = document.getElementById('discount-select');
+        if (selectEl) {
+            selectEl.value = `${currentDiscountId}_${currentDiscountAmount}`;
+        }
+    }
+}
+
+/**
+ * [V17.2 新增] 僅更新總金額
+ */
+function updateFinalTotalDisplay(subtotal) {
+    // (如果 subtotal 未傳入，則重新計算)
+    if (subtotal === undefined) {
+        subtotal = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    }
+    
+    const finalTotal = subtotal - currentDiscountAmount; 
+
+    if (orderFinalTotal) orderFinalTotal.textContent = formatCurrency(finalTotal);
 
     if (checkoutBtn) {
         checkoutBtn.textContent = `結帳 (${formatCurrency(finalTotal)})`;
@@ -507,6 +546,9 @@ function updateOrderTotals() {
     }
 }
 
+/**
+ * [V17] 清空訂單
+ */
 function clearOrder(force = false) {
     if (!force && orderItems.length > 0) {
         if (!confirm('確定要清空整筆訂單嗎？')) {
@@ -514,17 +556,21 @@ function clearOrder(force = false) {
         }
     }
     orderItems = [];
+    currentDiscountId = 0; 
+    currentDiscountAmount = 0; 
+    
     renderOrderItems();
-    updateOrderTotals();
+    updateOrderTotals(); // 確保折扣 UI (下拉選單) 也被重設
     console.log('🗑️ 訂單已清空');
 }
 
 
 // ===============================================
-// 8. 結帳邏輯 - [V14 修改]
+// 8. 結帳邏輯 - [V17]
 // ===============================================
 function showCheckoutModal() {
     if (orderItems.length === 0) return;
+    
     const totalAmount = parseFloat(checkoutBtn.dataset.total || 0);
     if (isNaN(totalAmount)) return;
 
@@ -534,7 +580,7 @@ function showCheckoutModal() {
     checkoutErrorMessage.textContent = '';
     checkoutErrorMessage.classList.add('hidden');
     finalConfirmBtn.disabled = false;
-    finalConfirmBtn.textContent = '確認結帳並入帳'; 
+    finalConfirmBtn.textContent = '確認結帳'; 
 
     checkoutModal.classList.add('active');
 
@@ -587,7 +633,7 @@ async function processCheckout() {
 
     if (inventoryError) {
         finalConfirmBtn.disabled = false;
-        finalConfirmBtn.textContent = '確認結帳並入帳';
+        finalConfirmBtn.textContent = '確認結帳';
         checkoutModal.classList.remove('active'); 
         renderOrderItems(); 
         return; 
@@ -600,13 +646,14 @@ async function processCheckout() {
     const transactionTime = new Date().toISOString();
 
     try {
-        // 1. 寫入 orders
+        // [V17] 1. 寫入 orders
         const { data: orderData, error: orderError } = await supabase
             .from('orders')
             .insert([{
                 employee_id: employeeId,
                 total_amount: totalAmount,
-                discount_amount: 0, 
+                discount_amount: currentDiscountAmount, 
+                discount_id: currentDiscountId > 0 ? currentDiscountId : null, 
                 status: 'Completed',
                 paid_amount: paidAmount,
                 change_amount: changeAmount,
@@ -617,20 +664,20 @@ async function processCheckout() {
 
         if (orderError) throw new Error(`寫入訂單主表失敗: ${orderError.message}`);
         const orderId = orderData.id;
-        console.log(`訂單 ${orderId} 寫入成功。`);
+        console.log(`訂單 ${orderId} 寫入成功 (含折扣)。`);
 
-        // [V14 修改] 2. 寫入 order_items (包含 note)
+        // [V14] 2. 寫入 order_items
         const itemsPayload = orderItems.map(item => ({
             order_id: orderId,
             product_id: item.product_id,
             quantity: item.quantity,
             price_at_sale: item.price,
             subtotal: item.price * item.quantity,
-            note: item.note // [V14] 儲存備註
+            note: item.note 
         }));
         const { error: itemsError } = await supabase.from('order_items').insert(itemsPayload);
         if (itemsError) throw new Error(`寫入訂單明細失敗: ${itemsError.message}`);
-        console.log('訂單明細寫入成功 (含備註)。');
+        console.log('訂單明細寫入成功 (含商品備註)。');
 
         // 3. 扣減庫存
         const updatePromises = orderItems.map(item => {
@@ -660,21 +707,24 @@ async function processCheckout() {
         alert(`結帳失敗：${err.message}\n請稍後再試或聯繫管理員。`);
     } finally {
         finalConfirmBtn.disabled = false;
-        finalConfirmBtn.textContent = '確認結帳並入帳';
+        finalConfirmBtn.textContent = '確認結帳';
     }
 }
 
 
 // ===============================================
-// 9. 應用程式啟動與事件監聽 - [V14 修改]
+// 9. 應用程式啟動與事件監聽 - [V17.2 修改]
 // ===============================================
 
 function initializeEmployeeModule() {
     loadEmployees();
     if (employeeModal) {
-        window.requestAnimationFrame(() => {
-            employeeModal.classList.add('active');
-        });
+        const firstEmployeeModal = document.getElementById('employee-selection-modal');
+        if (firstEmployeeModal) {
+            window.requestAnimationFrame(() => {
+                firstEmployeeModal.classList.add('active');
+            });
+        }
     }
 }
 
@@ -700,9 +750,9 @@ function initializeApp() {
     if (paidAmountInput) paidAmountInput.addEventListener('input', handlePaymentInput);
     if (finalConfirmBtn) finalConfirmBtn.addEventListener('click', processCheckout);
     
-    // [V14 修改] 訂單明細表格的事件委派
+    // [V14] 訂單明細表格的事件委派
     if (orderItemsTableBody) {
-        // 處理 +/- 和移除按鈕 (click)
+        // (click) 處理 +/-/移除/備註 按鈕
         orderItemsTableBody.addEventListener('click', (e) => {
             const target = e.target;
             const button = target.closest('button'); 
@@ -711,7 +761,6 @@ function initializeApp() {
             const index = parseInt(button.dataset.index, 10);
             if (isNaN(index)) return;
 
-            // 處理 +/-
             if (button.classList.contains('increase-btn')) {
                 increaseItemQuantity(index);
             } else if (button.classList.contains('decrease-btn')) {
@@ -719,9 +768,7 @@ function initializeApp() {
                 if (orderItems[index]?.quantity > 0) {
                    decreaseItemQuantity(index);
                 }
-            } 
-            // 處理 移除
-            else if (button.classList.contains('remove-item-btn')) {
+            } else if (button.classList.contains('remove-item-btn')) {
                 const removeButton = target.closest('.remove-item-btn');
                 if (removeButton) {
                     const removeIndex = parseInt(removeButton.dataset.index, 10);
@@ -729,14 +776,12 @@ function initializeApp() {
                         removeItem(removeIndex);
                     }
                 }
-            }
-            // [V14 新增] 處理 備註
-            else if (button.classList.contains('add-note-btn') || button.classList.contains('edit-note-btn')) {
+            } else if (button.classList.contains('add-note-btn') || button.classList.contains('edit-note-btn')) {
                 handleEditNote(index);
             }
         });
 
-        // [V12] 處理手動輸入 (change)
+        // (change) 處理手動輸入
         orderItemsTableBody.addEventListener('change', (e) => {
             const target = e.target;
             if (target.classList.contains('quantity-input')) {
@@ -748,7 +793,34 @@ function initializeApp() {
         });
     }
 
-    // [V13.1] 統一的 Enter 鍵監聽器 (使用 keydown)
+    // [V17.2] 折扣下拉選單事件監聽 (Bug 修復)
+    const orderTotals = document.querySelector('.order-totals');
+    if (orderTotals) {
+        orderTotals.addEventListener('change', (e) => {
+            if (e.target.id === 'discount-select') {
+                const selectedValue = e.target.value; 
+                const [id, amount] = selectedValue.split('_').map(Number);
+                
+                const subtotal = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+                if (amount > subtotal) {
+                    alert(`折扣金額 (NT$ ${amount}) 不能超過小計 (NT$ ${subtotal})。\n將自動取消折扣。`);
+                    currentDiscountId = 0;
+                    currentDiscountAmount = 0;
+                    // [V17.2] 強制重繪下拉選單以重設
+                    updateOrderTotals(); 
+                } else {
+                    currentDiscountId = id;
+                    currentDiscountAmount = amount;
+                    // [V17.2] 只更新總金額，不重繪下拉選單
+                    updateFinalTotalDisplay(subtotal); 
+                }
+                
+                console.log(`折扣已選擇: ID=${currentDiscountId}, 金額=${currentDiscountAmount}`);
+            }
+        });
+    }
+
+    // [V13.1] 統一的 Enter 鍵監聽器
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return; 
 
@@ -756,7 +828,6 @@ function initializeApp() {
         const isEmployeeModalActive = employeeModal && employeeModal.classList.contains('active');
         const targetTagName = e.target.tagName.toLowerCase();
 
-        // 情況 1: 正在結帳 Modal 中
         if (isCheckoutModalActive) {
             if (e.target === paidAmountInput) {
                 if (!finalConfirmBtn.disabled) {
@@ -767,16 +838,13 @@ function initializeApp() {
             }
             return; 
         }
-        // 情況 2: 正在員工 Modal 中
         if (isEmployeeModalActive) {
             return;
         }
-        // 情況 3: 正在輸入框中 (例如訂單数量框)
-        if (targetTagName === 'input') {
-            e.target.blur(); // 觸發失焦 (change)
+        if (targetTagName === 'input' || targetTagName === 'textarea' || targetTagName === 'select') {
+            e.target.blur();
             return;
         }
-        // 情況 4: 在主畫面，且訂單不為空
         if (orderItems.length > 0) {
             e.preventDefault(); 
             console.log('⚡ 觸發 Global Enter 開啟結帳');
@@ -786,9 +854,9 @@ function initializeApp() {
 
     // 初始渲染
     renderOrderItems();
-    updateOrderTotals();
+    updateOrderTotals(); // [V17] 確保折扣下拉選單在啟動時被渲染
 
-    console.log('🚀 POS 系統腳本 (V14) 已啟動。');
+    console.log('🚀 POS 系統腳本 (V17.2) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化

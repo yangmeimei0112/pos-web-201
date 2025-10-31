@@ -149,4 +149,73 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 #order-details-table th:nth-child(n+2),
 #order-details-table td:nth-child(n+2) { text-align: right; }
 .order-detail-summary { display: flex; gap: 20px; margin-bottom: 15px; }
-.order-detail-summary p { margin: 0; }
+.order-detail-summary p { margin: 0; }/* ====================================================================
+   V10.1: 後台訂單明細的「商品備註」樣式
+   ==================================================================== */
+
+/* 顯示在 "訂單查詢" -> "展開明細" -> "品名" 下方的備註 */
+.item-note-display-backend {
+    display: block; /* 顯示在品名下方 */
+    font-size: 0.9em;
+    color: var(--danger-color);
+    font-weight: 700;
+    margin-top: 5px;
+    white-space: normal; /* 允許備註文字換行 */
+    max-width: 300px; /* 避免過長 */
+}
+/* ====================================================================
+   V16: 折扣管理 (Discount) 模組樣式
+   ==================================================================== */
+
+/* [V16] 擴充共用表格樣式 */
+#discount-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95em;
+}
+
+#discount-list-table th,
+#discount-list-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--soft-border);
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+#discount-list-table th {
+    background-color: var(--secondary-color-light);
+    font-weight: 700;
+    color: var(--secondary-color);
+    position: sticky;
+    top: 0;
+}
+
+#discount-list-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+#discount-list-table td .btn-secondary {
+    padding: 5px 10px;
+    font-size: 0.9em;
+    margin-right: 5px;
+}
+
+/* [V16] 折扣表格欄位對齊 */
+#discount-list-table th:nth-child(3), /* 金額 */
+#discount-list-table td:nth-child(3) {
+    text-align: right;
+}
+#discount-list-table th:nth-child(4), /* 狀態 */
+#discount-list-table td:nth-child(4),
+#discount-list-table th:nth-child(5), /* 操作 */
+#discount-list-table td:nth-child(5)
+{
+    text-align: center;
+}
+
+/* [V16] 折扣 Modal (共用 .form-grid-small) */
+#discount-modal .modal-content {
+    max-width: 500px;
+    text-align: left;
+}

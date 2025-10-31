@@ -23,6 +23,7 @@
                 <li class="active" data-target="product-management-section"><a href="#">商品管理</a></li>
                 <li data-target="employee-management-section"><a href="#">員工管理</a></li>
                 <li data-target="orders-section"><a href="#">訂單查詢</a></li>
+                <li data-target="discount-management-section"><a href="#">折扣管理</a></li>
                 <li data-target="reports-section"><a href="#">報表分析 (待實作)</a></li>
             </ul>
         </nav>
@@ -35,7 +36,7 @@
                 </div>
                 <div class="table-container">
                     <table id="product-list-table">
-                        <thead>
+                         <thead>
                             <tr>
                                 <th>商品ID</th>
                                 <th>名稱</th>
@@ -84,7 +85,6 @@
                     <h1>訂單查詢</h1>
                     <button id="delete-all-orders-btn" class="btn-danger">刪除全部訂單</button>
                 </div>
-
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label for="filter-sequence-number">查詢第幾筆訂單:</label>
@@ -93,7 +93,6 @@
                     <button id="filter-search-btn" class="btn-primary">查詢</button>
                     <button id="filter-clear-btn" class="btn-secondary">顯示全部</button>
                 </div>
-
                 <div class="table-container">
                     <table id="order-list-table">
                         <thead>
@@ -107,8 +106,31 @@
                             </tr>
                         </thead>
                         <tbody id="order-list-tbody">
+                            <td colspan="6" class="loading-message">載入訂單資料中...</td>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="discount-management-section" class="management-section">
+                <div class="content-header">
+                    <h1>折扣優惠管理</h1>
+                    <button id="add-discount-btn" class="btn-primary">＋ 新增折扣</button>
+                </div>
+                <div class="table-container">
+                    <table id="discount-list-table">
+                        <thead>
                             <tr>
-                                <td colspan="6" class="loading-message">載入訂單資料中...</td>
+                                <th>折扣ID</th>
+                                <th>折扣名稱</th>
+                                <th>折扣金額 (NT$)</th>
+                                <th>狀態 (啟用/停用)</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="discount-list-tbody">
+                            <tr>
+                                <td colspan="5" class="loading-message">載入折扣資料中...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -142,6 +164,7 @@
             </form>
         </div>
     </div>
+    
     <div id="employee-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
@@ -155,6 +178,37 @@
                 </div>
                 <div class="form-actions"> <button type="button" class="btn-secondary cancel-btn">取消</button> <button type="submit" id="save-employee-btn" class="btn-primary">儲存</button> </div>
                 <div id="employee-form-error-message" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="discount-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h1 id="discount-modal-title">新增折扣</h1>
+            <form id="discount-form">
+                <input type="hidden" id="discount-id" name="id">
+                
+                <div class="form-grid form-grid-small">
+                    <div class="form-group">
+                        <label for="discount-name">折扣名稱*</label>
+                        <input type="text" id="discount-name" name="name" required placeholder="例如: 員工 9 折">
+                    </div>
+                    <div class="form-group">
+                        <label for="discount-amount">折扣金額 (NT$)*</label>
+                        <input type="number" id="discount-amount" name="amount" required min="0" placeholder="例如: 50">
+                    </div>
+                    <div class="form-group form-group-checkbox">
+                        <input type="checkbox" id="discount-is-active" name="is_active" checked>
+                        <label for="discount-is-active">保持啟用狀態 (勾選=前台可見)</label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary cancel-btn">取消</button>
+                    <button type="submit" id="save-discount-btn" class="btn-primary">儲存</button>
+                </div>
+                <div id="discount-form-error-message" class="error-message"></div>
             </form>
         </div>
     </div>
