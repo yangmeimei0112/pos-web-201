@@ -1,7 +1,9 @@
 /* ====================================================================
-   POS 系統核心 JS 邏輯 - script.js (V13.2 - 焦點修復版)
-   - [修復] 解決 showCheckoutModal 的 focus 競爭條件 (Race Condition)
-   - [保留] V13.1 的統一 Enter 鍵監聽器
+   POS 系統核心 JS 邏輯 - script.js (V14 - 商品備註版)
+   - [新增] 訂單明細項目可加入/編輯備註 (note)
+   - [修改] renderOrderItems() 顯示備註按鈕
+   - [修改] processCheckout() 將備註寫入 'order_items' 表
+   - [保留] V13.2 的 Enter 鍵功能
    - [保留] V12 的手動輸入數量功能
    ==================================================================== */
 
@@ -27,7 +29,7 @@ if (window.supabase) {
 let currentEmployee = null;
 let allProducts = []; 
 let activeCategory = 'ALL';
-let orderItems = []; 
+let orderItems = []; // 當前訂單明細 (V14: 項目將包含 note)
 
 
 // ===============================================
@@ -269,36 +271,52 @@ function filterAndRenderProducts(category) {
 }
 
 // ===============================================
-// 7. 訂單處理核心函數 - [V12 修改]
+// 7. 訂單處理核心函數 - [V14 修改]
 // ===============================================
 function getProductStock(productId) {
     const product = allProducts.find(p => p.id === productId);
     return product ? product.stock : 0;
 }
 
+/**
+ * [V14 修改] 新增商品到訂單 (加入 note 屬性)
+ */
 function addItemToOrder(product) {
     const existingItemIndex = orderItems.findIndex(item => item.product_id === product.id);
     const maxStock = getProductStock(product.id);
 
     if (existingItemIndex > -1) {
         const existingItem = orderItems[existingItemIndex];
-        if (existingItem.quantity + 1 > maxStock) {
-            alert(`商品「${product.name}」庫存不足！\n目前庫存: ${maxStock}，無法再新增。`);
-            return;
+        // [V14] 檢查：如果已有備註，不合併，而是新增一條
+        if (existingItem.note) {
+             // 提示：已有備註，將新增為獨立項目 (或詢問用戶)
+             // 暫時簡化：不合併
+        } else {
+            // 沒有備註，可以合併
+            if (existingItem.quantity + 1 > maxStock) {
+                alert(`商品「${product.name}」庫存不足！\n目前庫存: ${maxStock}，無法再新增。`);
+                return;
+            }
+            existingItem.quantity += 1;
+            renderOrderItems();
+            updateOrderTotals();
+            return; // 合併完成，結束
         }
-        existingItem.quantity += 1;
-    } else {
-        if (1 > maxStock) {
-            alert(`商品「${product.name}」庫存為 0，無法加入訂單。`);
-            return;
-        }
-        orderItems.push({
-            product_id: product.id,
-            name: product.name,
-            price: parseFloat(product.price),
-            quantity: 1,
-        });
     }
+
+    // 執行到這裡，代表是新商品，或是「有備註」的同款商品
+    if (1 > maxStock) {
+        alert(`商品「${product.name}」庫存為 0，無法加入訂單。`);
+        return;
+    }
+    orderItems.push({
+        product_id: product.id,
+        name: product.name,
+        price: parseFloat(product.price),
+        quantity: 1,
+        note: "" // [V14] 新增 note 屬性
+    });
+    
     renderOrderItems();
     updateOrderTotals();
 }
@@ -332,7 +350,7 @@ function decreaseItemQuantity(index) {
         renderOrderItems();
         updateOrderTotals();
     } else {
-        if (confirm(`確定要將「${item.name}」從訂單中移除嗎？`)) {
+        if (confirm(`確定要將「${item.name}」${item.note ? `(備註: ${item.note})` : ''} 從訂單中移除嗎？`)) {
             removeItem(index);
         } else {
             renderOrderItems();
@@ -351,7 +369,7 @@ function handleQuantityChange(index, newQuantityStr) {
     const maxStock = getProductStock(item.product_id);
 
     if (isNaN(newQuantity) || newQuantity < 1) {
-        if (confirm(`數量無效。您是否要將「${item.name}」從訂單中移除？`)) {
+        if (confirm(`數量無效。您是否要將「${item.name}」${item.note ? `(備註: ${item.note})` : ''} 從訂單中移除？`)) {
             removeItem(index); 
         } else {
             renderOrderItems(); 
@@ -365,8 +383,28 @@ function handleQuantityChange(index, newQuantityStr) {
     }
 
     item.quantity = newQuantity;
-    renderOrderItems(); // 重新渲染以更新 +/- 按鈕狀態和總價
+    renderOrderItems(); 
     updateOrderTotals();
+}
+
+/**
+ * [V14 新增] 處理新增/編輯備註
+ */
+function handleEditNote(index) {
+    const item = orderItems[index];
+    if (!item) return;
+
+    // 使用 prompt 讓用戶輸入備註，並顯示當前備註
+    const currentNote = item.note || "";
+    const newNote = prompt(`請輸入「${item.name}」的備註：`, currentNote);
+
+    // newNote === null 代表用戶按了「取消」
+    if (newNote !== null) {
+        item.note = newNote.trim(); // 儲存備註 (並去除前後空白)
+        console.log(`項目 ${index} 的備註更新為: ${item.note}`);
+        renderOrderItems(); // 重新渲染以顯示備註
+    }
+    // 如果按取消，則不執行任何操作
 }
 
 
@@ -384,7 +422,7 @@ function removeItem(index) {
 }
 
 /**
- * [V12 修改] 訂單明細渲染 (加入 <input> 框)
+ * [V14 修改] 訂單明細渲染 (加入備註按鈕和顯示)
  */
 function renderOrderItems() {
     if (!orderItemsTableBody) return;
@@ -407,8 +445,27 @@ function renderOrderItems() {
         row.className = 'order-item-row';
         row.dataset.index = index; 
 
+        // [V14] 產生備註按鈕或已儲存的備註
+        let noteHtml;
+        if (item.note) {
+            // 如果有備註，顯示備註並提供 "編輯" 按鈕
+            noteHtml = `
+                <span class="item-note-display" title="${item.note}">${item.note}</span>
+                <button class="note-btn edit-note-btn" data-index="${index}"><i class="fas fa-pen"></i> 編輯備註</button>
+            `;
+        } else {
+            // 如果沒有備註，顯示 "新增" 按鈕
+            noteHtml = `
+                <button class="note-btn add-note-btn" data-index="${index}"><i class="fas fa-plus"></i> 新增備註</button>
+            `;
+        }
+
+        // [V14] 修改品名欄位 (td.item-name) 以包含備註
         row.innerHTML = `
-            <td class="item-name">${item.name}</td>
+            <td class="item-name">
+                ${item.name}
+                ${noteHtml} 
+            </td>
             <td class="item-price">${formatCurrency(item.price)}</td>
             <td class="item-quantity">
                 <div class="item-quantity-control">
@@ -464,7 +521,7 @@ function clearOrder(force = false) {
 
 
 // ===============================================
-// 8. 結帳邏輯 - [V13.2 修改]
+// 8. 結帳邏輯 - [V14 修改]
 // ===============================================
 function showCheckoutModal() {
     if (orderItems.length === 0) return;
@@ -481,13 +538,10 @@ function showCheckoutModal() {
 
     checkoutModal.classList.add('active');
 
-    // [V13.2 修復] 
-    // 加入 100 毫秒延遲，確保 CSS 轉場動畫完成，
-    // 這樣 .focus() 才能 100% 成功。
     setTimeout(() => {
         paidAmountInput.focus(); 
         paidAmountInput.select(); 
-    }, 100); // 100 毫秒的延遲
+    }, 100); 
 
     handlePaymentInput(); 
 }
@@ -519,7 +573,6 @@ async function processCheckout() {
     finalConfirmBtn.disabled = true;
     finalConfirmBtn.textContent = '處理中...';
 
-    // 結帳前強制刷新庫存
     await loadProducts(); 
     
     let inventoryError = false;
@@ -539,8 +592,6 @@ async function processCheckout() {
         renderOrderItems(); 
         return; 
     }
-
-    // --- 庫存檢查通過，繼續結帳 ---
 
     const totalAmount = parseFloat(checkoutBtn.dataset.total);
     const employeeId = currentEmployee.id;
@@ -568,17 +619,18 @@ async function processCheckout() {
         const orderId = orderData.id;
         console.log(`訂單 ${orderId} 寫入成功。`);
 
-        // 2. 寫入 order_items
+        // [V14 修改] 2. 寫入 order_items (包含 note)
         const itemsPayload = orderItems.map(item => ({
             order_id: orderId,
             product_id: item.product_id,
             quantity: item.quantity,
             price_at_sale: item.price,
             subtotal: item.price * item.quantity,
+            note: item.note // [V14] 儲存備註
         }));
         const { error: itemsError } = await supabase.from('order_items').insert(itemsPayload);
         if (itemsError) throw new Error(`寫入訂單明細失敗: ${itemsError.message}`);
-        console.log('訂單明細寫入成功。');
+        console.log('訂單明細寫入成功 (含備註)。');
 
         // 3. 扣減庫存
         const updatePromises = orderItems.map(item => {
@@ -614,7 +666,7 @@ async function processCheckout() {
 
 
 // ===============================================
-// 9. 應用程式啟動與事件監聽 - [V13.2 修改]
+// 9. 應用程式啟動與事件監聽 - [V14 修改]
 // ===============================================
 
 function initializeEmployeeModule() {
@@ -642,13 +694,13 @@ function initializeApp() {
     if (changeEmployeeBtn) changeEmployeeBtn.onclick = handleEmployeeSwitch;
     if (clearOrderBtn) clearOrderBtn.addEventListener('click', () => clearOrder());
 
-    // 結帳 Modal (按鈕點擊)
+    // 結帳 Modal
     if (checkoutBtn) checkoutBtn.addEventListener('click', showCheckoutModal);
     if (closeCheckoutModalBtn) closeCheckoutModalBtn.addEventListener('click', () => checkoutModal.classList.remove('active'));
     if (paidAmountInput) paidAmountInput.addEventListener('input', handlePaymentInput);
     if (finalConfirmBtn) finalConfirmBtn.addEventListener('click', processCheckout);
     
-    // [V12] 訂單明細表格的事件委派
+    // [V14 修改] 訂單明細表格的事件委派
     if (orderItemsTableBody) {
         // 處理 +/- 和移除按鈕 (click)
         orderItemsTableBody.addEventListener('click', (e) => {
@@ -659,6 +711,7 @@ function initializeApp() {
             const index = parseInt(button.dataset.index, 10);
             if (isNaN(index)) return;
 
+            // 處理 +/-
             if (button.classList.contains('increase-btn')) {
                 increaseItemQuantity(index);
             } else if (button.classList.contains('decrease-btn')) {
@@ -666,7 +719,9 @@ function initializeApp() {
                 if (orderItems[index]?.quantity > 0) {
                    decreaseItemQuantity(index);
                 }
-            } else if (button.classList.contains('remove-item-btn')) {
+            } 
+            // 處理 移除
+            else if (button.classList.contains('remove-item-btn')) {
                 const removeButton = target.closest('.remove-item-btn');
                 if (removeButton) {
                     const removeIndex = parseInt(removeButton.dataset.index, 10);
@@ -674,6 +729,10 @@ function initializeApp() {
                         removeItem(removeIndex);
                     }
                 }
+            }
+            // [V14 新增] 處理 備註
+            else if (button.classList.contains('add-note-btn') || button.classList.contains('edit-note-btn')) {
+                handleEditNote(index);
             }
         });
 
@@ -691,7 +750,7 @@ function initializeApp() {
 
     // [V13.1] 統一的 Enter 鍵監聽器 (使用 keydown)
     document.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter') return; // 只處理 Enter 鍵
+        if (e.key !== 'Enter') return; 
 
         const isCheckoutModalActive = checkoutModal && checkoutModal.classList.contains('active');
         const isEmployeeModalActive = employeeModal && employeeModal.classList.contains('active');
@@ -699,7 +758,6 @@ function initializeApp() {
 
         // 情況 1: 正在結帳 Modal 中
         if (isCheckoutModalActive) {
-            // [V13.1] 只有當焦點在付款輸入框時，才觸發結帳
             if (e.target === paidAmountInput) {
                 if (!finalConfirmBtn.disabled) {
                     e.preventDefault();
@@ -709,18 +767,15 @@ function initializeApp() {
             }
             return; 
         }
-
         // 情況 2: 正在員工 Modal 中
         if (isEmployeeModalActive) {
             return;
         }
-
-        // 情況 3: 正在輸入框中 (例如訂單數量框)
+        // 情況 3: 正在輸入框中 (例如訂單数量框)
         if (targetTagName === 'input') {
-            e.target.blur(); // 觸發失焦，進而觸發 change 事件
+            e.target.blur(); // 觸發失焦 (change)
             return;
         }
-
         // 情況 4: 在主畫面，且訂單不為空
         if (orderItems.length > 0) {
             e.preventDefault(); 
@@ -733,7 +788,7 @@ function initializeApp() {
     renderOrderItems();
     updateOrderTotals();
 
-    console.log('🚀 POS 系統腳本 (V13.2) 已啟動。');
+    console.log('🚀 POS 系統腳本 (V14) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化

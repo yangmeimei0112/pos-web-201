@@ -722,3 +722,39 @@ body {
     -webkit-appearance: none;
     margin: 0;
 }
+/* ====================================================================
+   V14: 商品備註 (Note) 樣式
+   ==================================================================== */
+
+/* 備註按鈕 (新增/編輯) */
+.note-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    font-size: 0.9em;
+    padding: 2px 5px;
+    margin-top: 4px; /* 與商品名稱保持一點距離 */
+    display: block; /* 讓它顯示在品名下方 */
+    transition: color 0.2s;
+}
+.note-btn:hover {
+    color: #2980b9;
+    text-decoration: underline;
+}
+.note-btn i {
+    margin-right: 4px; /* 圖示與文字的距離 */
+}
+
+/* 已有備註的顯示樣式 */
+.item-note-display {
+    font-size: 0.9em;
+    color: var(--danger-color); /* 用醒目的顏色顯示備註 */
+    font-weight: 700;
+    margin-top: 4px;
+    display: block;
+    max-width: 150px; /* 避免備註太長撐爆 */
+    overflow: hidden;
+    text-overflow: ellipsis; /* 超出部分顯示 ... */
+    white-space: nowrap; /* 不換行 */
+}
