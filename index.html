@@ -11,6 +11,57 @@
 </head>
 <body>
 
+    <div id="employee-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="employee-modal-title">
+        <div class="modal-content">
+            <h1 id="employee-modal-title">請選擇值班人員</h1>
+            <div id="loading-message" class="loading-message" role="status">
+                <i class="fas fa-spinner fa-spin"></i> 正在載入員工資料...
+            </div>
+            <div id="employee-list" class="employee-grid">
+            </div> 
+        </div>
+    </div>
+
+    <div id="checkout-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title">
+        <div class="modal-content">
+            <button class="close-btn" id="close-checkout-modal" aria-label="關閉結帳視窗">&times;</button>
+            <h1 id="checkout-modal-title">結帳確認</h1>
+            <div class="checkout-summary">
+                <div class="summary-row">
+                    <span>訂單總額 (應付):</span>
+                    <span id="summary-total-amount" class="text-large text-danger">NT$ 0</span>
+                </div>
+            </div>
+            <div class="payment-area">
+                <label for="paid-amount">顧客支付金額:</label>
+                <input type="number" id="paid-amount" value="0" min="0" step="1" required pattern="[0-9]*" inputmode="numeric" aria-required="true">
+            </div>
+            <div class="change-display">
+                <div class="summary-row">
+                    <span>找零金額:</span>
+                    <span id="summary-change-amount" class="text-large text-success">NT$ 0</span>
+                </div>
+            </div>
+            <p id="checkout-error-message" class="text-danger hidden" role="alert">支付金額不足！</p>
+            <div class="checkout-actions">
+                <button id="final-confirm-btn" class="checkout-button" aria-label="確認結帳並將交易記錄入帳">
+                    <i class="fas fa-check"></i> 確認結帳
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="retrieve-order-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="retrieve-modal-title">
+        <div class="modal-content">
+            <button class="close-btn" id="close-retrieve-modal" aria-label="關閉取單視窗">&times;</button>
+            <h1 id="retrieve-modal-title">取回暫掛訂單</h1>
+            
+            <div id="held-order-list-container" class="held-order-list-container">
+                </div>
+        </div>
+    </div>
+
+
     <header class="pos-header">
         <div class="employee-info">
             <small class="designer-note">Website designed by Yang</small>
@@ -18,18 +69,14 @@
                 <i class="fas fa-user-circle"></i> 請先選擇值班人員
             </span>
         </div>
-
         <h1 class="system-title">
             <i class="fas fa-cash-register"></i> 201實驗班專用POS系統
         </h1>
-
         <div class="utility-info">
             <time id="current-time"></time>
-            
             <button id="go-to-backend-btn" class="backend-button" title="前往商品、庫存、員工管理介面" aria-label="後台管理介面">
                 <i class="fas fa-chart-line"></i> 後台管理
             </button>
-            
             <button id="change-employee-btn" class="backend-button" title="切換員工/登出" aria-label="切換員工">
                 <i class="fas fa-user-cog"></i> 切換員工
             </button>
@@ -104,58 +151,22 @@
                         <i class="fas fa-coins"></i> 結帳 
                     </button>
                 </div>
+
+                <div class="system-buttons">
+                    <button id="hold-order-btn" class="system-button">
+                        <i class="fas fa-pause-circle"></i> 暫掛訂單
+                    </button>
+                    <button id="retrieve-order-btn" class="system-button">
+                        <i class="fas fa-play-circle"></i> 取回訂單
+                        <span id="held-order-count" class="held-order-count hidden">0</span>
+                    </button>
+                </div>
+
             </aside>
 
         </main>
     </div> 
-
-    <div id="employee-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="employee-modal-title">
-        <div class="modal-content">
-            <h1 id="employee-modal-title">請選擇值班人員</h1>
-            
-            <div id="loading-message" class="loading-message" role="status">
-                <i class="fas fa-spinner fa-spin"></i> 正在載入員工資料...
-            </div>
-            
-            <div id="employee-list" class="employee-grid">
-            </div> 
-        </div>
-    </div>
-
-    <div id="checkout-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title">
-        <div class="modal-content">
-            <button class="close-btn" id="close-checkout-modal" aria-label="關閉結帳視窗">&times;</button>
-            <h1 id="checkout-modal-title">結帳確認</h1>
-            
-            <div class="checkout-summary">
-                <div class="summary-row">
-                    <span>訂單總額 (應付):</span>
-                    <span id="summary-total-amount" class="text-large text-danger">NT$ 0</span>
-                </div>
-            </div>
-
-            <div class="payment-area">
-                <label for="paid-amount">顧客支付金額:</label>
-                <input type="number" id="paid-amount" value="0" min="0" step="1" required pattern="[0-9]*" inputmode="numeric" aria-required="true">
-            </div>
-            
-            <div class="change-display">
-                <div class="summary-row">
-                    <span>找零金額:</span>
-                    <span id="summary-change-amount" class="text-large text-success">NT$ 0</span>
-                </div>
-            </div>
-
-            <p id="checkout-error-message" class="text-danger hidden" role="alert">支付金額不足！</p>
-
-            <div class="checkout-actions">
-                <button id="final-confirm-btn" class="checkout-button" aria-label="確認結帳並將交易記錄入帳">
-                    <i class="fas fa-check"></i> 確認結帳
-                </button>
-            </div>
-        </div>
-    </div>
     
     <script src="script.js"></script>
-</body>
+</body> 
 </html>

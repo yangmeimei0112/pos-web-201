@@ -651,128 +651,148 @@ body {
 }
 
 /* ====================================================================
-   V11: 前台訂單數量修改按鈕樣式 (V17.3 需保留)
+   V11: 前台訂單數量修改按鈕樣式 (V18 需保留)
    ==================================================================== */
-
-.item-quantity-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-.quantity-btn {
-    background-color: var(--button-bg-light);
-    border: 1px solid var(--border-color);
-    color: var(--text-color-dark);
-    font-weight: bold;
-    font-size: 1.1em;
-    cursor: pointer;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    line-height: 26px;
-    text-align: center;
-    padding: 0;
-    transition: background-color 0.2s, color 0.2s;
-    user-select: none;
-}
-.quantity-btn:hover {
-    background-color: var(--primary-color-light);
-    color: var(--primary-color);
-    border-color: var(--primary-color-light);
-}
-.quantity-btn:active {
-    background-color: var(--primary-color);
-    color: white;
-}
-.quantity-btn.decrease-btn[disabled] {
-    background-color: #f0f0f0;
-    color: #ccc;
-    cursor: not-allowed;
-    border-color: #eee;
-}
+.item-quantity-control { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.quantity-btn { background-color: var(--button-bg-light); border: 1px solid var(--border-color); color: var(--text-color-dark); font-weight: bold; font-size: 1.1em; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; line-height: 26px; text-align: center; padding: 0; transition: background-color 0.2s, color 0.2s; user-select: none; }
+.quantity-btn:hover { background-color: var(--primary-color-light); color: var(--primary-color); border-color: var(--primary-color-light); }
+.quantity-btn:active { background-color: var(--primary-color); color: white; }
+.quantity-btn.decrease-btn[disabled] { background-color: #f0f0f0; color: #ccc; cursor: not-allowed; border-color: #eee; }
 
 /* ====================================================================
-   V12: 訂單數量手動輸入框樣式 (V17.3 需保留)
+   V12: 訂單數量手動輸入框樣式 (V18 需保留)
    ==================================================================== */
-
-.quantity-input {
-    width: 45px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 1em;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: 4px 2px;
-    -moz-appearance: textfield;
-}
+.quantity-input { width: 45px; text-align: center; font-weight: 700; font-size: 1em; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 4px 2px; -moz-appearance: textfield; }
 .quantity-input::-webkit-outer-spin-button,
-.quantity-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-/* ====================================================================
-   V14: 商品備註 (Note) 樣式 (V17.3 需保留)
-   ==================================================================== */
-
-.note-btn {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    cursor: pointer;
-    font-size: 0.9em;
-    padding: 2px 5px;
-    margin-top: 4px;
-    display: block;
-    transition: color 0.2s;
-}
-.note-btn:hover {
-    color: #2980b9;
-    text-decoration: underline;
-}
-.note-btn i {
-    margin-right: 4px;
-}
-.item-note-display {
-    font-size: 0.9em;
-    color: var(--danger-color);
-    font-weight: 700;
-    margin-top: 4px;
-    display: block;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+.quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* ====================================================================
-   V17.3: 折扣 (Discount) 下拉選單樣式 (修復 V17.2)
-   (取代 V15 / V17.1 / V17.2 的樣式)
+   V14: 商品備註 (Note) 樣式 (V18 需保留)
    ==================================================================== */
-   
-/* "折扣" 欄位 */
-.order-totals .discount-row {
-    /* (V-Old 預設使用 <dl>，樣式已由 .total-row 控制) */
-}
+.note-btn { background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.9em; padding: 2px 5px; margin-top: 4px; display: block; transition: color 0.2s; }
+.note-btn:hover { color: #2980b9; text-decoration: underline; }
+.note-btn i { margin-right: 4px; }
+.item-note-display { font-size: 0.9em; color: var(--danger-color); font-weight: 700; margin-top: 4px; display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* [V17.3] 折扣下拉選單樣式 (顯眼的橘黃色 + 粗體 + 移除 max-width) */
+/* ====================================================================
+   V17.1: 折扣 (Discount) 下拉選單樣式 (V18 需保留)
+   ==================================================================== */
 .discount-select {
     font-size: 0.95em;
-    font-weight: 700; /* 粗體 */
+    font-weight: 700; 
     padding: 5px 8px;
     border-radius: var(--border-radius);
     background-color: white;
+    max-width: 150px;
     cursor: pointer;
     vertical-align: middle; 
-    
-    color: var(--warning-color); /* 橘黃色 */
-    border: 1px solid var(--warning-color); /* 橘黃色邊框 */
-    
-    /* [V17.3 修復] 移除 max-width，允許選單自動延展 */
-    /* max-width: 150px; */ 
+    color: var(--warning-color); 
+    border: 1px solid var(--warning-color); 
 }
 .discount-select:focus {
     outline: none;
     border-color: var(--warning-color);
-    box-shadow: 0 0 5px rgba(243, 156, 18, 0.3); /* 橘黃色光暈 */
+    box-shadow: 0 0 5px rgba(243, 156, 18, 0.3); 
+}
+
+/* ====================================================================
+   V18.2: 暫掛/取單 (Hold/Retrieve) 樣式
+   ==================================================================== */
+
+/* [V18.2] 修改 .system-buttons 以容納 4 個按鈕 */
+.system-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2x2 網格 */
+    gap: 10px;
+    margin-top: 15px;
+    flex-shrink: 0;
+}
+.system-button {
+    background-color: var(--button-bg-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-color-dark);
+    padding: 10px;
+    font-size: 0.9em;
+    font-weight: 700;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-align: center;
+}
+.system-button:hover {
+    background-color: #e0e0e0;
+}
+.system-button i {
+    margin-right: 5px;
+}
+
+/* [V18.2] 取單按鈕上的計數器 */
+#retrieve-order-btn {
+    position: relative; /* 為了定位計數器 */
+}
+.held-order-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--danger-color);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-align: center;
+}
+.held-order-count.hidden {
+    display: none;
+}
+
+/* [V18.2] 取單 Modal 樣式 */
+#retrieve-order-modal .modal-content {
+    max-width: 500px;
+}
+.held-order-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin-top: 20px;
+}
+/* 暫掛訂單列表 (空) */
+.held-order-list-container:empty::after {
+    content: "目前沒有暫掛中的訂單";
+    display: block;
+    padding: 30px;
+    text-align: center;
+    color: var(--text-color-light);
+    font-style: italic;
+}
+/* 暫掛訂單 (項目) */
+.held-order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid var(--soft-border);
+}
+.held-order-item:last-child {
+    border-bottom: none;
+}
+.held-order-name {
+    font-size: 1.1em;
+    font-weight: 700;
+}
+.held-order-info {
+    font-size: 0.9em;
+    color: var(--text-color-light);
+}
+.held-order-actions .btn-primary {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    margin-left: 10px;
+}
+.held-order-actions .btn-danger {
+    padding: 8px 12px; /* 刪除按鈕小一點 */
+    font-size: 0.9em;
 }
