@@ -30,6 +30,7 @@
         </nav>
 
         <main class="backend-content">
+            
             <section id="product-management-section" class="management-section active">
                 <div class="content-header">
                     <h1>商品與庫存管理</h1>
@@ -44,7 +45,8 @@
                                 <th>分類</th>
                                 <th>售價</th>
                                 <th>成本</th>
-                                <th>庫存</th>
+                                <th>庫存 (浮動)</th>
+                                <th>正常庫存 (固定)</th>
                                 <th>預警門檻</th>
                                 <th>狀態</th>
                                 <th class="col-sort">排序調整</th>
@@ -52,7 +54,7 @@
                             </tr>
                         </thead>
                         <tbody id="product-list-tbody">
-                            <td colspan="10" class="loading-message">載入商品資料中...</td>
+                            <td colspan="11" class="loading-message">載入商品資料中...</td>
                         </tbody>
                     </table>
                 </div>
@@ -138,6 +140,7 @@
                 </div>
             </section>
 
+
             <section id="reports-section" class="management-section">
                 <div class="content-header"><h1>報表分析</h1></div>
                 
@@ -213,7 +216,6 @@
                     </div>
                 </div>
             </section>
-
             <section id="stocktake-section" class="management-section">
                 <div class="content-header">
                     <h1>庫存盤點</h1>
@@ -240,7 +242,8 @@
                     </table>
                 </div>
             </section>
-            </main>
+
+        </main>
     </div>
 
     <div id="product-modal" class="modal">
@@ -254,10 +257,19 @@
                     <div class="form-group"> <label for="product-category">分類*</label> <input type="text" id="product-category" name="category" required> </div>
                     <div class="form-group"> <label for="product-price">售價*</label> <input type="number" id="product-price" name="price" required min="0"> </div>
                     <div class="form-group"> <label for="product-cost">成本</label> <input type="number" id="product-cost" name="cost" min="0"> </div>
-                    <div class="form-group"> <label for="product-stock">庫存*</label> <input type="number" id="product-stock" name="stock" required min="0"> </div>
+                    
+                    <div class="form-group"> <label for="product-stock">庫存 (浮動)*</label> <input type="number" id="product-stock" name="stock" required min="0"> </div>
+                    
+                    <div class="form-group">
+                        <label for="product-par-stock">正常庫存 (固定)</label>
+                        <input type="number" id="product-par-stock" name="par_stock" min="0">
+                    </div>
+
                     <div class="form-group"> <label for="product-warning-threshold">庫存預警門檻</label> <input type="number" id="product-warning-threshold" name="warning_threshold" min="0"> </div>
-                    <div class="form-group form-group-checkbox"> <input type="checkbox" id="product-is-active" name="is_active" checked> <label for="product-is-active">保持上架狀態</label> </div>
                 </div>
+                
+                <div class="form-group form-group-checkbox"> <input type="checkbox" id="product-is-active" name="is_active" checked> <label for="product-is-active">保持上架狀態</label> </div>
+                
                 <div class="form-actions"> <button type="button" class="btn-secondary cancel-btn">取消</button> <button type="submit" id="save-product-btn" class="btn-primary">儲存</button> </div>
                 <div id="product-form-error-message" class="error-message"></div>
             </form>

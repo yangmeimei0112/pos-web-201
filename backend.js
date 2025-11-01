@@ -1,22 +1,19 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V23.1 - 實作盤點「一鍵更新」功能)
-   - [新增] 區塊 9: 
-     - handleUpdateAllStock() (核心更新邏輯)
-   - [修改] 區塊 10: 
-     - DOMContentLoaded (為更新按鈕綁定點擊事件)
+   後台管理 (Backend) 邏輯 (V26.1 - 修正 V26.0 的 SUPABASE_URL 錯字)
+   - [修正] 區塊 1: SUPABASE_URL 缺少 "https://"
+   - (V26.0 - 融合 V25全局滾動 + V22報表Tabs)
    ==================================================================== */
 
 // ====================================================================
-// 1. Supabase 初始化 & 2. 通用輔助函數
+// 1. [V26.1 修正] Supabase 初始化 & 2. 通用輔助函數
 // ====================================================================
-const SUPABASE_URL = "https://ojqstguuubieqgcufwwg.supabase.co";
+const SUPABASE_URL = "https://ojqstguuubieqgcufwwg.supabase.co"; // [V26.1] 修正錯字
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcXN0Z3V1dWJpZXFnY3Vmd3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0Nzk4NjgsImV4cCI6MjA3NzA1NTg2OH0.n-gbI2qzyrVMHvmbchBHVDZ_7cLjWyLm4eUTrwit1-c";
 if (typeof supabase === 'undefined') { console.error("Supabase client 未載入。"); }
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 console.log("Supabase (後台) 初始化成功", db);
 const formatCurrency = (amount) => {
     if (amount === null || isNaN(amount)) return 'N/A';
-    // [V19] 總覽的錢加小數點
     if (String(amount).includes('.')) {
         return `NT$ ${Math.max(0, amount).toFixed(1)}`;
     }
@@ -24,7 +21,7 @@ const formatCurrency = (amount) => {
 }
 
 // ====================================================================
-// 3. DOM 元素參照
+// 3. [V26.0] DOM 元素參照
 // ====================================================================
 const backToPosBtn = document.getElementById('back-to-pos-btn');
 const navLinks = document.querySelectorAll('.backend-nav li');
@@ -63,10 +60,10 @@ const dashboardTotalOrders = document.getElementById('dashboard-total-orders');
 const dashboardAvgOrderValue = document.getElementById('dashboard-avg-order-value');
 const dashboardTotalCost = document.getElementById('dashboard-total-cost');
 const dashboardTotalProfit = document.getElementById('dashboard-total-profit');
-// [V22.0] 報表 (分頁內容)
+// [V21.0] 報表 (內容)
 const topProductsTableBody = document.getElementById('top-products-tbody');
 const employeeSalesTableBody = document.getElementById('employee-sales-tbody');
-// [V22.0] 報表 (分頁按鈕)
+// [V26.0] 恢復 V22 的 Tabs DOM 參照
 const reportSubNavButtons = document.querySelectorAll('.report-sub-nav button');
 const reportContentSections = document.querySelectorAll('.report-content');
 // [V23.0] 庫存盤點
@@ -75,10 +72,10 @@ const updateAllStockBtn = document.getElementById('update-all-stock-btn');
 
 
 // -----------------------------------------------------------
-//  區塊 4: 商品管理功能 (CRUD) - (V10.1 版本)
+//  [V24.0] 區塊 4: 商品管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadProducts() { 
-    productTableBody.innerHTML = '<tr><td colspan="10" class="loading-message">載入商品資料中...</td></tr>';
+    productTableBody.innerHTML = '<tr><td colspan="11" class="loading-message">載入商品資料中...</td></tr>';
     try {
         const { data, error } = await db.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }); 
         if (error) throw error;
@@ -86,12 +83,12 @@ async function loadProducts() {
         renderProductTable(data); 
     } catch (err) {
         console.error("載入商品時發生錯誤:", err);
-        productTableBody.innerHTML = `<tr><td colspan="10" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
+        productTableBody.innerHTML = `<tr><td colspan="11" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
     }
 }
 function renderProductTable(products) { 
     if (!products || products.length === 0) {
-        productTableBody.innerHTML = '<tr><td colspan="10" class="loading-message">目前沒有任何商品。</td></tr>';
+        productTableBody.innerHTML = '<tr><td colspan="11" class="loading-message">目前沒有任何商品。</td></tr>';
         return;
     }
     productTableBody.innerHTML = ''; 
@@ -107,26 +104,88 @@ function renderProductTable(products) {
             </td>
         `;
         row.innerHTML = `
-            <td>${product.id}</td><td>${product.name}</td><td>${product.category}</td><td>${formatCurrency(product.price)}</td><td>${formatCurrency(product.cost)}</td><td>${product.stock}</td><td>${product.warning_threshold ?? 'N/A'}</td><td>${statusText}</td>${sortButtons}<td> <button class="btn-secondary edit-btn" data-id="${product.id}">編輯/上下架</button> <button class="btn-danger delete-btn" data-id="${product.id}">刪除</button> </td>
+            <td>${product.id}</td>
+            <td>${product.name}</td>
+            <td>${product.category}</td>
+            <td>${formatCurrency(product.price)}</td>
+            <td>${formatCurrency(product.cost)}</td>
+            <td>${product.stock}</td>
+            <td>${product.par_stock ?? 0}</td>
+            <td>${product.warning_threshold ?? 'N/A'}</td>
+            <td>${statusText}</td>
+            ${sortButtons}
+            <td>
+                <button class="btn-secondary edit-btn" data-id="${product.id}">編輯/上下架</button>
+                <button class="btn-danger delete-btn" data-id="${product.id}">刪除</button>
+            </td>
         `;
         productTableBody.appendChild(row);
     });
 }
 function showProductModal(product = null) { 
-    productFormErrorMessage.textContent = ''; productForm.reset(); 
+    productFormErrorMessage.textContent = ''; 
+    productForm.reset(); 
     if (product) {
-        productModal.querySelector('#modal-title').textContent = '編輯商品'; document.getElementById('product-id').value = product.id; document.getElementById('product-name').value = product.name; document.getElementById('product-category').value = product.category; document.getElementById('product-price').value = product.price; document.getElementById('product-cost').value = product.cost ?? 0; document.getElementById('product-stock').value = product.stock; document.getElementById('product-warning-threshold').value = product.warning_threshold ?? 10; document.getElementById('product-is-active').checked = product.is_active;
+        productModal.querySelector('#modal-title').textContent = '編輯商品'; 
+        document.getElementById('product-id').value = product.id; 
+        document.getElementById('product-name').value = product.name; 
+        document.getElementById('product-category').value = product.category; 
+        document.getElementById('product-price').value = product.price; 
+        document.getElementById('product-cost').value = product.cost ?? 0; 
+        document.getElementById('product-stock').value = product.stock; 
+        document.getElementById('product-warning-threshold').value = product.warning_threshold ?? 10; 
+        document.getElementById('product-is-active').checked = product.is_active;
+        document.getElementById('product-par-stock').value = product.par_stock ?? 0;
     } else {
-        productModal.querySelector('#modal-title').textContent = '新增商品'; document.getElementById('product-id').value = ''; document.getElementById('product-is-active').checked = true;
+        productModal.querySelector('#modal-title').textContent = '新增商品'; 
+        document.getElementById('product-id').value = ''; 
+        document.getElementById('product-is-active').checked = true;
+        document.getElementById('product-par-stock').value = 0;
     }
     productModal.classList.add('active');
 }
 function hideProductModal() { productModal.classList.remove('active'); productForm.reset(); }
 async function handleProductFormSubmit(e) { 
-    e.preventDefault(); productFormErrorMessage.textContent = ''; const saveBtn = document.getElementById('save-product-btn'); saveBtn.disabled = true; saveBtn.textContent = '儲存中...'; const formData = new FormData(productForm); const productData = Object.fromEntries(formData.entries()); const productId = productData.id; productData.is_active = document.getElementById('product-is-active').checked; productData.price = parseFloat(productData.price); productData.cost = parseFloat(productData.cost) || 0; productData.stock = parseInt(productData.stock, 10); productData.warning_threshold = parseInt(productData.warning_threshold, 10) || 0; 
+    e.preventDefault(); 
+    productFormErrorMessage.textContent = ''; 
+    const saveBtn = document.getElementById('save-product-btn'); 
+    saveBtn.disabled = true; 
+    saveBtn.textContent = '儲存中...'; 
+    
+    const formData = new FormData(productForm); 
+    const productData = Object.fromEntries(formData.entries()); 
+    const productId = productData.id; 
+    
+    productData.is_active = document.getElementById('product-is-active').checked; 
+    productData.price = parseFloat(productData.price); 
+    productData.cost = parseFloat(productData.cost) || 0; 
+    productData.stock = parseInt(productData.stock, 10); 
+    productData.warning_threshold = parseInt(productData.warning_threshold, 10) || 0; 
+    productData.par_stock = parseInt(productData.par_stock, 10) || 0;
+
     try {
-        let response; if (productId) { const { id, ...updateData } = productData; response = await db.from('products').update(updateData).eq('id', productId).select(); } else { delete productData.id; const newSortOrder = (currentProductList.length + 1) * 10; productData.sort_order = newSortOrder; response = await db.from('products').insert([productData]).select(); } const { data, error } = response; if (error) { throw error; } console.log('商品儲存成功:', data); hideProductModal(); await loadProducts();
-    } catch (err) { console.error("儲存商品時發生錯誤:", err); productFormErrorMessage.textContent = `儲存失敗: ${err.message}`; } finally { saveBtn.disabled = false; saveBtn.textContent = '儲存'; }
+        let response; 
+        if (productId) { 
+            const { id, ...updateData } = productData; 
+            response = await db.from('products').update(updateData).eq('id', productId).select(); 
+        } else { 
+            delete productData.id; 
+            const newSortOrder = (currentProductList.length + 1) * 10; 
+            productData.sort_order = newSortOrder; 
+            response = await db.from('products').insert([productData]).select(); 
+        } 
+        const { data, error } = response; 
+        if (error) { throw error; } 
+        console.log('商品儲存成功:', data); 
+        hideProductModal(); 
+        await loadProducts();
+    } catch (err) { 
+        console.error("儲存商品時發生錯誤:", err); 
+        productFormErrorMessage.textContent = `儲存失敗: ${err.message}`; 
+    } finally { 
+        saveBtn.disabled = false; 
+        saveBtn.textContent = '儲存'; 
+    }
 }
 async function handleProductDelete(id) { 
     if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的商品嗎？\n\n注意：此操作無法復原。\n如果只是暫時不賣，請使用「編輯/上下架」功能。`)) { return; } 
@@ -142,7 +201,7 @@ async function handleProductTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  區塊 5: 員工管理功能 (CRUD) - (V9 版本)
+//  區塊 5: 員工管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadEmployees() { 
     employeeTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入員工資料中...</td></tr>';
@@ -228,7 +287,7 @@ function renderOrderTable(ordersToRender) {
                     </div>
                     <div class="table-container modal-table-container">
                         <table id="order-details-table">
-                            <thead> <tr> <th>商品名稱</th> <th>售價</th> <th>數量</th> <th>小計</th> </tr> </thead>
+                            <thead> <tr> <th>商品名稱</th> <th>售價</th> <th>数量</th> <th>小計</th> </tr> </thead>
                             <tbody id="order-details-tbody-${order.id}">
                                 <tr><td colspan="4" class="loading-message">載入明細中...</td></tr>
                             </tbody>
@@ -549,12 +608,9 @@ function renderEmployeeSalesTable(stats) {
 
 
 // -----------------------------------------------------------
-//  [V23.1 修改] 區塊 9: 庫存盤點功能
+//  [V23.1] 區塊 9: 庫存盤點功能
 // -----------------------------------------------------------
 
-/**
- * [V23.0] 載入所有商品以進行盤點
- */
 async function loadStocktakeList() {
     if (!stocktakeListTbody) return;
     stocktakeListTbody.innerHTML = '<tr><td colspan="6" class="loading-message">載入商品資料中...</td></tr>';
@@ -573,10 +629,6 @@ async function loadStocktakeList() {
         stocktakeListTbody.innerHTML = `<tr><td colspan="6" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
     }
 }
-
-/**
- * [V23.0] 渲染盤點表格
- */
 function renderStocktakeTable(products) {
     if (!products || products.length === 0) {
         stocktakeListTbody.innerHTML = '<tr><td colspan="6" class="loading-message">沒有商品可供盤點。</td></tr>';
@@ -586,7 +638,7 @@ function renderStocktakeTable(products) {
     stocktakeListTbody.innerHTML = '';
     products.forEach(product => {
         const row = document.createElement('tr');
-        row.dataset.productId = product.id; // 將 product ID 存在 row 上
+        row.dataset.productId = product.id; 
 
         row.innerHTML = `
             <td>${product.id}</td>
@@ -601,10 +653,6 @@ function renderStocktakeTable(products) {
         stocktakeListTbody.appendChild(row);
     });
 }
-
-/**
- * [V23.0] 當盤點輸入框變動時，即時計算差異
- */
 function handleStocktakeInputChange(e) {
     const target = e.target;
     if (!target.classList.contains('stocktake-input')) return;
@@ -615,9 +663,6 @@ function handleStocktakeInputChange(e) {
     const dbStockEl = row.querySelector('.db-stock');
     const diffEl = row.querySelector('.stock-diff');
     
-    // [V23.1 修正] 確保 dbStock 來自原始 data-stock 值，而不是會變動的 textContent
-    // (在 V23.0 中這沒問題，但在 V23.1 更新後，textContent 會被刷新)
-    // 為了簡單起見，我們還是讀 textContent，因為 loadStocktakeList() 會重置
     const dbStock = parseInt(dbStockEl.textContent, 10);
     const actualStock = parseInt(target.value, 10);
 
@@ -641,10 +686,6 @@ function handleStocktakeInputChange(e) {
         diffEl.classList.add('zero');
     }
 }
-
-/**
- * [V23.1 新增] 處理「一鍵更新庫存」
- */
 async function handleUpdateAllStock() {
     if (!confirm("您確定要使用目前輸入的「實際盤點數量」覆蓋所有商品庫存嗎？\n\n【警告】此操作無法復原。")) {
         return;
@@ -653,7 +694,6 @@ async function handleUpdateAllStock() {
     updateAllStockBtn.disabled = true;
     updateAllStockBtn.textContent = '更新中...';
 
-    // 1. 收集所有更新資料
     const payload = [];
     const rows = stocktakeListTbody.querySelectorAll('tr');
 
@@ -681,22 +721,18 @@ async function handleUpdateAllStock() {
         return;
     }
 
-    // 2. 呼叫 RPC
     try {
         const { error } = await db.rpc('bulk_update_stock', { updates: payload });
         
         if (error) throw error;
 
-        // 3. 成功
         alert(`成功更新 ${payload.length} 項商品的庫存！`);
-        // 重新載入列表，以顯示最新的資料庫狀態
         await loadStocktakeList(); 
 
     } catch (err) {
         console.error("批次更新庫存時發生錯誤:", err);
         alert(`更新失敗: ${err.message}`);
     } finally {
-        // 4. 恢復按鈕
         updateAllStockBtn.disabled = false;
         updateAllStockBtn.textContent = '✔ 一鍵更新庫存';
     }
@@ -704,19 +740,22 @@ async function handleUpdateAllStock() {
 
 
 // -----------------------------------------------------------
-//  [V23.1 修改] 區塊 10: 事件監聽器 (原區塊 9)
+//  [V26.0 恢復] 區塊 10: 事件監聽器
 // -----------------------------------------------------------
 
 /**
- * [V22.0] 報表分頁 (Sub-Tabs) 的切換邏輯
+ * [V26.0] 恢復 V22 的報表分頁 (Sub-Tabs) 切換邏輯
  */
 function setupReportTabs() {
+    if (!reportSubNavButtons.length) return; // 防呆
     reportSubNavButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetId = button.dataset.target;
             if (!targetId) return;
+
             reportSubNavButtons.forEach(btn => btn.classList.remove('active'));
             reportContentSections.forEach(sec => sec.classList.remove('active'));
+
             button.classList.add('active');
             const targetContent = document.getElementById(targetId);
             if (targetContent) {
@@ -727,7 +766,7 @@ function setupReportTabs() {
 }
 
 /**
- * [V23.0] 側邊主導航 (Main Nav) 的切換邏輯
+ * [V26.0 恢復] 側邊主導航 (Main Nav) 的切換邏輯
  */
 function setupNavigation() {
     navLinks.forEach(link => {
@@ -753,20 +792,21 @@ function setupNavigation() {
             } else if (targetId === 'discount-management-section') {
                 loadDiscounts();
             } else if (targetId === 'reports-section') {
-                // 1. 載入所有報表數據
+                // [V26.0] 載入所有報表數據
                 loadDashboardData();
                 loadTopSellingProducts();
                 loadEmployeeSalesStats(); 
                 
-                // 2. [V22.0] 重置分頁標籤
-                reportSubNavButtons.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.target === 'report-top-products');
-                });
-                reportContentSections.forEach(sec => {
-                    sec.classList.toggle('active', sec.id === 'report-top-products');
-                });
+                // [V26.0] 恢復 V22 的 Tabs 重置邏輯
+                if (reportSubNavButtons.length > 0 && reportContentSections.length > 0) {
+                    reportSubNavButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.target === 'report-top-products');
+                    });
+                    reportContentSections.forEach(sec => {
+                        sec.classList.toggle('active', sec.id === 'report-top-products');
+                    });
+                }
             } else if (targetId === 'stocktake-section') {
-                // [V23.0] 載入盤點清單
                 loadStocktakeList();
             }
         });
@@ -776,7 +816,7 @@ function setupNavigation() {
 // 頁面載入完成後
 document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
-    setupReportTabs(); // [V22.0] 啟用報表分頁
+    setupReportTabs(); // [V26.0] 恢復 V22 的 Tabs 啟用
     loadProducts(); // 預設載入商品
 
     backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
