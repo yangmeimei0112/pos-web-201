@@ -1,8 +1,8 @@
 /* ====================================================================
-   後台管理 (Backend) 樣式 (V22.0 - 報表區增加分頁 Tabs)
+   後台管理 (Backend) 樣式 (V23.0 - 新增庫存盤點頁面樣式)
    ==================================================================== */
 
-/* ( ... 原有 V21.0 的 CSS 內容 ... ) */
+/* ( ... 原有 V22.0 的 CSS 內容 ... ) */
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -448,13 +448,12 @@ tr.order-detail-row.expanded {
 }
 
 /* ---------------------------------
-   10. [V22.0] 報表分析樣式 (修改)
+   10. [V22.0] 報表分析樣式
    --------------------------------- */
 .management-section#reports-section h2 {
     font-size: 1.5rem; /* 24px */
     font-weight: 600;
     color: #333;
-    /* [V22.0] 移除邊界，改由 .report-content 控制 */
     border-bottom: 2px solid #f0f0f0;
     padding-bottom: 10px;
     margin-bottom: 20px;
@@ -499,7 +498,7 @@ tr.order-detail-row.expanded {
     white-space: nowrap; /* [V20.0] 防止 "NT$" 和數字換行 */
 }
 
-/* [V22.0] 新增: 報表分頁按鈕列 */
+/* [V22.0] 報表分頁按鈕列 */
 .report-sub-nav {
     display: flex;
     gap: 10px;
@@ -526,7 +525,7 @@ tr.order-detail-row.expanded {
     border-bottom-color: #007bff; /* 啟用時的藍色底線 */
 }
 
-/* [V22.0] 新增: 報表分頁內容 */
+/* [V22.0] 報表分頁內容 */
 .report-content {
     display: none; /* 預設隱藏 */
 }
@@ -550,14 +549,12 @@ tr.order-detail-row.expanded {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
 }
-
 @media (min-width: 992px) {
     /* 總覽卡片：最多 5 欄 */
     .dashboard-stats-grid {
         grid-template-columns: repeat(5, 1fr);
     }
 }
-
 @media (max-width: 768px) {
     .backend-app {
         flex-direction: column; /* 垂直排列 */
@@ -597,8 +594,64 @@ tr.order-detail-row.expanded {
         flex-direction: column;
         align-items: stretch;
     }
-    /* [V22.0] 讓分頁按鈕可以捲動 */
     .report-sub-nav {
         overflow-x: auto;
     }
+}
+
+/* ---------------------------------
+   12. [V23.0] 庫存盤點
+   --------------------------------- */
+.stocktake-instructions {
+    background-color: #e6f7ff;
+    border: 1px solid #b3e0ff;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+.stocktake-instructions p {
+    margin: 0;
+    color: #0056b3;
+}
+
+#stocktake-list-table {
+    min-width: 0; /* 覆蓋全域的 min-width */
+}
+
+/* 盤點輸入框 */
+.stocktake-input {
+    width: 100px;
+    padding: 8px 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    text-align: center;
+    /* 讓 input[type=number] 的箭頭隱藏 (跨瀏覽器) */
+    -moz-appearance: textfield;
+}
+.stocktake-input::-webkit-outer-spin-button,
+.stocktake-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.stocktake-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+    outline: none;
+}
+
+/* 庫存差異 */
+.stock-diff {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.stock-diff.positive {
+    color: #28a745; /* 綠色 (多盤) */
+}
+.stock-diff.negative {
+    color: #dc3545; /* 紅色 (少盤) */
+}
+.stock-diff.zero {
+    color: #6c757d; /* 灰色 (無差異) */
 }

@@ -1,11 +1,9 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V22.0 - 報表區實作分頁 Tabs)
-   - [新增] 區塊 3: DOM 參照 (報表分頁)
+   後台管理 (Backend) 邏輯 (V23.1 - 實作盤點「一鍵更新」功能)
    - [新增] 區塊 9: 
-     - setupReportTabs() (分頁切換邏輯)
-   - [修改] 區塊 9: 
-     - setupNavigation() (重置分頁狀態)
-     - DOMContentLoaded (呼叫 setupReportTabs)
+     - handleUpdateAllStock() (核心更新邏輯)
+   - [修改] 區塊 10: 
+     - DOMContentLoaded (為更新按鈕綁定點擊事件)
    ==================================================================== */
 
 // ====================================================================
@@ -71,6 +69,9 @@ const employeeSalesTableBody = document.getElementById('employee-sales-tbody');
 // [V22.0] 報表 (分頁按鈕)
 const reportSubNavButtons = document.querySelectorAll('.report-sub-nav button');
 const reportContentSections = document.querySelectorAll('.report-content');
+// [V23.0] 庫存盤點
+const stocktakeListTbody = document.getElementById('stocktake-list-tbody');
+const updateAllStockBtn = document.getElementById('update-all-stock-btn');
 
 
 // -----------------------------------------------------------
@@ -445,70 +446,50 @@ async function handleDiscountTableClick(e) {
 // -----------------------------------------------------------
 //  [V21.0] 區塊 8: 報表分析功能
 // -----------------------------------------------------------
-
-/**
- * [V19] 載入並顯示總覽 (Dashboard) 數據
- */
 async function loadDashboardData() {
     dashboardTotalSales.textContent = '計算中...';
     dashboardTotalOrders.textContent = '計算中...';
     dashboardAvgOrderValue.textContent = 'N/A';
     dashboardTotalCost.textContent = 'N/A';
     dashboardTotalProfit.textContent = 'N/A';
-
     try {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
         const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-
         const { data: orders, error: ordersError } = await db.from('orders')
             .select('id, total_amount')
             .gte('sales_date', todayStart)
             .lte('sales_date', todayEnd);
-        
         if (ordersError) throw ordersError;
-
         const totalOrders = orders.length;
         const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0);
         const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-
         const orderIds = orders.map(o => o.id);
         let totalCost = 0;
-        
         if (orderIds.length > 0) {
             const { data: items, error: itemsError } = await db.from('order_items')
                 .select('quantity, products (cost)') 
                 .in('order_id', orderIds);
-
             if (itemsError) throw itemsError;
-
             totalCost = items.reduce((sum, item) => {
                 const cost = (item.products && item.products.cost) ? item.products.cost : 0;
                 return sum + (cost * item.quantity);
             }, 0);
         }
-
         const totalProfit = totalSales - totalCost;
-
         dashboardTotalSales.textContent = formatCurrency(totalSales);
         dashboardTotalOrders.textContent = totalOrders;
         dashboardAvgOrderValue.textContent = formatCurrency(avgOrderValue);
         dashboardTotalCost.textContent = formatCurrency(totalCost);
         dashboardTotalProfit.textContent = formatCurrency(totalProfit);
-
     } catch (err) {
         console.error("載入總覽數據時發生錯誤:", err);
         dashboardTotalSales.textContent = '讀取失敗';
         dashboardTotalOrders.textContent = '讀取失敗';
     }
 }
-
-/**
- * [V19] 載入並顯示熱銷商品排行
- */
 async function loadTopSellingProducts() {
     topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入熱銷排行中...</td></tr>';
-    
     try {
         const { data, error } = await db.rpc('get_top_selling_products', { limit_count: 10 });
         if (error) throw error;
@@ -518,16 +499,11 @@ async function loadTopSellingProducts() {
         topProductsTableBody.innerHTML = `<tr><td colspan="5" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
     }
 }
-
-/**
- * [V20.0] 渲染熱銷排行表格
- */
 function renderTopProductsTable(products) {
     if (!products || products.length === 0) {
         topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">尚無銷售紀錄。</td></tr>';
         return;
     }
-
     topProductsTableBody.innerHTML = ''; 
     products.forEach((item, index) => {
         const row = document.createElement('tr');
@@ -541,36 +517,23 @@ function renderTopProductsTable(products) {
         topProductsTableBody.appendChild(row);
     });
 }
-
-/**
- * [V21.0] 載入並顯示員工銷售排行
- */
 async function loadEmployeeSalesStats() {
     if (!employeeSalesTableBody) return; // 防呆
     employeeSalesTableBody.innerHTML = '<tr><td colspan="4" class="loading-message">載入員工排行中...</td></tr>';
-    
     try {
         const { data, error } = await db.rpc('get_employee_sales_stats');
-
         if (error) throw error;
-        
         renderEmployeeSalesTable(data);
-
     } catch (err) {
         console.error("載入員工銷售排行時發生錯誤:", err);
         employeeSalesTableBody.innerHTML = `<tr><td colspan="4" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
     }
 }
-
-/**
- * [V21.0] 渲染員工銷售排行表格
- */
 function renderEmployeeSalesTable(stats) {
     if (!stats || stats.length === 0) {
         employeeSalesTableBody.innerHTML = '<tr><td colspan="4" class="loading-message">尚無員工銷售紀錄。</td></tr>';
         return;
     }
-
     employeeSalesTableBody.innerHTML = ''; 
     stats.forEach((item, index) => {
         const row = document.createElement('tr');
@@ -586,7 +549,162 @@ function renderEmployeeSalesTable(stats) {
 
 
 // -----------------------------------------------------------
-//  [V22.0 修改] 區塊 9: 事件監聽器
+//  [V23.1 修改] 區塊 9: 庫存盤點功能
+// -----------------------------------------------------------
+
+/**
+ * [V23.0] 載入所有商品以進行盤點
+ */
+async function loadStocktakeList() {
+    if (!stocktakeListTbody) return;
+    stocktakeListTbody.innerHTML = '<tr><td colspan="6" class="loading-message">載入商品資料中...</td></tr>';
+    
+    try {
+        const { data, error } = await db
+            .from('products')
+            .select('id, name, category, stock')
+            .order('category', { ascending: true })
+            .order('name', { ascending: true });
+            
+        if (error) throw error;
+        renderStocktakeTable(data);
+    } catch (err) {
+        console.error("載入盤點清單時發生錯誤:", err);
+        stocktakeListTbody.innerHTML = `<tr><td colspan="6" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
+    }
+}
+
+/**
+ * [V23.0] 渲染盤點表格
+ */
+function renderStocktakeTable(products) {
+    if (!products || products.length === 0) {
+        stocktakeListTbody.innerHTML = '<tr><td colspan="6" class="loading-message">沒有商品可供盤點。</td></tr>';
+        return;
+    }
+
+    stocktakeListTbody.innerHTML = '';
+    products.forEach(product => {
+        const row = document.createElement('tr');
+        row.dataset.productId = product.id; // 將 product ID 存在 row 上
+
+        row.innerHTML = `
+            <td>${product.id}</td>
+            <td>${product.name}</td>
+            <td>${product.category}</td>
+            <td class="db-stock">${product.stock}</td>
+            <td>
+                <input type="number" class="stocktake-input" data-id="${product.id}" value="${product.stock}" min="0">
+            </td>
+            <td class="stock-diff zero">0</td>
+        `;
+        stocktakeListTbody.appendChild(row);
+    });
+}
+
+/**
+ * [V23.0] 當盤點輸入框變動時，即時計算差異
+ */
+function handleStocktakeInputChange(e) {
+    const target = e.target;
+    if (!target.classList.contains('stocktake-input')) return;
+
+    const row = target.closest('tr');
+    if (!row) return;
+
+    const dbStockEl = row.querySelector('.db-stock');
+    const diffEl = row.querySelector('.stock-diff');
+    
+    // [V23.1 修正] 確保 dbStock 來自原始 data-stock 值，而不是會變動的 textContent
+    // (在 V23.0 中這沒問題，但在 V23.1 更新後，textContent 會被刷新)
+    // 為了簡單起見，我們還是讀 textContent，因為 loadStocktakeList() 會重置
+    const dbStock = parseInt(dbStockEl.textContent, 10);
+    const actualStock = parseInt(target.value, 10);
+
+    if (isNaN(dbStock) || isNaN(actualStock) || actualStock < 0) {
+        diffEl.textContent = 'N/A';
+        diffEl.className = 'stock-diff';
+        if (actualStock < 0) target.value = 0; // 防止負數
+        return;
+    }
+
+    const diff = actualStock - dbStock;
+
+    diffEl.textContent = diff;
+    diffEl.className = 'stock-diff'; // Reset
+    if (diff > 0) {
+        diffEl.classList.add('positive');
+        diffEl.textContent = `+${diff}`; 
+    } else if (diff < 0) {
+        diffEl.classList.add('negative');
+    } else {
+        diffEl.classList.add('zero');
+    }
+}
+
+/**
+ * [V23.1 新增] 處理「一鍵更新庫存」
+ */
+async function handleUpdateAllStock() {
+    if (!confirm("您確定要使用目前輸入的「實際盤點數量」覆蓋所有商品庫存嗎？\n\n【警告】此操作無法復原。")) {
+        return;
+    }
+
+    updateAllStockBtn.disabled = true;
+    updateAllStockBtn.textContent = '更新中...';
+
+    // 1. 收集所有更新資料
+    const payload = [];
+    const rows = stocktakeListTbody.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        const id = row.dataset.productId;
+        const input = row.querySelector('.stocktake-input');
+        
+        if (id && input) {
+            const new_stock = parseInt(input.value, 10);
+            if (!isNaN(new_stock) && new_stock >= 0) {
+                payload.push({
+                    id: parseInt(id, 10),
+                    new_stock: new_stock
+                });
+            } else {
+                console.warn(`ID ${id} 的庫存值無效 (${input.value})，已跳過。`);
+            }
+        }
+    });
+
+    if (payload.length === 0) {
+        alert("沒有有效的庫存資料可更新。");
+        updateAllStockBtn.disabled = false;
+        updateAllStockBtn.textContent = '✔ 一鍵更新庫存';
+        return;
+    }
+
+    // 2. 呼叫 RPC
+    try {
+        const { error } = await db.rpc('bulk_update_stock', { updates: payload });
+        
+        if (error) throw error;
+
+        // 3. 成功
+        alert(`成功更新 ${payload.length} 項商品的庫存！`);
+        // 重新載入列表，以顯示最新的資料庫狀態
+        await loadStocktakeList(); 
+
+    } catch (err) {
+        console.error("批次更新庫存時發生錯誤:", err);
+        alert(`更新失敗: ${err.message}`);
+    } finally {
+        // 4. 恢復按鈕
+        updateAllStockBtn.disabled = false;
+        updateAllStockBtn.textContent = '✔ 一鍵更新庫存';
+    }
+}
+
+
+// -----------------------------------------------------------
+//  [V23.1 修改] 區塊 10: 事件監聽器 (原區塊 9)
 // -----------------------------------------------------------
 
 /**
@@ -597,15 +715,9 @@ function setupReportTabs() {
         button.addEventListener('click', () => {
             const targetId = button.dataset.target;
             if (!targetId) return;
-
-            // 1. 移除所有按鈕的 active
             reportSubNavButtons.forEach(btn => btn.classList.remove('active'));
-            // 2. 移除所有內容的 active
             reportContentSections.forEach(sec => sec.classList.remove('active'));
-
-            // 3. 啟用點擊的按鈕
             button.classList.add('active');
-            // 4. 顯示對應的內容
             const targetContent = document.getElementById(targetId);
             if (targetContent) {
                 targetContent.classList.add('active');
@@ -615,7 +727,7 @@ function setupReportTabs() {
 }
 
 /**
- * [V22.0] 側邊主導航 (Main Nav) 的切換邏輯
+ * [V23.0] 側邊主導航 (Main Nav) 的切換邏輯
  */
 function setupNavigation() {
     navLinks.forEach(link => {
@@ -631,6 +743,7 @@ function setupNavigation() {
             link.classList.add('active');
             document.getElementById(targetId).classList.add('active');
 
+            // 根據 targetId 載入對應資料
             if (targetId === 'product-management-section') {
                 loadProducts();
             } else if (targetId === 'employee-management-section') {
@@ -645,21 +758,16 @@ function setupNavigation() {
                 loadTopSellingProducts();
                 loadEmployeeSalesStats(); 
                 
-                // 2. [V22.0] 重置分頁標籤，確保 "熱銷商品" 永遠是預設
+                // 2. [V22.0] 重置分頁標籤
                 reportSubNavButtons.forEach(btn => {
-                    if (btn.dataset.target === 'report-top-products') {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
+                    btn.classList.toggle('active', btn.dataset.target === 'report-top-products');
                 });
                 reportContentSections.forEach(sec => {
-                    if (sec.id === 'report-top-products') {
-                        sec.classList.add('active');
-                    } else {
-                        sec.classList.remove('active');
-                    }
+                    sec.classList.toggle('active', sec.id === 'report-top-products');
                 });
+            } else if (targetId === 'stocktake-section') {
+                // [V23.0] 載入盤點清單
+                loadStocktakeList();
             }
         });
     });
@@ -668,7 +776,7 @@ function setupNavigation() {
 // 頁面載入完成後
 document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
-    setupReportTabs(); // [V22.0] 新增：啟用報表分頁
+    setupReportTabs(); // [V22.0] 啟用報表分頁
     loadProducts(); // 預設載入商品
 
     backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
@@ -723,4 +831,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     discountForm.addEventListener('submit', handleDiscountFormSubmit);
     discountTableBody.addEventListener('click', handleDiscountTableClick);
+
+    // [V23.0] 庫存盤點: 自動計算差異
+    if (stocktakeListTbody) {
+        stocktakeListTbody.addEventListener('input', handleStocktakeInputChange);
+    }
+    
+    // [V23.1] 庫存盤點: 綁定更新按鈕
+    if (updateAllStockBtn) {
+        updateAllStockBtn.addEventListener('click', handleUpdateAllStock);
+    }
 });

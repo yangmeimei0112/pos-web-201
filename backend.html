@@ -25,6 +25,7 @@
                 <li data-target="orders-section"><a href="#">訂單查詢</a></li>
                 <li data-target="discount-management-section"><a href="#">折扣管理</a></li>
                 <li data-target="reports-section"><a href="#">報表分析</a></li>
+                <li data-target="stocktake-section"><a href="#">庫存盤點</a></li>
             </ul>
         </nav>
 
@@ -137,7 +138,6 @@
                 </div>
             </section>
 
-
             <section id="reports-section" class="management-section">
                 <div class="content-header"><h1>報表分析</h1></div>
                 
@@ -212,9 +212,35 @@
                         </table>
                     </div>
                 </div>
-                </section>
+            </section>
 
-        </main>
+            <section id="stocktake-section" class="management-section">
+                <div class="content-header">
+                    <h1>庫存盤點</h1>
+                    <button id="update-all-stock-btn" class="btn-primary">✔ 一鍵更新庫存</button>
+                </div>
+                <div class="stocktake-instructions">
+                    <p>請在「實際盤點數量」欄位輸入**實際庫存**。系統將自動計算差異。按下「一鍵更新庫存」後，將會用您輸入的數字覆蓋資料庫中的庫存。</p>
+                </div>
+                <div class="table-container">
+                    <table id="stocktake-list-table">
+                         <thead>
+                            <tr>
+                                <th style="width: 100px;">商品ID</th>
+                                <th>名稱</th>
+                                <th>分類</th>
+                                <th style="width: 150px;">資料庫庫存</th>
+                                <th style="width: 150px;">實際盤點數量</th>
+                                <th style="width: 120px;">庫存差異</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stocktake-list-tbody">
+                            <td colspan="6" class="loading-message">載入商品資料中...</td>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            </main>
     </div>
 
     <div id="product-modal" class="modal">
