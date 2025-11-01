@@ -1,6 +1,8 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V16.1 - 折扣安全刪除版)
-   - [新增] 區塊 7: 新增「刪除折扣」功能 (handleDiscountDelete)
+   後台管理 (Backend) 邏輯 (V20.0 - 報表增強與 UI 修正)
+   - [修改] 區塊 8: 
+     - renderTopProductsTable() 增加銷售額與利潤欄位
+     - loadDashboardData() 修正本日時間範圍 (小修正)
    ==================================================================== */
 
 // ====================================================================
@@ -13,6 +15,10 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 console.log("Supabase (後台) 初始化成功", db);
 const formatCurrency = (amount) => {
     if (amount === null || isNaN(amount)) return 'N/A';
+    // [V19] 總覽的錢加小數點
+    if (String(amount).includes('.')) {
+        return `NT$ ${Math.max(0, amount).toFixed(1)}`;
+    }
     return `NT$ ${Math.max(0, amount).toFixed(0)}`;
 }
 
@@ -43,13 +49,20 @@ const filterSequenceNumber = document.getElementById('filter-sequence-number');
 const filterSearchBtn = document.getElementById('filter-search-btn');
 const filterClearBtn = document.getElementById('filter-clear-btn');
 const deleteAllOrdersBtn = document.getElementById('delete-all-orders-btn');
-// [V16] 折扣
+// 折扣
 const discountTableBody = document.getElementById('discount-list-tbody');
 const discountModal = document.getElementById('discount-modal');
 const discountForm = document.getElementById('discount-form');
 const addDiscountBtn = document.getElementById('add-discount-btn');
 const discountModalTitle = document.getElementById('discount-modal-title');
 const discountFormErrorMessage = document.getElementById('discount-form-error-message');
+// [V19] 報表
+const dashboardTotalSales = document.getElementById('dashboard-total-sales');
+const dashboardTotalOrders = document.getElementById('dashboard-total-orders');
+const dashboardAvgOrderValue = document.getElementById('dashboard-avg-order-value');
+const dashboardTotalCost = document.getElementById('dashboard-total-cost');
+const dashboardTotalProfit = document.getElementById('dashboard-total-profit');
+const topProductsTableBody = document.getElementById('top-products-tbody');
 
 
 // -----------------------------------------------------------
@@ -221,10 +234,8 @@ function renderOrderTable(ordersToRender) {
 async function loadOrderDetails(orderId, targetTbody) { 
     if (!orderId || !targetTbody) return; if (targetTbody.dataset.loaded === 'true') { return; } 
     try { 
-        // [V10.1] 查詢 'note'
-        const { data: items, error } = await db .from('order_items') .select(` quantity, price_at_sale, subtotal, note, products ( name ) `) .eq('order_id', orderId); 
+        const { data: items, error } = await db .from('order_items') .select(` quantity, price_at_sale, note, products ( name ) `) .eq('order_id', orderId); 
         if (error) throw error; 
-        // [V10.1] 渲染明細
         if (!items || items.length === 0) { 
             targetTbody.innerHTML = '<tr><td colspan="4" class="loading-message">此訂單沒有品項。</td></tr>'; 
         } else { 
@@ -233,11 +244,12 @@ async function loadOrderDetails(orderId, targetTbody) {
                 const row = document.createElement('tr'); 
                 const prodName = item.products ? item.products.name : 'N/A';
                 const noteHtml = item.note ? `<span class="item-note-display-backend">備註: ${item.note}</span>` : '';
+                const subtotal = item.price_at_sale * item.quantity;
                 row.innerHTML = ` 
                     <td>${prodName}${noteHtml}</td>
                     <td>${formatCurrency(item.price_at_sale)}</td>
                     <td>${item.quantity}</td>
-                    <td>${formatCurrency(item.subtotal)}</td> 
+                    <td>${formatCurrency(subtotal)}</td> 
                 `; 
                 targetTbody.appendChild(row); 
             }); 
@@ -264,10 +276,6 @@ async function handleDeleteAllOrders() {
 // -----------------------------------------------------------
 //  [V16.1 修改] 區塊 7: 折扣管理功能 (CRUD)
 // -----------------------------------------------------------
-
-/**
- * [V16] 載入所有折扣並渲染到表格
- */
 async function loadDiscounts() {
     discountTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入折扣資料中...</td></tr>';
     try {
@@ -275,20 +283,13 @@ async function loadDiscounts() {
             .from('discounts')
             .select('*')
             .order('id', { ascending: true }); 
-
         if (error) throw error;
-        
         renderDiscountTable(data); 
-
     } catch (err) {
         console.error("載入折扣時發生錯誤:", err);
         discountTableBody.innerHTML = `<tr><td colspan="5" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
     }
 }
-
-/**
- * [V16.1] 將折扣資料渲染成 HTML 表格 (新增刪除按鈕)
- */
 function renderDiscountTable(discounts) {
     if (!discounts || discounts.length === 0) {
         discountTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">目前沒有任何折扣。</td></tr>';
@@ -298,11 +299,9 @@ function renderDiscountTable(discounts) {
     discounts.forEach(item => {
         const row = document.createElement('tr');
         const statusText = item.is_active ? '<span class="status-active">✔ 啟用中</span>' : '<span class="status-inactive">✘ 已停用</span>';
-        
         const toggleActiveButton = item.is_active
-            ? `<button class.btn-secondary" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">停用</button>` // [V16.1] 修正：btn-secondary
+            ? `<button class="btn-secondary deactivate-discount-btn" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">停用</button>`
             : `<button class="btn-primary activate-discount-btn" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">啟用</button>`;
-
         row.innerHTML = `
             <td>${item.id}</td>
             <td>${item.name}</td>
@@ -317,10 +316,6 @@ function renderDiscountTable(discounts) {
         discountTableBody.appendChild(row);
     });
 }
-
-/**
- * [V16] 顯示折扣 Modal
- */
 function showDiscountModal(discount = null) {
     discountFormErrorMessage.textContent = ''; 
     discountForm.reset(); 
@@ -337,32 +332,21 @@ function showDiscountModal(discount = null) {
     }
     discountModal.classList.add('active');
 }
-
-/**
- * [V16] 隱藏折扣 Modal
- */
 function hideDiscountModal() {
     discountModal.classList.remove('active');
     discountForm.reset();
 }
-
-/**
- * [V16] 處理折扣表單提交 (新增/更新)
- */
 async function handleDiscountFormSubmit(e) {
     e.preventDefault();
     discountFormErrorMessage.textContent = '';
     const saveBtn = document.getElementById('save-discount-btn');
     saveBtn.disabled = true;
     saveBtn.textContent = '儲存中...';
-
     const formData = new FormData(discountForm);
     const discountData = Object.fromEntries(formData.entries());
     const discountId = discountData.id;
-
     discountData.is_active = document.getElementById('discount-is-active').checked;
     discountData.amount = parseFloat(discountData.amount);
-
     try {
         let response;
         if (discountId) {
@@ -385,10 +369,6 @@ async function handleDiscountFormSubmit(e) {
         saveBtn.textContent = '儲存';
     }
 }
-
-/**
- * [V16] 處理折扣啟用/停用
- */
 async function handleToggleDiscountActive(id, newActiveState) {
     const actionText = newActiveState ? '啟用' : '停用';
     if (!confirm(`您確定要 ${actionText} ID 為 ${id} 的折扣嗎？\n(這將影響前台能否選取)`)) {
@@ -399,21 +379,14 @@ async function handleToggleDiscountActive(id, newActiveState) {
             .from('discounts')
             .update({ is_active: newActiveState }) 
             .eq('id', id);
-
         if (error) throw error;
-        
         console.log(`折扣 ${id} ${actionText} 成功`);
         await loadDiscounts(); 
-
     } catch (err) {
         console.error(`折扣 ${actionText} 時發生錯誤:`, err);
         alert(`${actionText} 失敗: ${err.message}`);
     }
 }
-
-/**
- * [V16.1 新增] 處理折扣刪除 (安全刪除)
- */
 async function handleDiscountDelete(id) {
     if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的折扣嗎？\n\n警告：此操作無法復原。\n如果已有訂單使用此折扣，建議改用「停用」。`)) {
         return;
@@ -423,16 +396,13 @@ async function handleDiscountDelete(id) {
             .from('discounts')
             .delete()
             .eq('id', id);
-
         if (error) {
-            // 檢查是否為 外鍵約束(Foreign Key) 錯誤 (orders.discount_id)
             if (error.code === '23503') { 
                 alert(`刪除失敗：該折扣已被歷史訂單使用，無法永久刪除。\n\n提示：請改用「停用」功能來取代。`);
             } else {
                 throw error;
             }
         } else {
-            // 刪除成功
             console.log(`折扣 ${id} 刪除成功`);
             await loadDiscounts(); 
         }
@@ -441,10 +411,6 @@ async function handleDiscountDelete(id) {
         alert(`刪除失敗: ${err.message}`);
     }
 }
-
-/**
- * [V16.1] 折扣表格點擊事件 (新增刪除)
- */
 async function handleDiscountTableClick(e) {
     const target = e.target.closest('button'); 
     if (!target) return; 
@@ -462,7 +428,6 @@ async function handleDiscountTableClick(e) {
     if (target.classList.contains('activate-discount-btn')) {
         await handleToggleDiscountActive(id, true); 
     }
-    // [V16.1 新增]
     if (target.classList.contains('delete-discount-btn')) {
         await handleDiscountDelete(id);
     }
@@ -470,7 +435,123 @@ async function handleDiscountTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  [V16 修改] 區塊 8: 事件監聽器
+//  [V20.0 修改] 區塊 8: 報表分析功能
+// -----------------------------------------------------------
+
+/**
+ * [V19] 載入並顯示總覽 (Dashboard) 數據
+ */
+async function loadDashboardData() {
+    dashboardTotalSales.textContent = '計算中...';
+    dashboardTotalOrders.textContent = '計算中...';
+    dashboardAvgOrderValue.textContent = 'N/A';
+    dashboardTotalCost.textContent = 'N/A';
+    dashboardTotalProfit.textContent = 'N/A';
+
+    try {
+        // 1. 設定本日的開始與結束時間 (確保時間在本地時區)
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+
+        // 2. 查詢本日 "訂單 (orders)"
+        const { data: orders, error: ordersError } = await db.from('orders')
+            .select('id, total_amount')
+            .gte('sales_date', todayStart)
+            .lte('sales_date', todayEnd);
+        
+        if (ordersError) throw ordersError;
+
+        // 3. 計算總覽數據
+        const totalOrders = orders.length;
+        const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0);
+        const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+        // 4. 查詢本日 "訂單明細 (order_items)" 以計算成本
+        const orderIds = orders.map(o => o.id);
+        let totalCost = 0;
+        
+        if (orderIds.length > 0) {
+            const { data: items, error: itemsError } = await db.from('order_items')
+                .select('quantity, products (cost)') 
+                .in('order_id', orderIds);
+
+            if (itemsError) throw itemsError;
+
+            // 5. 計算總成本
+            totalCost = items.reduce((sum, item) => {
+                const cost = (item.products && item.products.cost) ? item.products.cost : 0;
+                return sum + (cost * item.quantity);
+            }, 0);
+        }
+
+        // 6. 計算毛利
+        const totalProfit = totalSales - totalCost;
+
+        // 7. 更新 UI
+        dashboardTotalSales.textContent = formatCurrency(totalSales);
+        dashboardTotalOrders.textContent = totalOrders;
+        dashboardAvgOrderValue.textContent = formatCurrency(avgOrderValue);
+        dashboardTotalCost.textContent = formatCurrency(totalCost);
+        dashboardTotalProfit.textContent = formatCurrency(totalProfit);
+
+    } catch (err) {
+        console.error("載入總覽數據時發生錯誤:", err);
+        dashboardTotalSales.textContent = '讀取失敗';
+        dashboardTotalOrders.textContent = '讀取失敗';
+    }
+}
+
+/**
+ * [V19] 載入並顯示熱銷商品排行
+ * 呼叫 `get_top_selling_products` RPC
+ */
+async function loadTopSellingProducts() {
+    topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入熱銷排行中...</td></tr>';
+    
+    try {
+        // 呼叫 RPC (V20.0 版本會回傳更多欄位)
+        const { data, error } = await db.rpc('get_top_selling_products', { limit_count: 10 });
+
+        if (error) throw error;
+        
+        renderTopProductsTable(data);
+
+    } catch (err) {
+        console.error("載入熱銷排行時發生錯誤:", err);
+        topProductsTableBody.innerHTML = `<tr><td colspan="5" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
+    }
+}
+
+/**
+ * [V20.0 修改] 輔助函數：渲染熱銷排行表格
+ */
+function renderTopProductsTable(products) {
+    if (!products || products.length === 0) {
+        // [V20] 修改 colspan
+        topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">尚無銷售紀錄。</td></tr>';
+        return;
+    }
+
+    topProductsTableBody.innerHTML = ''; 
+    products.forEach((item, index) => {
+        const row = document.createElement('tr');
+        
+        // [V20] 新增 總銷售額 (total_revenue) 和 預估總利潤 (total_profit)
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${item.product_name || 'N/A'}</td>
+            <td>${item.total_sold}</td>
+            <td>${formatCurrency(item.total_revenue)}</td>
+            <td>${formatCurrency(item.total_profit)}</td>
+        `;
+        topProductsTableBody.appendChild(row);
+    });
+}
+
+
+// -----------------------------------------------------------
+//  [V19] 區塊 9: 事件監聽器
 // -----------------------------------------------------------
 
 // 導航分頁切換邏輯
@@ -479,11 +560,10 @@ function setupNavigation() {
         link.addEventListener('click', () => {
             const targetId = link.dataset.target;
             
-            // [V16] 啟用 'discount-management-section'
-            if (!targetId || targetId === 'reports-section') {
-                if(targetId) alert('此功能待實作');
+            if (!targetId) {
                 return; 
             }
+
             navLinks.forEach(nav => nav.classList.remove('active'));
             managementSections.forEach(sec => sec.classList.remove('active'));
             link.classList.add('active');
@@ -496,7 +576,10 @@ function setupNavigation() {
             } else if (targetId === 'orders-section') {
                 loadAllOrdersForSequence(); 
             } else if (targetId === 'discount-management-section') {
-                loadDiscounts(); // [V16] 載入折扣
+                loadDiscounts();
+            } else if (targetId === 'reports-section') {
+                loadDashboardData();
+                loadTopSellingProducts();
             }
         });
     });
@@ -550,7 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     deleteAllOrdersBtn.addEventListener('click', handleDeleteAllOrders);
 
-    // [V16.1] 折扣 Modal 控制 & 表單 & 表格點擊
+    // 折扣 Modal 控制 & 表單 & 表格點擊
     addDiscountBtn.addEventListener('click', () => showDiscountModal(null));
     discountModal.querySelector('.close-btn').addEventListener('click', hideDiscountModal);
     discountModal.querySelector('.cancel-btn').addEventListener('click', hideDiscountModal);

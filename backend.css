@@ -1,221 +1,567 @@
 /* ====================================================================
-   後台管理 (Backend) 專用樣式表
-   - V10: 微調 filter-bar 樣式
+   後台管理 (Backend) 樣式 (V20.0 - 修正報表卡片換行)
    ==================================================================== */
 
-body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+/* ( ... 原有 V19.1 的 CSS 內容 ... ) */
 
-/* 後台主佈局 */
-.backend-app { display: flex; flex-grow: 1; overflow: hidden; }
-.backend-nav { flex: 0 0 200px; background-color: var(--secondary-color); padding: 20px; box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); z-index: 10; }
-.backend-nav ul { list-style: none; padding: 0; margin: 0; }
-.backend-nav li a { display: block; padding: 12px 15px; color: var(--secondary-color-light); text-decoration: none; border-radius: var(--border-radius); transition: background-color 0.2s; }
-.backend-nav li { cursor: pointer; }
-.backend-nav li:hover a { background-color: #34495e; }
-.backend-nav li.active a { background-color: var(--primary-color); color: white; font-weight: 700; }
-.backend-content { flex-grow: 1; padding: 25px; background-color: #f4f7f6; overflow-y: auto; }
-.content-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
-.content-header h1 { margin: 0; color: var(--secondary-color); }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    background-color: #f8f9fa;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
 
-/* 通用按鈕 */
-.btn-primary { background-color: var(--primary-color); color: white; border: none; padding: 10px 18px; border-radius: var(--border-radius); cursor: pointer; font-size: 1em; font-weight: 700; transition: background-color 0.2s; }
-.btn-primary:hover { background-color: #2980b9; }
-.btn-secondary { background-color: var(--button-bg-light); color: var(--text-color-dark); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: var(--border-radius); cursor: pointer; font-size: 1em; font-weight: 700; transition: background-color 0.2s; }
-.btn-secondary:hover { background-color: #e0e0e0; }
-.btn-danger { background-color: var(--danger-color); color: white; padding: 5px 10px; font-size: 0.9em; border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color 0.2s; }
-.btn-danger:hover { background-color: #c0392b; }
+/* ---------------------------------
+   1. 頂部標頭 (Header)
+   --------------------------------- */
+.pos-header {
+    background-color: #343a40;
+    color: white;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    flex-shrink: 0;
+}
+.system-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+.backend-button {
+    background-color: #495057;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+.backend-button:hover {
+    background-color: #6c757d;
+}
+#back-to-pos-btn {
+    background-color: #007bff;
+}
+#back-to-pos-btn:hover {
+    background-color: #0056b3;
+}
 
-/* 表格 */
-.table-container { width: 100%; overflow-x: auto; background-color: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); }
-#product-list-table,
-#employee-list-table,
-#order-list-table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
-#product-list-table th,
-#product-list-table td,
-#employee-list-table th,
-#employee-list-table td,
-#order-list-table th,
-#order-list-table td { padding: 12px 15px; border-bottom: 1px solid var(--soft-border); text-align: left; vertical-align: middle; white-space: nowrap; }
-#product-list-table th,
-#employee-list-table th,
-#order-list-table th { background-color: var(--secondary-color-light); font-weight: 700; color: var(--secondary-color); position: sticky; top: 0; }
-#product-list-table tbody tr:hover,
-#employee-list-table tbody tr:hover { background-color: #f9f9f9; }
-#order-list-table tbody tr.order-row:hover { background-color: #f9f9f9; cursor: pointer; }
-/* 欄位對齊 */
-#product-list-table th:nth-child(n+4),
-#product-list-table td:nth-child(n+4) { text-align: right; }
-#product-list-table th:last-child,
-#product-list-table td:last-child,
-#product-list-table th:nth-child(8),
-#product-list-table td:nth-child(8),
-#product-list-table th:nth-child(9),
-#product-list-table td:nth-child(9) { text-align: center; }
-#employee-list-table th:nth-child(4),
-#employee-list-table td:nth-child(4),
-#employee-list-table th:nth-child(5),
-#employee-list-table td:nth-child(5) { text-align: center; }
-/* [V10 修改] 訂單表格對齊 (因新增欄位，索引+1) */
-#order-list-table th:nth-child(1), /* 第幾筆 */
-#order-list-table td:nth-child(1) { text-align: center; }
-#order-list-table th:nth-child(5), /* 總金額 */
-#order-list-table td:nth-child(5) { text-align: right; }
-#order-list-table th:nth-child(6), /* 操作 */
-#order-list-table td:nth-child(6) { text-align: center; }
+/* ---------------------------------
+   2. 主應用程式佈局
+   --------------------------------- */
+.backend-app {
+    display: flex;
+    flex-grow: 1;
+}
 
-#product-list-table td .btn-secondary,
-#employee-list-table td .btn-secondary,
-#order-list-table td .btn-secondary { padding: 5px 10px; font-size: 0.9em; margin-right: 5px; }
-.loading-message { text-align: center; color: var(--text-color-light); font-style: italic; padding: 30px; }
+/* ---------------------------------
+   3. 側邊導航 (Nav)
+   --------------------------------- */
+.backend-nav {
+    width: 220px;
+    background-color: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    padding: 20px 0;
+    flex-shrink: 0;
+}
+.backend-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.backend-nav li a {
+    display: block;
+    padding: 12px 24px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s, color 0.2s;
+}
+.backend-nav li a:hover {
+    background-color: #f8f9fa;
+}
+.backend-nav li.active a {
+    background-color: #007bff;
+    color: white;
+    border-left: 4px solid #0056b3;
+    padding-left: 20px;
+}
+.backend-nav li:last-child a {
+    border-bottom: none;
+}
 
-/* 表單 (Modal) */
-#product-modal .modal-content { max-width: 800px; text-align: left; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
-.form-group { display: flex; flex-direction: column; }
-.form-group label { font-weight: 700; margin-bottom: 6px; font-size: 0.9em; }
+/* ---------------------------------
+   4. 主要內容區 (Content)
+   --------------------------------- */
+.backend-content {
+    flex-grow: 1;
+    padding: 24px 32px;
+    overflow-y: auto; 
+}
+.management-section {
+    display: none; 
+}
+.management-section.active {
+    display: block;
+}
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e9ecef;
+}
+.content-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+/* ---------------------------------
+   5. 通用按鈕樣式
+   --------------------------------- */
+.btn-primary, .btn-secondary, .btn-danger, .btn-primary:disabled, .btn-secondary:disabled, .btn-danger:disabled {
+    padding: 10px 18px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1.5;
+}
+.btn-primary { background-color: #007bff; color: white; }
+.btn-primary:hover { background-color: #0056b3; }
+.btn-primary:disabled { background-color: #b0d7ff; cursor: not-allowed; }
+
+.btn-secondary { background-color: #6c757d; color: white; }
+.btn-secondary:hover { background-color: #5a6268; }
+.btn-secondary:disabled { background-color: #c8cbcf; cursor: not-allowed; }
+
+.btn-danger { background-color: #dc3545; color: white; }
+.btn-danger:hover { background-color: #c82333; }
+.btn-danger:disabled { background-color: #f3c4c8; cursor: not-allowed; }
+
+/* ---------------------------------
+   6. 表格 (Table) 樣式
+   --------------------------------- */
+.table-container {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    overflow: hidden; 
+    overflow-x: auto; /* 確保在小螢幕上可以滾動 */
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px; /* 確保表格內容不會過度擠壓 */
+}
+table th, table td {
+    padding: 14px 18px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+table tbody tr:last-child td {
+    border-bottom: none;
+}
+table tbody tr:hover {
+    background-color: #f1f3f5;
+}
+table td .btn-secondary,
+table td .btn-danger {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    margin-right: 5px;
+}
+table td .btn-danger { margin-right: 0; }
+.status-active { color: #28a745; font-weight: 600; }
+.status-inactive { color: #dc3545; font-weight: 500; }
+.loading-message {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px;
+    font-size: 1.1rem;
+}
+.loading-message.error { color: #dc3545; font-weight: 500; }
+
+/* 排序按鈕 */
+.col-sort { width: 100px; }
+.product-sort { text-align: center; }
+.sort-btn {
+    background-color: #f1f3f5;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin: 0 2px;
+    color: #495057;
+}
+.sort-btn:hover { background-color: #e9ecef; }
+.sort-btn:disabled {
+    background-color: #f8f9fa;
+    color: #ced4da;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* ---------------------------------
+   7. 彈出視窗 (Modal)
+   --------------------------------- */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.6); 
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 32px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal.active .modal-content {
+    transform: scale(1);
+}
+.modal-content h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: #333;
+}
+.close-btn {
+    color: #aaa;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close-btn:hover, .close-btn:focus {
+    color: #000;
+    text-decoration: none;
+}
+
+/* ---------------------------------
+   8. 表單 (Form)
+   --------------------------------- */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+/* 員工/折扣 Modal 使用較少欄位 */
+.form-grid-small {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+.form-group label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #495057;
+    font-size: 0.95rem;
+}
 .form-group input[type="text"],
-.form-group input[type="number"],
-.form-group input[type="password"],
-.form-group input[type="date"],
-.form-group input[type="time"]
-{ width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 1em; box-sizing: border-box; }
-.form-group-checkbox { grid-column: 1 / -1; flex-direction: row; align-items: center; margin-top: 10px; }
-.form-group-checkbox input { margin-right: 10px; width: auto; }
-.form-actions { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--soft-border); padding-top: 20px; margin-top: 10px; }
-.error-message { color: var(--danger-color); font-weight: bold; margin-top: 15px; text-align: center; }
+.form-group input[type="number"] {
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    outline: none;
+}
+.form-group-checkbox {
+    flex-direction: row;
+    align-items: center;
+    grid-column: 1 / -1; /* 讓 checkbox 橫跨整欄 */
+    margin-top: 10px;
+}
+.form-group-checkbox input {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+}
+.form-group-checkbox label {
+    margin-bottom: 0;
+    font-weight: normal;
+    color: #333;
+}
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #e9ecef;
+}
+.error-message {
+    color: #dc3545;
+    font-weight: 500;
+    margin-top: 15px;
+    text-align: right;
+}
 
-/* 狀態顯示 */
-.status-active { color: #27ae60; font-weight: 700; }
-.status-inactive { color: var(--danger-color); font-weight: 700; }
-
-/* 商品排序按鈕 */
-#product-list-table th.col-sort,
-#product-list-table td.product-sort { text-align: center; width: 100px; }
-.sort-btn { background: none; border: 1px solid var(--border-color); color: var(--text-color-dark); cursor: pointer; border-radius: var(--border-radius); font-size: 1.1em; width: 40px; padding: 2px 0; margin: 0 3px; transition: background-color 0.2s, color 0.2s; }
-.sort-btn:hover:not(:disabled) { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-.sort-btn:disabled { color: var(--border-color); cursor: not-allowed; background-color: #f9f9f9; }
-
-/* 分頁系統 */
-.management-section { display: none; }
-.management-section.active { display: block; }
-
-/* 員工 Modal */
-#employee-modal .modal-content { max-width: 500px; text-align: left; }
-.form-grid-small { grid-template-columns: 1fr; gap: 15px; }
-
-/* [V10 修改] 篩選列樣式 (減少 gap，調整按鈕) */
+/* ---------------------------------
+   9. [V10.1] 訂單查詢
+   --------------------------------- */
 .filter-bar {
     display: flex;
-    flex-wrap: wrap; 
-    align-items: flex-end; 
-    gap: 10px; /* 減少間距 */
-    background-color: white;
-    padding: 15px 20px; /* 調整 padding */
+    gap: 15px;
+    align-items: center;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
     border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    margin-bottom: 24px;
 }
-.filter-group { display: flex; flex-direction: column; gap: 5px; }
-.filter-group label { font-size: 0.9em; font-weight: 700; color: var(--text-color-dark); }
-.filter-group input[type="number"], /* [V10] number input */
-.filter-group input[type="text"] { 
-    padding: 8px 10px; 
-    font-size: 0.95em; 
-    width: 150px; /* 固定寬度 */
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.filter-group label {
+    font-weight: 500;
+    color: #495057;
+}
+.filter-group input[type="number"] {
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    width: 120px;
 }
 .filter-bar .btn-primary,
 .filter-bar .btn-secondary {
-    padding: 9px 15px; 
-    font-size: 0.95em;
-    height: 38px; /* 調整高度以匹配 input */
-    margin-bottom: 0; /* [V10] 移除底部 margin */
+    padding: 8px 16px;
+    font-size: 0.9rem;
 }
-
-/* 可展開式訂單 (Accordion) */
-.order-row td { transition: background-color 0.2s; }
-.order-row.expanded td { background-color: var(--secondary-color-light); border-bottom: none; }
-.order-detail-row { display: none; }
-.order-detail-row.expanded { display: table-row; }
-.order-detail-cell { padding: 0 !important; border-bottom: 1px solid var(--soft-border); }
-.order-detail-content { background-color: #fdfdfd; padding: 20px; }
-.expand-arrow { display: inline-block; margin-right: 10px; font-size: 0.8em; transition: transform 0.2s; cursor: pointer; color: var(--primary-color); }
-.order-row.expanded .expand-arrow { transform: rotate(90deg); }
-
-/* 訂單明細 (展開後) */
-#order-details-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-#order-details-table th,
-#order-details-table td { padding: 10px 12px; border-bottom: 1px solid var(--soft-border); text-align: left; }
-#order-details-table th { background-color: #f1f1f1; }
-#order-details-table th:nth-child(n+2),
-#order-details-table td:nth-child(n+2) { text-align: right; }
-.order-detail-summary { display: flex; gap: 20px; margin-bottom: 15px; }
-.order-detail-summary p { margin: 0; }/* ====================================================================
-   V10.1: 後台訂單明細的「商品備註」樣式
-   ==================================================================== */
-
-/* 顯示在 "訂單查詢" -> "展開明細" -> "品名" 下方的備註 */
-.item-note-display-backend {
-    display: block; /* 顯示在品名下方 */
-    font-size: 0.9em;
-    color: var(--danger-color);
-    font-weight: 700;
-    margin-top: 5px;
-    white-space: normal; /* 允許備註文字換行 */
-    max-width: 300px; /* 避免過長 */
+#delete-all-orders-btn {
+    margin-left: auto;
 }
-/* ====================================================================
-   V16: 折扣管理 (Discount) 模組樣式
-   ==================================================================== */
-
-/* [V16] 擴充共用表格樣式 */
-#discount-list-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.95em;
+tr.order-row {
+    cursor: pointer;
 }
-
-#discount-list-table th,
-#discount-list-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid var(--soft-border);
-    text-align: left;
-    vertical-align: middle;
-    white-space: nowrap;
+tr.order-row:hover {
+    background-color: #f1f3f5;
 }
-
-#discount-list-table th {
-    background-color: var(--secondary-color-light);
-    font-weight: 700;
-    color: var(--secondary-color);
+tr.order-row .expand-arrow {
+    display: inline-block;
+    transition: transform 0.2s;
+    margin-right: 10px;
+    font-size: 0.8em;
+}
+tr.order-row.expanded .expand-arrow {
+    transform: rotate(90deg);
+}
+tr.order-detail-row {
+    display: none; /* 預設隱藏 */
+}
+tr.order-detail-row.expanded {
+    display: table-row; /* 展開時顯示 */
+}
+.order-detail-cell {
+    padding: 0 !important;
+    background-color: #fcfcfc;
+}
+.order-detail-content {
+    padding: 24px;
+    border-left: 4px solid #007bff;
+}
+.order-detail-summary {
+    margin-bottom: 20px;
+}
+.order-detail-summary p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+.modal-table-container {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+.modal-table-container table {
+    min-width: 0; /* 覆蓋全域的 min-width */
+}
+.modal-table-container th {
+    background-color: #f1f3f5;
     position: sticky;
     top: 0;
+    z-index: 1;
+}
+/* [V10.1] 訂單明細中的備註 */
+.item-note-display-backend {
+    display: block;
+    font-size: 0.85em;
+    color: #555;
+    font-style: italic;
+    margin-top: 4px;
 }
 
-#discount-list-table tbody tr:hover {
-    background-color: #f9f9f9;
+/* ---------------------------------
+   10. [V19.1] 報表分析樣式
+   --------------------------------- */
+.management-section#reports-section h2 {
+    font-size: 1.5rem; /* 24px */
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+    margin-top: 30px; /* 與上方區塊的間距 */
+    margin-bottom: 20px;
+}
+.management-section#reports-section h2:first-of-type {
+    margin-top: 0; /* 第一個 h2 不要有上間距 */
 }
 
-#discount-list-table td .btn-secondary {
-    padding: 5px 10px;
-    font-size: 0.9em;
-    margin-right: 5px;
+/* 總覽卡片 Grid */
+.dashboard-stats-grid {
+    display: grid;
+    /* 響應式：手機 1 欄, 平板 3 欄, 電腦 5 欄 */
+    grid-template-columns: repeat(1, 1fr); 
+    gap: 20px;
+    margin-bottom: 40px;
 }
 
-/* [V16] 折扣表格欄位對齊 */
-#discount-list-table th:nth-child(3), /* 金額 */
-#discount-list-table td:nth-child(3) {
-    text-align: right;
-}
-#discount-list-table th:nth-child(4), /* 狀態 */
-#discount-list-table td:nth-child(4),
-#discount-list-table th:nth-child(5), /* 操作 */
-#discount-list-table td:nth-child(5)
-{
-    text-align: center;
-}
-
-/* [V16] 折扣 Modal (共用 .form-grid-small) */
-#discount-modal .modal-content {
-    max-width: 500px;
+/* 總覽卡片 */
+.stat-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     text-align: left;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.stat-card-title {
+    font-size: 1rem; /* 16px */
+    color: #555;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.stat-card-value {
+    font-size: 2.25rem; /* 36px */
+    font-weight: 700;
+    color: #333;
+    line-height: 1.2;
+    white-space: nowrap; /* [V20.0] 新增: 防止 "NT$" 和數字換行 */
+}
+
+/* 熱銷排行表格 (限制最大寬度，使其更易讀) */
+#top-products-table-container {
+    max-width: 800px; 
+}
+
+
+/* ---------------------------------
+   11. 響應式調整
+   --------------------------------- */
+@media (min-width: 600px) {
+    /* 總覽卡片：至少 2 欄 */
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (min-width: 992px) {
+    /* 總覽卡片：最多 5 欄 */
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .backend-app {
+        flex-direction: column; /* 垂直排列 */
+    }
+    .backend-nav {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex; /* 橫向捲動 */
+        overflow-x: auto;
+        padding: 0;
+    }
+    .backend-nav ul {
+        display: flex; /* 讓 li 橫排 */
+        flex-shrink: 0; /* 避免壓縮 */
+    }
+    .backend-nav li a {
+        padding: 16px 20px;
+        border-bottom: none;
+        border-right: 1px solid #f0f0f0;
+    }
+    .backend-nav li.active a {
+        border-left: none;
+        border-bottom: 4px solid #0056b3;
+        padding-left: 20px;
+    }
+    .backend-content {
+        padding: 16px;
+    }
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
