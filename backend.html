@@ -165,25 +165,54 @@
                     </div>
                 </div>
 
-                <h2 style="margin-top: 40px;">熱銷商品排行 (Top 10)</h2>
-                <div class="table-container" id="top-products-table-container">
-                    <table id="top-products-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">排行</th>
-                                <th>商品名稱</th>
-                                <th>總銷售數量</th>
-                                <th>總銷售額</th> <th>預估總利潤</th> </tr>
-                        </thead>
-                        <tbody id="top-products-tbody">
-                            <tr>
-                                <td colspan="5" class="loading-message">載入熱銷排行中...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="report-sub-nav">
+                    <button class="btn-secondary active" data-target="report-top-products">熱銷商品排行</button>
+                    <button class="btn-secondary" data-target="report-employee-sales">員工銷售排行</button>
                 </div>
 
-            </section>
+                <div id="report-top-products" class="report-content active">
+                    <h2 style="margin-top: 0;">熱銷商品排行 (Top 10)</h2>
+                    <div class="table-container" id="top-products-table-container">
+                        <table id="top-products-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">排行</th>
+                                    <th>商品名稱</th>
+                                    <th>總銷售數量</th>
+                                    <th>總銷售額</th>
+                                    <th>預估總利潤</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-products-tbody">
+                                <tr>
+                                    <td colspan="5" class="loading-message">載入熱銷排行中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="report-employee-sales" class="report-content">
+                    <h2 style="margin-top: 0;">員工銷售排行 (全時段)</h2>
+                    <div class="table-container" id="employee-sales-table-container">
+                        <table id="employee-sales-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">排行</th>
+                                    <th>員工姓名</th>
+                                    <th>總銷售額</th>
+                                    <th>總訂單數</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employee-sales-tbody">
+                                <tr>
+                                    <td colspan="4" class="loading-message">載入員工排行中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                </section>
 
         </main>
     </div>
@@ -256,6 +285,7 @@
             </form>
         </div>
     </div>
+
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="backend.js"></script>

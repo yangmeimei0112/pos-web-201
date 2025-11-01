@@ -1,8 +1,11 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V20.0 - 報表增強與 UI 修正)
-   - [修改] 區塊 8: 
-     - renderTopProductsTable() 增加銷售額與利潤欄位
-     - loadDashboardData() 修正本日時間範圍 (小修正)
+   後台管理 (Backend) 邏輯 (V22.0 - 報表區實作分頁 Tabs)
+   - [新增] 區塊 3: DOM 參照 (報表分頁)
+   - [新增] 區塊 9: 
+     - setupReportTabs() (分頁切換邏輯)
+   - [修改] 區塊 9: 
+     - setupNavigation() (重置分頁狀態)
+     - DOMContentLoaded (呼叫 setupReportTabs)
    ==================================================================== */
 
 // ====================================================================
@@ -56,13 +59,18 @@ const discountForm = document.getElementById('discount-form');
 const addDiscountBtn = document.getElementById('add-discount-btn');
 const discountModalTitle = document.getElementById('discount-modal-title');
 const discountFormErrorMessage = document.getElementById('discount-form-error-message');
-// [V19] 報表
+// [V19] 報表 (總覽)
 const dashboardTotalSales = document.getElementById('dashboard-total-sales');
 const dashboardTotalOrders = document.getElementById('dashboard-total-orders');
 const dashboardAvgOrderValue = document.getElementById('dashboard-avg-order-value');
 const dashboardTotalCost = document.getElementById('dashboard-total-cost');
 const dashboardTotalProfit = document.getElementById('dashboard-total-profit');
+// [V22.0] 報表 (分頁內容)
 const topProductsTableBody = document.getElementById('top-products-tbody');
+const employeeSalesTableBody = document.getElementById('employee-sales-tbody');
+// [V22.0] 報表 (分頁按鈕)
+const reportSubNavButtons = document.querySelectorAll('.report-sub-nav button');
+const reportContentSections = document.querySelectorAll('.report-content');
 
 
 // -----------------------------------------------------------
@@ -137,7 +145,7 @@ async function handleProductTableClick(e) {
 // -----------------------------------------------------------
 async function loadEmployees() { 
     employeeTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入員工資料中...</td></tr>';
-    try { const { data, error } = await db.from('employees').select('*').order('id', { ascending: true }); if (error) throw error; renderEmployeeTable(data); } catch (err) { console.error("載入員工時發生錯誤:", err); employeeTableBody.innerHTML = `<tr><td colspan="5" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`; }
+    try { const { data, error } = await db.from('employees').select('*').order('id', { ascending: true }); if (error) throw error; renderEmployeeTable(data); } catch (err) { console.error("載入員工時發生錯誤:", err); employeeTableBody.innerHTML = `<tr><td colspan="5" class="loading-message error">資料載入失败: ${err.message}</td></tr>`; }
 }
 function renderEmployeeTable(employees) { 
     if (!employees || employees.length === 0) { employeeTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">目前沒有任何員工資料。</td></tr>'; return; } employeeTableBody.innerHTML = ''; employees.forEach(emp => { const row = document.createElement('tr'); const statusText = emp.is_active ? '<span class="status-active">✔ 在職中</span>' : '<span class="status-inactive">✘ 已停用</span>'; const toggleActiveButton = emp.is_active ? `<button class="btn-secondary deactivate-employee-btn" data-id="${emp.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">停用</button>` : `<button class="btn-primary activate-employee-btn" data-id="${emp.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">啟用</button>`; row.innerHTML = ` <td>${emp.id}</td><td>${emp.employee_name}</td><td>${emp.employee_code}</td><td>${statusText}</td><td> <button class="btn-secondary edit-employee-btn" data-id="${emp.id}">編輯</button> ${toggleActiveButton} <button class="btn-danger delete-employee-btn" data-id="${emp.id}">刪除</button> </td> `; employeeTableBody.appendChild(row); });
@@ -274,7 +282,7 @@ async function handleDeleteAllOrders() {
 
 
 // -----------------------------------------------------------
-//  [V16.1 修改] 區塊 7: 折扣管理功能 (CRUD)
+//  [V16.1] 區塊 7: 折扣管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadDiscounts() {
     discountTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入折扣資料中...</td></tr>';
@@ -435,7 +443,7 @@ async function handleDiscountTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  [V20.0 修改] 區塊 8: 報表分析功能
+//  [V21.0] 區塊 8: 報表分析功能
 // -----------------------------------------------------------
 
 /**
@@ -449,12 +457,10 @@ async function loadDashboardData() {
     dashboardTotalProfit.textContent = 'N/A';
 
     try {
-        // 1. 設定本日的開始與結束時間 (確保時間在本地時區)
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
         const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
 
-        // 2. 查詢本日 "訂單 (orders)"
         const { data: orders, error: ordersError } = await db.from('orders')
             .select('id, total_amount')
             .gte('sales_date', todayStart)
@@ -462,12 +468,10 @@ async function loadDashboardData() {
         
         if (ordersError) throw ordersError;
 
-        // 3. 計算總覽數據
         const totalOrders = orders.length;
         const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0);
         const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-        // 4. 查詢本日 "訂單明細 (order_items)" 以計算成本
         const orderIds = orders.map(o => o.id);
         let totalCost = 0;
         
@@ -478,17 +482,14 @@ async function loadDashboardData() {
 
             if (itemsError) throw itemsError;
 
-            // 5. 計算總成本
             totalCost = items.reduce((sum, item) => {
                 const cost = (item.products && item.products.cost) ? item.products.cost : 0;
                 return sum + (cost * item.quantity);
             }, 0);
         }
 
-        // 6. 計算毛利
         const totalProfit = totalSales - totalCost;
 
-        // 7. 更新 UI
         dashboardTotalSales.textContent = formatCurrency(totalSales);
         dashboardTotalOrders.textContent = totalOrders;
         dashboardAvgOrderValue.textContent = formatCurrency(avgOrderValue);
@@ -504,19 +505,14 @@ async function loadDashboardData() {
 
 /**
  * [V19] 載入並顯示熱銷商品排行
- * 呼叫 `get_top_selling_products` RPC
  */
 async function loadTopSellingProducts() {
     topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入熱銷排行中...</td></tr>';
     
     try {
-        // 呼叫 RPC (V20.0 版本會回傳更多欄位)
         const { data, error } = await db.rpc('get_top_selling_products', { limit_count: 10 });
-
         if (error) throw error;
-        
         renderTopProductsTable(data);
-
     } catch (err) {
         console.error("載入熱銷排行時發生錯誤:", err);
         topProductsTableBody.innerHTML = `<tr><td colspan="5" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
@@ -524,11 +520,10 @@ async function loadTopSellingProducts() {
 }
 
 /**
- * [V20.0 修改] 輔助函數：渲染熱銷排行表格
+ * [V20.0] 渲染熱銷排行表格
  */
 function renderTopProductsTable(products) {
     if (!products || products.length === 0) {
-        // [V20] 修改 colspan
         topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">尚無銷售紀錄。</td></tr>';
         return;
     }
@@ -536,8 +531,6 @@ function renderTopProductsTable(products) {
     topProductsTableBody.innerHTML = ''; 
     products.forEach((item, index) => {
         const row = document.createElement('tr');
-        
-        // [V20] 新增 總銷售額 (total_revenue) 和 預估總利潤 (total_profit)
         row.innerHTML = `
             <td>${index + 1}</td>
             <td>${item.product_name || 'N/A'}</td>
@@ -549,12 +542,81 @@ function renderTopProductsTable(products) {
     });
 }
 
+/**
+ * [V21.0] 載入並顯示員工銷售排行
+ */
+async function loadEmployeeSalesStats() {
+    if (!employeeSalesTableBody) return; // 防呆
+    employeeSalesTableBody.innerHTML = '<tr><td colspan="4" class="loading-message">載入員工排行中...</td></tr>';
+    
+    try {
+        const { data, error } = await db.rpc('get_employee_sales_stats');
+
+        if (error) throw error;
+        
+        renderEmployeeSalesTable(data);
+
+    } catch (err) {
+        console.error("載入員工銷售排行時發生錯誤:", err);
+        employeeSalesTableBody.innerHTML = `<tr><td colspan="4" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
+    }
+}
+
+/**
+ * [V21.0] 渲染員工銷售排行表格
+ */
+function renderEmployeeSalesTable(stats) {
+    if (!stats || stats.length === 0) {
+        employeeSalesTableBody.innerHTML = '<tr><td colspan="4" class="loading-message">尚無員工銷售紀錄。</td></tr>';
+        return;
+    }
+
+    employeeSalesTableBody.innerHTML = ''; 
+    stats.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${item.employee_name || 'N/A'}</td>
+            <td>${formatCurrency(item.total_sales)}</td>
+            <td>${item.total_orders}</td>
+        `;
+        employeeSalesTableBody.appendChild(row);
+    });
+}
+
 
 // -----------------------------------------------------------
-//  [V19] 區塊 9: 事件監聽器
+//  [V22.0 修改] 區塊 9: 事件監聽器
 // -----------------------------------------------------------
 
-// 導航分頁切換邏輯
+/**
+ * [V22.0] 報表分頁 (Sub-Tabs) 的切換邏輯
+ */
+function setupReportTabs() {
+    reportSubNavButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.dataset.target;
+            if (!targetId) return;
+
+            // 1. 移除所有按鈕的 active
+            reportSubNavButtons.forEach(btn => btn.classList.remove('active'));
+            // 2. 移除所有內容的 active
+            reportContentSections.forEach(sec => sec.classList.remove('active'));
+
+            // 3. 啟用點擊的按鈕
+            button.classList.add('active');
+            // 4. 顯示對應的內容
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        });
+    });
+}
+
+/**
+ * [V22.0] 側邊主導航 (Main Nav) 的切換邏輯
+ */
 function setupNavigation() {
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
@@ -578,8 +640,26 @@ function setupNavigation() {
             } else if (targetId === 'discount-management-section') {
                 loadDiscounts();
             } else if (targetId === 'reports-section') {
+                // 1. 載入所有報表數據
                 loadDashboardData();
                 loadTopSellingProducts();
+                loadEmployeeSalesStats(); 
+                
+                // 2. [V22.0] 重置分頁標籤，確保 "熱銷商品" 永遠是預設
+                reportSubNavButtons.forEach(btn => {
+                    if (btn.dataset.target === 'report-top-products') {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                reportContentSections.forEach(sec => {
+                    if (sec.id === 'report-top-products') {
+                        sec.classList.add('active');
+                    } else {
+                        sec.classList.remove('active');
+                    }
+                });
             }
         });
     });
@@ -588,6 +668,7 @@ function setupNavigation() {
 // 頁面載入完成後
 document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
+    setupReportTabs(); // [V22.0] 新增：啟用報表分頁
     loadProducts(); // 預設載入商品
 
     backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
