@@ -1,13 +1,13 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V26.1 - 修正 V26.0 的 SUPABASE_URL 錯字)
-   - [修正] 區塊 1: SUPABASE_URL 缺少 "https://"
-   - (V26.0 - 融合 V25全局滾動 + V22報表Tabs)
+   後台管理 (Backend) 邏輯 (V27.0 - 新增總覽數字滾動動畫)
+   - [新增] 區塊 2: animateValue() 輔助函數
+   - [修改] 區塊 8: loadDashboardData() 更新 UI 時呼叫 animateValue()
    ==================================================================== */
 
 // ====================================================================
-// 1. [V26.1 修正] Supabase 初始化 & 2. 通用輔助函數
+// 1. Supabase 初始化 & 2. 通用輔助函數
 // ====================================================================
-const SUPABASE_URL = "https://ojqstguuubieqgcufwwg.supabase.co"; // [V26.1] 修正錯字
+const SUPABASE_URL = "https://ojqstguuubieqgcufwwg.supabase.co"; 
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcXN0Z3V1dWJpZXFnY3Vmd3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0Nzk4NjgsImV4cCI6MjA3NzA1NTg2OH0.n-gbI2qzyrVMHvmbchBHVDZ_7cLjWyLm4eUTrwit1-c";
 if (typeof supabase === 'undefined') { console.error("Supabase client 未載入。"); }
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -19,6 +19,54 @@ const formatCurrency = (amount) => {
     }
     return `NT$ ${Math.max(0, amount).toFixed(0)}`;
 }
+
+/**
+ * [V27.0 新增] 數字滾動動畫函數
+ * @param {HTMLElement} element - 要更新的 DOM 元素
+ * @param {number} start - 開始數字
+ * @param {number} end - 結束數字
+ * @param {number} duration - 動畫時間 (毫秒)
+ * @param {boolean} isCurrency - 是否加上 "NT$"
+ * @param {boolean} isDecimal - 是否保留一位小數
+ */
+function animateValue(element, start, end, duration, isCurrency = false, isDecimal = false) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        
+        let currentValue = progress * (end - start) + start;
+        
+        // 根據類型格式化
+        if (isCurrency) {
+            if (isDecimal) {
+                element.textContent = `NT$ ${currentValue.toFixed(1)}`;
+            } else {
+                element.textContent = `NT$ ${Math.floor(currentValue)}`;
+            }
+        } else {
+            // 用於訂單數 (整數)
+            element.textContent = Math.floor(currentValue);
+        }
+
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            // 確保動畫結束時顯示最終的精確值
+             if (isCurrency) {
+                if (isDecimal) {
+                    element.textContent = `NT$ ${end.toFixed(1)}`;
+                } else {
+                    element.textContent = `NT$ ${Math.floor(end)}`;
+                }
+            } else {
+                element.textContent = Math.floor(end);
+            }
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
 
 // ====================================================================
 // 3. [V26.0] DOM 元素參照
@@ -224,7 +272,7 @@ async function handleToggleEmployeeActive(id, newActiveState) {
 }
 async function handleEmployeeDelete(id) { 
     if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的員工嗎？\n\n警告：此操作無法復原。\n如果該員工已有訂單紀錄，請改用「停用」功能。`)) { return; } 
-    try { const { error } = await db.from('employees').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失敗：該員工已有歷史訂單紀錄，無法永久刪除。\n\n提示：請使用「停用」功能來取代。`); } else { throw error; } } else { console.log(`員工 ${id} 刪除成功`); await loadEmployees(); } } catch (err) { console.error("刪除員工時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
+    try { const { error } = await db.from('employees').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失败：該員工已有歷史訂單紀錄，無法永久刪除。\n\n提示：請使用「停用」功能來取代。`); } else { throw error; } } else { console.log(`員工 ${id} 刪除成功`); await loadEmployees(); } } catch (err) { console.error("刪除員工時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
 }
 async function handleEmployeeTableClick(e) { 
     const target = e.target.closest('button'); if (!target) return; const id = target.dataset.id; if (!id) return; if (target.classList.contains('edit-employee-btn')) { const { data, error } = await db.from('employees').select('*').eq('id', id).single(); if (error) { alert(`查詢員工資料失敗: ${error.message}`); return; } showEmployeeModal(data); } if (target.classList.contains('deactivate-employee-btn')) { await handleToggleEmployeeActive(id, false); } if (target.classList.contains('activate-employee-btn')) { await handleToggleEmployeeActive(id, true); } if (target.classList.contains('delete-employee-btn')) { await handleEmployeeDelete(id); }
@@ -503,50 +551,78 @@ async function handleDiscountTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  [V21.0] 區塊 8: 報表分析功能
+//  [V27.0 修改] 區塊 8: 報表分析功能
 // -----------------------------------------------------------
+
+/**
+ * [V27.0 修改] 載入並顯示總覽 (Dashboard) 數據
+ */
 async function loadDashboardData() {
+    // [V27.0] 先將文字設為 "計算中..."
     dashboardTotalSales.textContent = '計算中...';
     dashboardTotalOrders.textContent = '計算中...';
-    dashboardAvgOrderValue.textContent = 'N/A';
-    dashboardTotalCost.textContent = 'N/A';
-    dashboardTotalProfit.textContent = 'N/A';
+    dashboardAvgOrderValue.textContent = '計算中...';
+    dashboardTotalCost.textContent = '計算中...';
+    dashboardTotalProfit.textContent = '計算中...';
+
     try {
+        // 1. 設定本日的開始與結束時間
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
         const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+
+        // 2. 查詢本日 "訂單 (orders)"
         const { data: orders, error: ordersError } = await db.from('orders')
             .select('id, total_amount')
             .gte('sales_date', todayStart)
             .lte('sales_date', todayEnd);
+        
         if (ordersError) throw ordersError;
+
+        // 3. 計算總覽數據
         const totalOrders = orders.length;
         const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0);
         const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+        // 4. 查詢本日 "訂單明細 (order_items)" 以計算成本
         const orderIds = orders.map(o => o.id);
         let totalCost = 0;
+        
         if (orderIds.length > 0) {
             const { data: items, error: itemsError } = await db.from('order_items')
                 .select('quantity, products (cost)') 
                 .in('order_id', orderIds);
+
             if (itemsError) throw itemsError;
+
+            // 5. 計算總成本
             totalCost = items.reduce((sum, item) => {
                 const cost = (item.products && item.products.cost) ? item.products.cost : 0;
                 return sum + (cost * item.quantity);
             }, 0);
         }
+
+        // 6. 計算毛利
         const totalProfit = totalSales - totalCost;
-        dashboardTotalSales.textContent = formatCurrency(totalSales);
-        dashboardTotalOrders.textContent = totalOrders;
-        dashboardAvgOrderValue.textContent = formatCurrency(avgOrderValue);
-        dashboardTotalCost.textContent = formatCurrency(totalCost);
-        dashboardTotalProfit.textContent = formatCurrency(totalProfit);
+
+        // 7. [V27.0] 更新 UI (呼叫動畫)
+        const animDuration = 1000; // 動畫時間 1 秒
+        animateValue(dashboardTotalSales, 0, totalSales, animDuration, true, false);
+        animateValue(dashboardTotalOrders, 0, totalOrders, animDuration, false, false);
+        animateValue(dashboardAvgOrderValue, 0, avgOrderValue, animDuration, true, true); // 允許小數
+        animateValue(dashboardTotalCost, 0, totalCost, animDuration, true, false);
+        animateValue(dashboardTotalProfit, 0, totalProfit, animDuration, true, false);
+
     } catch (err) {
         console.error("載入總覽數據時發生錯誤:", err);
         dashboardTotalSales.textContent = '讀取失敗';
         dashboardTotalOrders.textContent = '讀取失敗';
+        dashboardAvgOrderValue.textContent = 'N/A';
+        dashboardTotalCost.textContent = 'N/A';
+        dashboardTotalProfit.textContent = 'N/A';
     }
 }
+
 async function loadTopSellingProducts() {
     topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入熱銷排行中...</td></tr>';
     try {
@@ -740,11 +816,11 @@ async function handleUpdateAllStock() {
 
 
 // -----------------------------------------------------------
-//  [V26.0 恢復] 區塊 10: 事件監聽器
+//  [V26.0] 區塊 10: 事件監聽器
 // -----------------------------------------------------------
 
 /**
- * [V26.0] 恢復 V22 的報表分頁 (Sub-Tabs) 切換邏輯
+ * [V26.0] 報表分頁 (Sub-Tabs) 切換邏輯
  */
 function setupReportTabs() {
     if (!reportSubNavButtons.length) return; // 防呆
@@ -766,7 +842,7 @@ function setupReportTabs() {
 }
 
 /**
- * [V26.0 恢復] 側邊主導航 (Main Nav) 的切換邏輯
+ * [V26.0] 側邊主導航 (Main Nav) 的切換邏輯
  */
 function setupNavigation() {
     navLinks.forEach(link => {
