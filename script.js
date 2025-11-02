@@ -1,10 +1,7 @@
 /* ====================================================================
-   POS 系統核心 JS 邏輯 - script.js (V18.2 - 暫掛單可編輯/可再次暫掛)
-   - [修復] V18.1: 允許編輯取回的暫掛訂單
-   - [修復] V18.1: 允許取回的訂單被再次暫掛
-   - [修復] V18.1: 允許取回的訂單選擇折扣
-   - [保留] V18.1: 取回訂單時，立即從 LocalStorage 刪除
-   - [保留] V17.2 (折扣下拉選單)
+   POS 系統核心 JS 邏輯 - script.js (V28.3 - 修正結帳庫存更新邏輯)
+   - [修正] V28.2: processCheckout 函數中的庫存扣減邏輯
+     (還原 V18.2 的 update 方式，移除不存在的 RPC 'decrement_stock')
    ==================================================================== */
 
 // ====================================================================
@@ -35,6 +32,7 @@ let currentDiscountId = 0;
 let currentDiscountAmount = 0; 
 let heldOrders = []; // [V18] 儲存暫掛訂單
 let currentHeldOrderName = null; // [V18] 標記當前是否為 "取回" 的訂單
+let lowStockItems = []; // [V28.2] 新增: 低庫存商品
 
 
 // ===============================================
@@ -79,6 +77,12 @@ const heldOrderCount = document.getElementById('held-order-count');
 const retrieveOrderModal = document.getElementById('retrieve-order-modal');
 const closeRetrieveModalBtn = document.getElementById('close-retrieve-modal');
 const heldOrderListContainer = document.getElementById('held-order-list-container');
+// [V28.2] 庫存預警 DOM
+const stockWarningBell = document.getElementById('stock-warning-bell');
+const stockWarningDot = document.getElementById('stock-warning-dot');
+const stockWarningModal = document.getElementById('stock-warning-modal');
+const closeWarningModalBtn = document.getElementById('close-warning-modal'); 
+const stockWarningTbody = document.getElementById('stock-warning-tbody');
 
 
 // ===============================================
@@ -189,7 +193,7 @@ const handleEmployeeSwitch = () => {
     clearOrder(true);
     currentEmployee = null;
     if (currentEmployeeDisplay) {
-        currentEmployeeDisplay.innerHTML = '<i class="fas fa-user-circle"></i> 請先選擇值班員工';
+        currentEmployeeDisplay.innerHTML = '<i class="fas fa-user-circle"></i> 請先選擇值班人員';
     }
     if (posMainApp) posMainApp.classList.add('hidden');
     if (employeeModal) employeeModal.classList.add('active');
@@ -202,7 +206,7 @@ const handleBackendRedirect = () => {
 
 
 // ===============================================
-// 6. 商品載入與渲染函數 (V4 排序修復版)
+// 6. [V28.2] 商品載入與渲染函數 (修改)
 // ===============================================
 async function loadProducts() {
     if (!productLoadingMessage || !productList) {
@@ -211,18 +215,35 @@ async function loadProducts() {
     }
     productLoadingMessage.style.display = 'block';
     productList.innerHTML = '';
+    lowStockItems = []; // [V28.2] 重置低庫存列表
+    
     try {
         const { data, error } = await supabase
             .from('products')
-            .select('id, name, price, stock, category, is_active, sort_order')
+            // [V28.2] 新增 warning_threshold
+            .select('id, name, price, stock, category, is_active, sort_order, warning_threshold')
             .eq('is_active', true)
             .order('sort_order', { ascending: true }) 
             .order('id', { ascending: true });
+            
         productLoadingMessage.style.display = 'none';
         if (error) throw error;
+        
         allProducts = data; 
+        
+        // [V28.2] 檢查庫存預警
+        allProducts.forEach(product => {
+            if (product.warning_threshold !== null && product.warning_threshold >= 0) {
+                if (product.stock <= product.warning_threshold) {
+                    lowStockItems.push(product);
+                }
+            }
+        });
+        updateStockWarningBell(); // [V28.2] 更新鈴鐺狀態
+
         renderCategories(allProducts); 
         filterAndRenderProducts(activeCategory); 
+
     } catch (err) {
         console.error('載入商品時發生錯誤:', err);
         productLoadingMessage.style.display = 'none';
@@ -418,15 +439,15 @@ function renderOrderItems() {
             </td>
             <td class="item-price">${formatCurrency(item.price)}</td>
             <td class="item-quantity">
-                <div class="item-quantity-control">
-                    <button class="quantity-btn decrease-btn" data-index="${index}" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
-                    <input type="number" class="quantity-input" data-index="${index}" value="${item.quantity}" min="1" max="${maxStock}">
-                    <button class="quantity-btn increase-btn" data-index="${index}" ${item.quantity >= maxStock ? 'disabled' : ''}>+</button>
+                <div class="item-controls">
+                    <button class="qty-btn decrease-btn" data-action="decrease" data-index="${index}" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
+                    <input type="number" class="item-qty-input" data-action="set-quantity" data-index="${index}" value="${item.quantity}" min="1" max="${maxStock}">
+                    <button class="qty-btn increase-btn" data-action="increase" data-index="${index}" ${item.quantity >= maxStock ? 'disabled' : ''}>+</button>
                 </div>
             </td>
             <td class="item-total">${formatCurrency(total)}</td>
             <td class="item-remove">
-                 <button class="remove-item-btn" data-index="${index}"><i class="fas fa-trash-alt"></i></button>
+                 <button class="remove-item-btn" data-action="remove" data-index="${index}"><i class="fas fa-trash-alt"></i></button>
             </td>
         `;
         orderItemsTableBody.appendChild(row);
@@ -440,9 +461,6 @@ function updateOrderTotals() {
         totalItems += item.quantity;
     });
 
-    // [V18.2] 移除 V18.1 對暫掛單禁用折扣的檢查
-    // const isHeldOrder = currentHeldOrderName !== null;
-    
     if (currentDiscountAmount > subtotal && subtotal > 0) {
         console.warn("折扣金額大於小計，自動重設折扣。");
         currentDiscountId = 0;
@@ -452,7 +470,6 @@ function updateOrderTotals() {
     if (orderItemCount) orderItemCount.textContent = totalItems;
     if (orderSubtotal) orderSubtotal.textContent = formatCurrency(subtotal);
     
-    // [V18.2] 傳入 false，永遠啟用折扣選單 (除非訂單為空)
     renderDiscountDropdown(subtotal, false); 
     updateFinalTotalDisplay(subtotal);
 }
@@ -463,7 +480,6 @@ function renderDiscountDropdown(subtotal, isDisabled = false) {
             .map(d => `<option value="${d.id}_${d.amount}">${d.name} (-${formatCurrency(d.amount)})</option>`)
             .join('');
         
-        // [V18.2] 確保 isDisabled 變數被正確使用
         const disabledAttr = (orderItems.length === 0 || isDisabled) ? 'disabled' : '';
 
         orderDiscount.innerHTML = `
@@ -499,7 +515,7 @@ function clearOrder(force = false) {
     orderItems = [];
     currentDiscountId = 0; 
     currentDiscountAmount = 0; 
-    currentHeldOrderName = null; // [V18.1] 清除暫掛狀態
+    currentHeldOrderName = null; 
     
     renderOrderItems();
     updateOrderTotals(); 
@@ -508,7 +524,7 @@ function clearOrder(force = false) {
 
 
 // ===============================================
-// 8. 結帳邏輯 - [V18.1 修改]
+// 8. [V28.3 修正] 結帳邏輯
 // ===============================================
 function showCheckoutModal() {
     if (orderItems.length === 0) return;
@@ -552,6 +568,7 @@ async function processCheckout() {
     finalConfirmBtn.disabled = true;
     finalConfirmBtn.textContent = '處理中...';
 
+    // [V28.3] 修正: 結帳前 *必須* 重新載入一次商品，以獲取最新庫存
     await loadProducts(); 
     
     let inventoryError = false;
@@ -567,7 +584,7 @@ async function processCheckout() {
         finalConfirmBtn.disabled = false;
         finalConfirmBtn.textContent = '確認結帳';
         checkoutModal.classList.remove('active'); 
-        renderOrderItems(); 
+        renderOrderItems(); // 重新渲染訂單 (也許庫存已變)
         return; 
     }
 
@@ -578,7 +595,7 @@ async function processCheckout() {
     const transactionTime = new Date().toISOString();
 
     try {
-        // [V17] 1. 寫入 orders
+        // 1. 寫入 orders
         const { data: orderData, error: orderError } = await supabase
             .from('orders')
             .insert([{
@@ -598,7 +615,7 @@ async function processCheckout() {
         const orderId = orderData.id;
         console.log(`訂單 ${orderId} 寫入成功 (含折扣)。`);
 
-        // [V14] 2. 寫入 order_items
+        // 2. 寫入 order_items
         const itemsPayload = orderItems.map(item => ({
             order_id: orderId,
             product_id: item.product_id,
@@ -611,8 +628,9 @@ async function processCheckout() {
         if (itemsError) throw new Error(`寫入訂單明細失敗: ${itemsError.message}`);
         console.log('訂單明細寫入成功 (含商品備註)。');
 
-        // 3. 扣減庫存
+        // 3. [V28.3 修正] 扣減庫存 (還原 V18.2 的 update 邏輯)
         const updatePromises = orderItems.map(item => {
+            // 讀取 'allProducts' (在函數開頭剛刷新) 的庫存
             const newStock = getProductStock(item.product_id) - item.quantity;
             return supabase
                 .from('products')
@@ -624,16 +642,17 @@ async function processCheckout() {
         const stockErrors = results.filter(res => res.status === 'rejected');
         if (stockErrors.length > 0) {
             console.error('部分庫存更新失敗:', stockErrors.map(e => e.reason));
+            // 即使更新失敗，也繼續完成結帳
         } else {
             console.log('庫存扣減成功。');
         }
-
-        // [V18.1] 移除 V18 中結帳時刪除暫掛單的邏輯
 
         // 4. 交易完成
         alert(`結帳成功！訂單號碼: ${orderId}\n應收金額: ${formatCurrency(totalAmount)}\n實收金額: ${formatCurrency(paidAmount)}\n找零金額: ${formatCurrency(changeAmount)}`);
         checkoutModal.classList.remove('active');
         clearOrder(true); 
+        
+        // [V28.3] 再次載入商品，確保UI (鈴鐺 和 庫存數字) 顯示最新狀態
         await loadProducts(); 
 
     } catch (err) {
@@ -682,9 +701,6 @@ function handleHoldOrder() {
         alert("目前訂單為空，無需暫掛。");
         return;
     }
-    
-    // [V18.2] 允許再次暫掛
-    // if (currentHeldOrderName !== null) { ... }
     
     // [V18.2] 如果是取回的訂單，建議使用原名稱
     const defaultName = currentHeldOrderName || `訂單 ${heldOrders.length + 1}`;
@@ -791,7 +807,79 @@ function handleRetrieveModalClick(e) {
 
 
 // ===============================================
-// 10. 應用程式啟動與事件監聽 - [V18.2 修改]
+// [V28.2] 區塊 10: 庫存預警功能
+// ===============================================
+/**
+ * [V28.2] 綁定鈴鐺和 Modal 事件
+ */
+function setupWarningBell() {
+    if (stockWarningBell) {
+        stockWarningBell.addEventListener('click', showStockWarningModal);
+    }
+    if (closeWarningModalBtn) { 
+        closeWarningModalBtn.addEventListener('click', hideStockWarningModal);
+    }
+    if (stockWarningModal) {
+        stockWarningModal.addEventListener('click', (e) => {
+            if (e.target === stockWarningModal) {
+                hideStockWarningModal();
+            }
+        });
+    }
+}
+
+/**
+ * [V28.2] 根據低庫存列表更新鈴鐺 (紅點)
+ */
+function updateStockWarningBell() {
+    if (!stockWarningBell || !stockWarningDot) return;
+
+    if (lowStockItems.length > 0) {
+        stockWarningBell.classList.add('active');
+        // console.log("低庫存商品:", lowStockItems.map(p => p.name));
+    } else {
+        stockWarningBell.classList.remove('active');
+        // console.log("庫存充足。");
+    }
+}
+
+/**
+ * [V28.2] 顯示低庫存 Modal
+ */
+function showStockWarningModal() {
+    if (!stockWarningTbody || !stockWarningModal) return;
+
+    if (lowStockItems.length === 0) {
+        alert("目前所有商品庫存充足！");
+        return;
+    }
+
+    stockWarningTbody.innerHTML = ''; // 清空
+    lowStockItems.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.stock}</td>
+            <td>${item.warning_threshold}</td>
+        `;
+        stockWarningTbody.appendChild(row);
+    });
+
+    stockWarningModal.classList.add('active');
+}
+
+/**
+ * [V28.2] 隱藏低庫存 Modal
+ */
+function hideStockWarningModal() {
+    if (stockWarningModal) {
+        stockWarningModal.classList.remove('active');
+    }
+}
+
+
+// ===============================================
+// 11. 應用程式啟動與事件監聽 (原 10) - [V28.2 修改]
 // ===============================================
 
 function initializeEmployeeModule() {
@@ -811,11 +899,12 @@ function initializeApp() {
     setInterval(updateClock, 1000);
 
     loadHeldOrdersFromStorage(); // [V18] 啟動時載入暫掛單
+    setupWarningBell(); // [V28.2] 啟用鈴鐺
 
     if (!currentEmployee) {
         initializeEmployeeModule();
     } else {
-        loadProducts();
+        loadProducts(); // [V28.2] loadProducts 會自動載入折扣
         if (posMainApp) posMainApp.classList.remove('hidden');
     }
 
@@ -834,37 +923,42 @@ function initializeApp() {
     if (orderItemsTableBody) {
         // (click) 處理 +/-/移除/備註
         orderItemsTableBody.addEventListener('click', (e) => {
-            // [V18.2] 移除編輯鎖定
             const target = e.target;
             const button = target.closest('button'); 
-            if (!button) return; 
-            const index = parseInt(button.dataset.index, 10);
-            if (isNaN(index)) return;
-            if (button.classList.contains('increase-btn')) {
-                increaseItemQuantity(index);
-            } else if (button.classList.contains('decrease-btn')) {
-                if (button.disabled) return;
-                if (orderItems[index]?.quantity > 0) {
-                   decreaseItemQuantity(index);
+            
+            // [V28.2] 處理備註按鈕
+            if (button && (button.classList.contains('add-note-btn') || button.classList.contains('edit-note-btn'))) {
+                const index = parseInt(button.dataset.index, 10);
+                if (!isNaN(index)) {
+                    handleEditNote(index);
                 }
-            } else if (button.classList.contains('remove-item-btn')) {
-                const removeButton = target.closest('.remove-item-btn');
-                if (removeButton) {
-                    const removeIndex = parseInt(removeButton.dataset.index, 10);
-                    if (!isNaN(removeIndex)) {
-                        removeItem(removeIndex);
+                return; // 處理完畢
+            }
+
+            // [V28.2] 處理 +/-/移除 按鈕
+            const actionButton = target.closest('[data-action]');
+            if (actionButton) {
+                const action = actionButton.dataset.action;
+                const index = parseInt(actionButton.dataset.index, 10);
+                if (isNaN(index)) return;
+
+                if (action === 'increase') {
+                    increaseItemQuantity(index);
+                } else if (action === 'decrease') {
+                    if (actionButton.disabled) return;
+                    if (orderItems[index]?.quantity > 0) {
+                       decreaseItemQuantity(index);
                     }
+                } else if (action === 'remove') {
+                    removeItem(index);
                 }
-            } else if (button.classList.contains('add-note-btn') || button.classList.contains('edit-note-btn')) {
-                handleEditNote(index);
             }
         });
 
         // (change) 處理手動輸入
         orderItemsTableBody.addEventListener('change', (e) => {
-            // [V18.2] 移除編輯鎖定
             const target = e.target;
-            if (target.classList.contains('quantity-input')) {
+            if (target.dataset.action === 'set-quantity') { // [V28.2] 修正: 監聽 data-action
                 const index = parseInt(target.dataset.index, 10);
                 if (!isNaN(index)) {
                     handleQuantityChange(index, target.value);
@@ -877,6 +971,7 @@ function initializeApp() {
     const orderTotals = document.querySelector('.order-totals');
     if (orderTotals) {
         orderTotals.addEventListener('change', (e) => {
+            // [V28.2] 適配 V18.2 的折扣 <dd> ID
             if (e.target.id === 'discount-select') {
                 const selectedValue = e.target.value; 
                 const [id, amount] = selectedValue.split('_').map(Number);
@@ -901,7 +996,8 @@ function initializeApp() {
         if (e.key !== 'Enter') return; 
         const isCheckoutModalActive = checkoutModal && checkoutModal.classList.contains('active');
         const isEmployeeModalActive = employeeModal && employeeModal.classList.contains('active');
-        const isRetrieveModalActive = retrieveOrderModal && retrieveOrderModal.classList.contains('active'); // [V18]
+        const isRetrieveModalActive = retrieveOrderModal && retrieveOrderModal.classList.contains('active'); 
+        const isWarningModalActive = stockWarningModal && stockWarningModal.classList.contains('active'); // [V28.2]
         const targetTagName = e.target.tagName.toLowerCase();
         
         if (isCheckoutModalActive) {
@@ -914,7 +1010,7 @@ function initializeApp() {
             }
             return; 
         }
-        if (isEmployeeModalActive || isRetrieveModalActive) { // [V18]
+        if (isEmployeeModalActive || isRetrieveModalActive || isWarningModalActive) { // [V28.2]
             return;
         }
         if (targetTagName === 'input' || targetTagName === 'textarea' || targetTagName === 'select') {
@@ -933,12 +1029,15 @@ function initializeApp() {
     if (retrieveOrderBtn) retrieveOrderBtn.addEventListener('click', showRetrieveModal);
     if (closeRetrieveModalBtn) closeRetrieveModalBtn.addEventListener('click', hideRetrieveModal);
     if (heldOrderListContainer) heldOrderListContainer.addEventListener('click', handleRetrieveModalClick);
+    
+    // [V28.2] 庫存預警 Modal (事件綁定已移至 setupWarningBell)
+    // (V28.2 註: V19.1 的 'warning-close-btn' 綁定已在 setupWarningBell 中完成)
 
     // 初始渲染
     renderOrderItems();
     updateOrderTotals(); 
 
-    console.log('🚀 POS 系統腳本 (V18.2) 已啟動。');
+    console.log('🚀 POS 系統腳本 (V18.2 + V28.2) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化

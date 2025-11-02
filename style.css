@@ -1,127 +1,115 @@
 ﻿/* ====================================================================
-   POS 系統樣式表 - 依功能區塊劃分與中文註記 (V17.3)
+   POS 系統樣式表 (V31.0 - 重新設計總計區佈局)
    ==================================================================== */
 
-
 /* -----------------------------------------------------------
-   區塊 1: 基礎設定與變數 (Imports, Fonts, Variables)
+   區塊 1: 基礎設定與變數
    ----------------------------------------------------------- */
-
-/* 引入 Google Fonts (中文字體) */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
-/* 引入等寬字體用於數字對齊 - 確保數字欄位視覺整齊 */
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500;700&display=swap');
 
-/* 定義 CSS 變數 (方便未來主題調整) */
 :root {
-    --primary-color: #3498db; /* 主色調：藍色 (用於按鈕、連結) */
-    --primary-color-light: #5dade2; /* 主色調淺色 (用於邊框、控制項) */
-    --secondary-color: #2c3e50; /* 次要色調：深灰/藍 (用於Header、主要標題) */
-    --secondary-color-light: #ecf0f1; /* 次要色調淺色 (用於背景、表頭背景) */
-    --success-color: #2ecc71; /* 成功/結帳：綠色 */
-    --danger-color: #e74c3c; /* 警告/移除/最終總計：紅色 */
-    --warning-color: #f39c12; /* [V17.2] 橘黃色 (同標題) */
-    --text-color-dark: #333; /* 主要文字顏色 */
-    --text-color-light: #95a5a6; /* 輔助文字顏色 (如庫存狀態) */
-    --border-color: #bdc3c7; /* 邊框標準色 */
-    --button-bg-light: #f4f7f6; /* 按鈕淺色背景 */
-    --border-radius: 5px; /* 標準圓角半徑 */
-    --soft-border: #f0f0f0; /* 更柔和的表格邊線顏色 */
-    --row-padding: 15px; /* 訂單項目行高 (解決擁擠問題) */
+    --primary-color: #3498db; 
+    --primary-color-light: #5dade2; 
+    --secondary-color: #2c3e50; 
+    --secondary-color-light: #ecf0f1; 
+    --success-color: #2ecc71; 
+    --danger-color: #e74c3c; 
+    --warning-color: #f39c12; 
+    --text-color-dark: #333; 
+    --text-color-light: #95a5a6; 
+    --border-color: #bdc3c7; 
+    --button-bg-light: #f4f7f6; 
+    --border-radius: 5px; 
+    --soft-border: #f0f0f0; 
+    --row-padding: 15px; 
 }
 
 /* -----------------------------------------------------------
-   區塊 2: 全域佈局與應用程式主體 (.pos-app, body)
+   區塊 2: 全域佈局與應用程式主體
    ----------------------------------------------------------- */
-
-/* 確保 body 佔滿整個視窗高度 */
 html, body {
-    height: 100%; /* 高度佔滿 100% */
-    margin: 0; /* 移除外邊距 */
-    padding: 0; /* 移除內邊距 */
+    height: 100%; 
+    margin: 0; 
+    padding: 0; 
 }
 
 body {
-    font-family: 'Noto Sans TC', sans-serif; /* 設定中文字體 */
-    background-color: var(--secondary-color-light); /* 設定淺灰色背景 */
-    color: var(--text-color-dark); /* 設定預設文字顏色 */
-    display: flex; /* 啟用 Flexbox 佈局 */
-    flex-direction: column; /* 垂直佈局 (Header在上, 內容在下) */
-    overflow: hidden; /* 隱藏整體滾動條 */
+    font-family: 'Noto Sans TC', sans-serif; 
+    background-color: var(--secondary-color-light); 
+    color: var(--text-color-dark); 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
 }
 
-/* 隱藏/顯示輔助類 */
 .hidden {
-    display: none !important; /* 強制隱藏 */
+    display: none !important; 
 }
 
-/* POS 應用程式主容器 - 佔據 Header 以外的所有剩餘空間 */
 .pos-app {
-    flex-grow: 1; /* 佔據所有剩餘垂直空間 */
+    flex-grow: 1; 
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 1400px; /* 限制最大寬度，避免過寬 */
-    margin: 0 auto; /* 居中顯示 */
+    max-width: 1400px; 
+    margin: 0 auto; 
     overflow: hidden;
 }
 
-/* POS 核心介面樣式 - 左右分割 (商品區和訂單區) */
 .pos-content {
-    flex-grow: 1; /* 佔據 POS App 的剩餘空間 */
-    display: flex; /* 左右並排佈局 */
-    overflow: hidden; /* 內容區不產生滾動條 */
+    flex-grow: 1; 
+    display: flex; 
+    overflow: hidden; 
     background-color: #ecf0f1;
 }
 
 /* -----------------------------------------------------------
    區塊 3: 頂部導航與標頭 (.pos-header)
    ----------------------------------------------------------- */
-
 .pos-header {
     display: flex;
-    justify-content: space-between; /* 內容左右分佈 */
-    align-items: center; /* 垂直居中對齊 */
+    justify-content: space-between; 
+    align-items: center; 
     padding: 10px 20px;
-    background-color: var(--secondary-color); /* 深色背景 */
+    background-color: var(--secondary-color); 
     color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 輕微陰影 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
     min-height: 35px;
-    flex-shrink: 0; /* 防止縮小 */
+    flex-shrink: 0; 
 }
 
 .employee-info, .utility-info {
     display: flex;
     align-items: center;
-    gap: 15px; /* 元素間距 */
+    gap: 15px; 
 }
 
 .designer-note {
-    font-size: 0.8em; /* 較小字體 */
-    opacity: 0.6; /* 關鍵：淡化顯示 */
-    color: #e9ecef; /* 淺灰色文字 (在深色背景上) */
-    margin-right: 20px; /* 與員工資訊保持間距 */
+    font-size: 0.8em; 
+    opacity: 0.6; 
+    color: #e9ecef; 
+    margin-right: 20px; 
 }
 
 .system-title {
     font-size: 1.5em;
     font-weight: 700;
     margin: 0;
-    color: var(--warning-color); /* 系統標題使用橙色強調 */
+    color: var(--warning-color); 
 }
 
 #current-employee-display {
     font-weight: 700;
-    color: var(--warning-color); /* 員工名稱強調 */
+    color: var(--warning-color); 
     font-size: 1.0em;
 }
 
 #current-time {
     font-size: 0.9em;
-    opacity: 0.8; /* 略微透明 */
+    opacity: 0.8; 
 }
 
-/* 後台按鈕樣式 */
 .backend-button {
     background-color: #34495e;
     color: white;
@@ -134,46 +122,65 @@ body {
 }
 
 .backend-button:hover {
-    background-color: var(--secondary-color); /* 懸停效果 */
+    background-color: var(--secondary-color); 
 }
 
 /* -----------------------------------------------------------
    區塊 4: 商品選擇區 (Product Selection)
    ----------------------------------------------------------- */
-
 .product-selection-area {
-    flex: 3; /* 佔據較大比例 (3/4.5) */
+    flex: 3; 
     display: flex;
     flex-direction: column;
     padding: 10px;
-    border-right: 1px solid var(--border-color); /* 右側邊線 */
+    border-right: 1px solid var(--border-color); 
     overflow: hidden;
-    min-height: 0; /* 修正 Flexbox 內滾動問題 */
+    min-height: 0; 
 }
 
-/* 商品分類 Tabs */
 .category-tabs {
     display: flex;
     gap: 5px;
     margin-bottom: 10px;
-    overflow-x: auto; /* 允許橫向滾動 */
+    overflow-x: auto; 
     padding-bottom: 5px;
     border-bottom: 2px solid var(--border-color);
-    flex-shrink: 0; /* 防止縮小 */
+    flex-shrink: 0; 
 }
 
-/* 商品列表 Grid */
+.category-button {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-color-dark);
+    padding: 10px 15px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1em;
+    white-space: nowrap; 
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.category-button:hover {
+    background-color: #fdfdfd;
+    border-color: var(--primary-color-light);
+}
+.category-button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    font-weight: 700;
+}
+
+
 .product-grid {
-    flex-grow: 1; /* 佔據剩餘垂直空間 */
+    flex-grow: 1; 
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 自動響應式佈局 */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
     gap: 15px;
-    overflow-y: auto; /* 允許垂直滾動 */
+    overflow-y: auto; 
     padding-right: 5px;
-    min-height: 0; /* 修正 Flexbox 內滾動問題 */
+    min-height: 0; 
 }
 
-/* 商品卡片 */
 .product-card {
     background-color: white;
     border: 1px solid #ddd;
@@ -183,11 +190,11 @@ body {
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: transform 0.1s, box-shadow 0.1s;
-    user-select: none; /* 防止選取文字 */
+    user-select: none; 
 }
 
 .product-card:hover {
-    transform: translateY(-2px); /* 懸停時輕微上移 */
+    transform: translateY(-2px); 
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -196,12 +203,12 @@ body {
     margin: 5px 0;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* 名稱過長時顯示省略號 */
+    text-overflow: ellipsis; 
 }
 
 .product-card .price {
     font-weight: bold;
-    color: var(--success-color); /* 價格使用綠色 */
+    color: var(--success-color); 
     font-size: 1.1em;
 }
 
@@ -210,23 +217,28 @@ body {
     color: var(--text-color-light);
     margin-top: 5px;
 }
+.product-card .stock-status .fa-check-circle {
+    color: var(--success-color);
+}
+.product-card .stock-status .fa-times-circle {
+    color: var(--danger-color);
+}
 
 .product-card.out-of-stock {
     opacity: 0.5;
-    pointer-events: none; /* 缺貨時禁用點擊和透明化 */
+    pointer-events: none; 
 }
 
 /* -----------------------------------------------------------
-   區塊 5: 訂單總結區塊主體 (Order Summary Area)
+   區塊 5: [V29.0 修改] 訂單總結區塊主體
    ----------------------------------------------------------- */
-
 .order-summary-area {
-    flex: 1.5; /* 佔據較小比例 (1.5/4.5) */
+    flex: 1.5; 
     display: flex;
     flex-direction: column;
     background-color: #ffffff;
     padding: 15px;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05); /* 左側輕微陰影 */
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05); 
     flex-shrink: 0;
     min-height: 0;
 }
@@ -236,7 +248,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
-    border-bottom: 2px solid var(--secondary-color); /* 標題底線 */
+    border-bottom: 2px solid var(--secondary-color); 
     padding-bottom: 8px;
     flex-shrink: 0;
 }
@@ -247,119 +259,108 @@ body {
     margin: 0;
 }
 
-/* 清空按鈕 */
-.clear-button {
+.order-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px; 
+}
+
+.order-header-actions .clear-button {
     background: none;
     border: 1px solid var(--danger-color);
     color: var(--danger-color);
-    padding: 5px 10px;
+    padding: 5px 10px; 
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
     flex-shrink: 0;
+    font-size: 0.9em; 
+    font-weight: 700;
 }
-
-.clear-button:hover {
-    background-color: var(--danger-color); /* 懸停時反色 */
+.order-header-actions .clear-button:hover {
+    background-color: var(--danger-color); 
     color: white;
 }
 
 /* -----------------------------------------------------------
-   區塊 6: 訂單明細表格 (Order Items Table) - 關鍵排版區
+   區塊 6: 訂單明細表格 (Order Items Table)
    ----------------------------------------------------------- */
-
 .order-items-list-container {
     flex-grow: 1;
-    overflow-y: auto; /* 訂單項目溢出時可滾動 */
-    margin-bottom: 15px;
+    overflow-y: auto; 
+    margin-bottom: 10px; 
     min-height: 0;
 }
-
 .order-items-list-container table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed; /* 鎖定欄寬是對齊的關鍵 */
+    table-layout: fixed; 
     font-size: 0.95em;
 }
-
-/* 確保行對齊的關鍵：使用 fixed + 精確 px/auto 寬度設定 */
 .order-items-list-container th:nth-child(1),
-.order-items-list-container td:nth-child(1) { width: auto; /* 1. 商品名稱：佔據剩餘空間 */ }
+.order-items-list-container td:nth-child(1) { width: auto; } 
 .order-items-list-container th:nth-child(2),
-.order-items-list-container td:nth-child(2) { width: 60px; } /* 2. 單價：固定 60px */
+.order-items-list-container td:nth-child(2) { width: 60px; } 
 .order-items-list-container th:nth-child(3),
-.order-items-list-container td:nth-child(3) { width: 95px; } /* 3. 數量控制：固定 95px */
+.order-items-list-container td:nth-child(3) { width: 95px; } 
 .order-items-list-container th:nth-child(4),
-.order-items-list-container td:nth-child(4) { width: 70px; } /* 4. 總計：固定 70px */
+.order-items-list-container td:nth-child(4) { width: 70px; } 
 .order-items-list-container th:nth-child(5),
-.order-items-list-container td:nth-child(5) { width: 35px; } /* 5. 移除按鈕：固定 35px */
+.order-items-list-container td:nth-child(5) { width: 35px; } 
 
 .order-items-list-container th {
     padding: 10px 8px;
-    background-color: var(--secondary-color-light); /* 表頭背景色 */
+    background-color: var(--secondary-color-light); 
     color: var(--secondary-color);
     font-weight: 700;
-    position: sticky; top: 0; z-index: 10; /* 表頭固定在頂部 */
+    position: sticky; top: 0; z-index: 10; 
     border-bottom: 2px solid var(--border-color);
     text-align: center;
 }
-
-/* 表頭文字對齊修正 */
-.order-items-list-container th:nth-child(1) { text-align: left; } /* 商品名靠左 */
+.order-items-list-container th:nth-child(1) { text-align: left; } 
 .order-items-list-container th:nth-child(2),
-.order-items-list-container th:nth-child(4) { text-align: right; } /* 數字相關靠右 */
+.order-items-list-container th:nth-child(4) { text-align: right; } 
 
 .order-items-list-container td {
-    padding: var(--row-padding) 8px; /* 設定大間距，防止擁擠 */
-    vertical-align: middle; /* 垂直居中 */
-    border-bottom: 1px solid var(--soft-border); /* 柔和的行分隔線 */
+    padding: var(--row-padding) 8px; 
+    vertical-align: middle; 
+    border-bottom: 1px solid var(--soft-border); 
 }
-
 .order-items-list-container tbody tr:last-child td {
-    border-bottom: none; /* 最後一行移除底線 */
+    border-bottom: none; 
 }
-
-/* 欄位內容對齊優化 */
 .order-item-row td:nth-child(1) {
-    text-align: left; /* 商品名稱靠左 */
+    text-align: left; 
 }
-.order-item-row td:nth-child(2), /* 單價 */
-.order-item-row td:nth-child(4) { /* 總計 */
-    text-align: right; /* 數字靠右，垂直對齊 */
-    font-family: 'Roboto Mono', monospace; /* 使用等寬字體保持對齊 */
+.order-item-row td:nth-child(2), 
+.order-item-row td:nth-child(4) { 
+    text-align: right; 
+    font-family: 'Roboto Mono', monospace; 
     font-weight: 500;
 }
-.order-item-row td:nth-child(3), /* 數量控制 (第三欄) */
-.order-item-row td:nth-child(5) { /* 移除 */
-    text-align: center; /* 居中對齊 */
+.order-item-row td:nth-child(3), 
+.order-item-row td:nth-child(5) { 
+    text-align: center; 
 }
-
 .order-item-row .item-name {
-    /* 防止商品名稱換行並使用省略號顯示過長文字 */
     font-weight: 700;
     color: var(--secondary-color);
-    white-space: nowrap; /* 確保名稱不會換行 */
+    white-space: nowrap; 
     overflow: hidden;
-    text-overflow: ellipsis; /* 文字溢出顯示省略號 */
+    text-overflow: ellipsis; 
     display: block;
 }
-
-/* 總額字體樣式增強 */
 .order-item-row .item-total {
     font-weight: 700;
-    color: var(--danger-color); /* 總計金額使用紅色強調 */
+    color: var(--danger-color); 
     font-size: 1.1em;
 }
-
-/* 訂單為空時的樣式修正 */
 .empty-order-message {
     text-align: center;
     font-style: italic;
     color: var(--text-color-light);
     padding: 20px;
 }
-
-/* 舊的 .order-items-list 不再需要，隱藏舊結構 */
 .order-items-list {
     display: none;
 }
@@ -367,16 +368,14 @@ body {
 /* -----------------------------------------------------------
    區塊 7: 數量控制元件 (Item Quantity Controls)
    ----------------------------------------------------------- */
-
-/* 數量輸入控制項容器 - 緊湊設計，居中且不影響行高 */
 .item-controls {
     display: flex;
-    align-items: stretch; /* 讓內容等高 */
+    align-items: stretch; 
     justify-content: center;
     gap: 0;
     width: 90px;
     margin: 0 auto;
-    border: 1px solid var(--primary-color-light); /* 外部邊框 */
+    border: 1px solid var(--primary-color-light); 
     border-radius: var(--border-radius);
     overflow: hidden;
 }
@@ -387,22 +386,19 @@ body {
     padding: 5px 0;
     border: none;
     border-radius: 0;
-    -moz-appearance: textfield; /* 移除 Firefox 的 spinner */
+    -moz-appearance: textfield; 
     font-size: 1em;
     font-family: 'Roboto Mono', monospace;
     font-weight: 700;
     color: var(--primary-color);
     background-color: white;
 }
-
-/* 移除 Chrome/Safari/Edge 的 spinner */
 .item-qty-input::-webkit-outer-spin-button,
 .item-qty-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-/* 數量增減按鈕 - 與輸入框高度統一 */
 .qty-btn {
     background: var(--button-bg-light);
     color: var(--primary-color);
@@ -413,74 +409,120 @@ body {
     font-size: 1.2em;
     transition: background 0.2s, color 0.2s;
     width: 30px;
-    height: 35px; /* 固定高度 */
+    height: 35px; 
     display: flex;
     justify-content: center;
     align-items: center;
     flex-shrink: 0;
 }
-
-/* 按鈕間的分隔線 */
 .item-controls .qty-btn:first-child {
     border-right: 1px solid var(--primary-color-light);
 }
-
 .item-controls .qty-btn:last-child {
     border-left: 1px solid var(--primary-color-light);
 }
-
 .qty-btn:hover {
     background: var(--primary-color);
     color: white;
 }
 
-/* 移除按鈕 - 更內斂 */
 .item-remove .remove-item-btn {
     background: none;
-    color: var(--text-color-light); /* 預設使用淺色 */
+    color: var(--text-color-light); 
     border: none;
     cursor: pointer;
     font-size: 1.3em;
     transition: color 0.2s;
     padding: 5px;
 }
-
 .item-remove .remove-item-btn:hover {
-    color: var(--danger-color); /* 懸停時使用紅色 */
+    color: var(--danger-color); 
 }
 
 /* -----------------------------------------------------------
-   區塊 8: 訂單總計與結帳按鈕 (Totals & Checkout)
+   區塊 8: [V31.0 修改] 訂單總計與結帳按鈕
    ----------------------------------------------------------- */
-
-/* 訂單總計區容器 */
 .order-totals {
-    border-top: 1px dashed var(--border-color); /* 虛線分隔 */
-    padding-top: 10px;
-    margin-bottom: 15px;
+    border-top: 1px dashed var(--border-color); 
+    padding-top: 5px; 
+    margin-bottom: 10px; 
     flex-shrink: 0;
+    /* [V31.0] 移除 V30 的 flex 佈局 */
 }
 
+/* [V31.0] 總數量 (左側) */
+.total-row-quantity {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-color-dark);
+    padding: 2px 0;
+}
+.total-row-quantity dt {
+    font-weight: 700;
+    color: var(--text-color-light);
+}
+.total-row-quantity dd {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.2em;
+    color: var(--primary-color);
+    text-align: right;
+}
+
+/* [V31.0] 小計/折扣 (右側) */
 .total-row {
     display: flex;
-    justify-content: space-between; /* 項目名稱與金額左右對齊 */
-    align-items: center; /* [V17.3] 垂直居中 */
-    padding: 5px 0;
-    font-size: 1.1em;
+    justify-content: space-between;
+    align-items: center; 
+    padding: 1px 0; /* [V31.0] 縮小垂直間距 */
+    font-size: 1.05em; /* 較小字體 */
+}
+.total-row dt {
+    color: var(--text-color-light);
+    font-weight: 300;
+    flex-basis: 40%; /* 標題佔 40% */
+    text-align: left;
+}
+.total-row dd {
+    font-weight: 700;
+    font-family: 'Roboto Mono', monospace;
+    flex-basis: 60%; /* 數字佔 60% */
+    text-align: right;
 }
 
+/* [V31.0] 應付金額 (最大) */
 .final-total-row {
-    font-size: 1.5em;
+    font-size: 1.8em; /* 放大 */
     font-weight: bold;
-    color: var(--danger-color); /* 最終總額使用紅色強調 */
-    border-top: 2px solid var(--secondary-color); /* 粗實線分隔 */
-    margin-top: 5px;
-    padding-top: 8px;
+    color: var(--danger-color); 
+    border-top: 2px solid var(--secondary-color); 
+    margin-top: 8px; 
+    padding-top: 6px; 
+}
+.final-total-row dt {
+    font-size: 0.9em; /* 標題縮小一點 */
+    font-weight: 700;
+    color: var(--danger-color);
+}
+.final-total-row dd {
+    font-size: 1em;
+}
+
+/* [V31.0] 確保折扣下拉選單垂直對齊 */
+.discount-row {
+    align-items: center;
+}
+/* [V31.0] 讓折扣的 <dd> 佔滿空間 */
+.discount-row dd {
+    flex-grow: 1;
 }
 
 .checkout-area {
     text-align: center;
     flex-shrink: 0;
+    margin-top: auto; 
 }
 
 .checkout-button {
@@ -488,7 +530,7 @@ body {
     padding: 20px;
     font-size: 1.5em;
     font-weight: bold;
-    background-color: var(--success-color); /* 結帳按鈕使用綠色 */
+    background-color: var(--success-color); 
     color: white;
     border: none;
     border-radius: 8px;
@@ -501,32 +543,30 @@ body {
 }
 
 .checkout-button:disabled {
-    background-color: var(--border-color); /* 禁用時變灰 */
+    background-color: var(--border-color); 
     cursor: not-allowed;
 }
 
 /* -----------------------------------------------------------
    區塊 9: 模態視窗 (Modals - Employee/Checkout)
    ----------------------------------------------------------- */
-
-/* 通用 Modal 樣式 */
 .modal {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.8); /* 半透明黑色背景遮罩 */
+    background-color: rgba(0, 0, 0, 0.8); 
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     opacity: 0;
-    visibility: hidden; /* 預設隱藏 */
+    visibility: hidden; 
     transition: opacity 0.3s, visibility 0.3s;
 }
 
 .modal.active {
     opacity: 1;
-    visibility: visible; /* 顯示時淡入 */
+    visibility: visible; 
 }
 
 .modal-content {
@@ -535,7 +575,7 @@ body {
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     width: 90%;
-    max-width: 600px; /* 員工選擇模態框最大寬度 */
+    max-width: 600px; 
     text-align: center;
     position: relative;
 }
@@ -545,14 +585,13 @@ body {
     margin-top: 0;
 }
 
-/* 員工選擇 Grid 樣式 */
 .employee-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 自動佈局按鈕 */
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
     gap: 15px;
     margin-top: 20px;
     max-height: 400px;
-    overflow-y: auto; /* 員工過多時可滾動 */
+    overflow-y: auto; 
     padding: 10px;
 }
 
@@ -577,9 +616,8 @@ body {
     color: var(--text-color-light);
 }
 
-/* 結帳 Modal 樣式 */
 #checkout-modal .modal-content {
-    max-width: 450px; /* 結帳模態框較窄 */
+    max-width: 450px; 
     padding: 30px 25px;
 }
 
@@ -603,7 +641,8 @@ body {
     border-radius: 5px;
 }
 
-.summary-row {
+/* [V31.0] 修正: 結帳 Modal 內的 .summary-row */
+#checkout-modal .summary-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -635,12 +674,12 @@ body {
     padding: 15px;
     font-size: 1.8em;
     text-align: right;
-    border: 2px solid var(--primary-color); /* 藍色邊框強調輸入框 */
+    border: 2px solid var(--primary-color); 
     border-radius: 5px;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 .change-display {
-    border-top: 2px dashed var(--border-color); /* 找零區虛線分隔 */
+    border-top: 2px dashed var(--border-color); 
     padding-top: 15px;
     margin-top: 20px;
 }
@@ -675,7 +714,7 @@ body {
 .item-note-display { font-size: 0.9em; color: var(--danger-color); font-weight: 700; margin-top: 4px; display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ====================================================================
-   V17.1: 折扣 (Discount) 下拉選單樣式 (V18 需保留)
+   V17.1: [V31.0 修改] 折扣 (Discount) 下拉選單樣式
    ==================================================================== */
 .discount-select {
     font-size: 0.95em;
@@ -683,7 +722,9 @@ body {
     padding: 5px 8px;
     border-radius: var(--border-radius);
     background-color: white;
-    max-width: 150px;
+    /* [V31.0] 移除 max-width: 150px; */
+    width: 100%; /* [V31.0] 讓其自動填滿 dd 區域 */
+    box-sizing: border-box; /* 確保 padding 不會溢出 */
     cursor: pointer;
     vertical-align: middle; 
     color: var(--warning-color); 
@@ -696,17 +737,9 @@ body {
 }
 
 /* ====================================================================
-   V18.2: 暫掛/取單 (Hold/Retrieve) 樣式
+   V18.2: [V29.0 修改] 暫掛/取單 (Hold/Retrieve) 樣式
    ==================================================================== */
-
-/* [V18.2] 修改 .system-buttons 以容納 4 個按鈕 */
-.system-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* 2x2 網格 */
-    gap: 10px;
-    margin-top: 15px;
-    flex-shrink: 0;
-}
+/* [V29.0] 移除原 V18.2 .system-buttons 樣式 */
 .system-button {
     background-color: var(--button-bg-light);
     border: 1px solid var(--border-color);
@@ -725,8 +758,6 @@ body {
 .system-button i {
     margin-right: 5px;
 }
-
-/* [V18.2] 取單按鈕上的計數器 */
 #retrieve-order-btn {
     position: relative; /* 為了定位計數器 */
 }
@@ -747,8 +778,6 @@ body {
 .held-order-count.hidden {
     display: none;
 }
-
-/* [V18.2] 取單 Modal 樣式 */
 #retrieve-order-modal .modal-content {
     max-width: 500px;
 }
@@ -759,7 +788,6 @@ body {
     border-radius: var(--border-radius);
     margin-top: 20px;
 }
-/* 暫掛訂單列表 (空) */
 .held-order-list-container:empty::after {
     content: "目前沒有暫掛中的訂單";
     display: block;
@@ -768,7 +796,6 @@ body {
     color: var(--text-color-light);
     font-style: italic;
 }
-/* 暫掛訂單 (項目) */
 .held-order-item {
     display: flex;
     justify-content: space-between;
@@ -788,11 +815,121 @@ body {
     color: var(--text-color-light);
 }
 .held-order-actions .btn-primary {
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    color: white;
     padding: 8px 15px;
     font-size: 0.9em;
     margin-left: 10px;
 }
 .held-order-actions .btn-danger {
-    padding: 8px 12px; /* 刪除按鈕小一點 */
+    background-color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+    color: white;
+    padding: 8px 12px;
     font-size: 0.9em;
+}
+
+/* ====================================================================
+   [V29.0] 新增: Header 內的按鈕佈局
+   ==================================================================== */
+.order-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* 暫掛群組 和 清空按鈕 的間距 */
+}
+.order-header-actions .system-buttons {
+    display: flex; /* 讓兩個暫掛按鈕水平排列 */
+    gap: 5px;
+    margin: 0;
+}
+.order-header-actions .system-button,
+.order-header-actions .clear-button {
+    padding: 5px 10px; /* 縮小按鈕 */
+    font-size: 0.9em; 
+    font-weight: 700;
+}
+.order-header-actions .system-button i,
+.order-header-actions .clear-button i {
+     margin-right: 3px; /* 縮小圖示間距 */
+}
+
+/* ====================================================================
+   V28.2: [新增] 庫存預警鈴鐺
+   ==================================================================== */
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+    padding: 5px;
+    margin-right: -10px; 
+    margin-left: 5px;
+}
+.notification-bell span {
+    font-size: 1.6rem;
+    display: inline-block;
+    transform: translateY(4px); /* 垂直對齊 */
+}
+.notification-dot {
+    display: none; /* 預設隱藏 */
+    position: absolute;
+    top: 5px;
+    right: 3px;
+    width: 10px;
+    height: 10px;
+    background-color: var(--danger-color);
+    border-radius: 50%;
+    border: 2px solid var(--secondary-color); /* 與 header 同色 */
+}
+.notification-bell.active .notification-dot {
+    display: block;
+}
+
+/* ====================================================================
+   V28.2: [新增] 庫存預警 Modal 樣式
+   ==================================================================== */
+#stock-warning-modal .modal-content {
+    max-width: 450px; 
+}
+#stock-warning-modal .close-btn {
+    position: absolute;
+    top: 10px; right: 15px;
+    font-size: 1.5em;
+    color: var(--text-color-light);
+    cursor: pointer;
+}
+#stock-warning-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+#stock-warning-table th {
+    padding: 10px 8px;
+    background-color: var(--secondary-color-light);
+    color: var(--secondary-color);
+    font-weight: 700;
+    position: sticky; top: 0; z-index: 10;
+    border-bottom: 2px solid var(--border-color);
+    text-align: center;
+}
+#stock-warning-table th:first-child {
+    text-align: left; 
+}
+#stock-warning-table td {
+    padding: 12px 8px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--soft-border);
+}
+#stock-warning-tbody tr:last-child td {
+    border-bottom: none;
+}
+#stock-warning-tbody td:nth-child(2),
+#stock-warning-tbody td:nth-child(3) {
+    text-align: center;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 700;
+}
+#stock-warning-tbody td:nth-child(2) {
+    color: var(--danger-color);
+}
+#stock-warning-tbody td:nth-child(3) {
+    color: var(--text-color-light);
 }

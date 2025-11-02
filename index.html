@@ -11,7 +11,7 @@
 </head>
 <body>
 
-    <div id="employee-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="employee-modal-title">
+    <div id="employee-selection-modal" class="modal active" role="dialog" aria-modal="true" aria-labelledby="employee-modal-title">
         <div class="modal-content">
             <h1 id="employee-modal-title">請選擇值班人員</h1>
             <div id="loading-message" class="loading-message" role="status">
@@ -60,6 +60,28 @@
                 </div>
         </div>
     </div>
+    
+    <div id="stock-warning-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="warning-modal-title">
+        <div class="modal-content">
+            <button class="close-btn" id="close-warning-modal" aria-label="關閉預警視窗">&times;</button>
+            <h1 id="warning-modal-title">低庫存商品</h1>
+            <p style="margin-top: -10px; margin-bottom: 20px;">以下商品庫存已低於預警門檻，請盡快補貨。</p>
+            
+            <div class="held-order-list-container" id="stock-warning-list-container">
+                <table id="stock-warning-table">
+                    <thead>
+                        <tr>
+                            <th>商品名稱</th>
+                            <th>目前庫存</th>
+                            <th>預警門檻</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-warning-tbody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
 
     <header class="pos-header">
@@ -74,6 +96,12 @@
         </h1>
         <div class="utility-info">
             <time id="current-time"></time>
+            
+            <div class="notification-bell" id="stock-warning-bell" title="低庫存商品">
+                <span>🔔</span>
+                <div class="notification-dot" id="stock-warning-dot"></div>
+            </div>
+
             <button id="go-to-backend-btn" class="backend-button" title="前往商品、庫存、員工管理介面" aria-label="後台管理介面">
                 <i class="fas fa-chart-line"></i> 後台管理
             </button>
@@ -89,7 +117,7 @@
             <section class="product-selection-area" aria-labelledby="product-list-heading">
                 
                 <div id="category-tabs" class="category-tabs" role="tablist">
-                </div>
+                    </div>
 
                 <div id="product-list" class="product-grid" role="list">
                     <p id="product-loading-message" aria-live="polite">
@@ -100,11 +128,23 @@
             </section>
 
             <aside class="order-summary-area"> 
+                
                 <div class="order-header">
                     <h2><i class="fas fa-receipt"></i> 訂單明細</h2>
-                    <button id="clear-order-btn" class="clear-button" title="清空訂單" aria-label="清空目前訂單">
-                        <i class="fas fa-trash-alt"></i> 清空所有商品
-                    </button>
+                    <div class="order-header-actions">
+                        <div class="system-buttons">
+                            <button id="hold-order-btn" class="system-button">
+                                <i class="fas fa-pause-circle"></i> 暫掛
+                            </button>
+                            <button id="retrieve-order-btn" class="system-button">
+                                <i class="fas fa-play-circle"></i> 取單
+                                <span id="held-order-count" class="held-order-count hidden">0</span>
+                            </button>
+                        </div>
+                        <button id="clear-order-btn" class="clear-button" title="清空訂單" aria-label="清空目前訂單">
+                            <i class="fas fa-trash-alt"></i> 清空
+                        </button>
+                    </div>
                 </div>
 
                 <div id="order-items-list-container" class="order-items-list-container" role="region" aria-label="訂單項目列表">
@@ -115,7 +155,8 @@
                                 <th scope="col">單價</th>
                                 <th scope="col">數量</th>
                                 <th scope="col">總額</th>
-                                <th scope="col">移除</th> </tr>
+                                <th scope="col">移除</th> 
+                            </tr>
                         </thead>
                         <tbody id="order-items-table-body">
                             <tr>
@@ -126,24 +167,23 @@
                 </div>
 
                 <div class="order-totals">
-                    <dl>
-                        <div class="total-row">
-                            <dt><strong>總數量:</strong></dt>
-                            <dd id="order-item-count">0</dd>
-                        </div>
-                        <div class="total-row">
-                            <dt><strong>小計:</strong></dt>
-                            <dd id="order-subtotal">NT$ 0</dd>
-                        </div>
-                        <div class="total-row discount-row">
-                            <dt><strong>折扣:</strong></dt>
-                            <dd id="order-discount">NT$ 0</dd>
-                        </div>
-                        <div class="total-row final-total-row">
-                            <dt>【應付金額】:</dt>
-                            <dd id="order-final-total">NT$ 0</dd>
-                        </div>
-                    </dl>
+                    <div class="total-row-quantity">
+                        <dt>總數量:</dt>
+                        <dd id="order-item-count">0</dd>
+                    </div>
+                    <div class="total-row">
+                        <dt>小計:</dt>
+                        <dd id="order-subtotal">NT$ 0</dd>
+                    </div>
+                    <div class="total-row discount-row">
+                        <dt>折扣:</dt>
+                        <dd id="order-discount">
+                            </dd>
+                    </div>
+                    <div class="total-row final-total-row">
+                        <dt>應付金額:</dt>
+                        <dd id="order-final-total">NT$ 0</dd>
+                    </div>
                 </div>
                 
                 <div class="checkout-area">
@@ -151,17 +191,6 @@
                         <i class="fas fa-coins"></i> 結帳 
                     </button>
                 </div>
-
-                <div class="system-buttons">
-                    <button id="hold-order-btn" class="system-button">
-                        <i class="fas fa-pause-circle"></i> 暫掛訂單
-                    </button>
-                    <button id="retrieve-order-btn" class="system-button">
-                        <i class="fas fa-play-circle"></i> 取回訂單
-                        <span id="held-order-count" class="held-order-count hidden">0</span>
-                    </button>
-                </div>
-
             </aside>
 
         </main>
