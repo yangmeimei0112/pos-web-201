@@ -6,6 +6,8 @@
     <title>後台管理 - 201S POS系統</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="backend.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <header class="pos-header">
@@ -30,11 +32,14 @@
         </nav>
 
         <main class="backend-content">
-            
+
             <section id="product-management-section" class="management-section active">
                 <div class="content-header">
                     <h1>商品與庫存管理</h1>
-                    <button id="add-product-btn" class="btn-primary">＋ 新增商品</button>
+                    <div class="header-actions">
+                        <button id="export-products-btn" class="btn-secondary"><i class="fas fa-file-excel"></i> 匯出 Excel</button>
+                        <button id="add-product-btn" class="btn-primary">＋ 新增商品</button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table id="product-list-table">
@@ -63,7 +68,9 @@
             <section id="employee-management-section" class="management-section">
                 <div class="content-header">
                     <h1>員工設定專區</h1>
-                    <button id="add-employee-btn" class="btn-primary">＋ 新增員工</button>
+                    <div class="header-actions">
+                        <button id="add-employee-btn" class="btn-primary">＋ 新增員工</button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table id="employee-list-table">
@@ -86,7 +93,10 @@
             <section id="orders-section" class="management-section">
                 <div class="content-header">
                     <h1>訂單查詢</h1>
-                    <button id="delete-all-orders-btn" class="btn-danger">刪除全部訂單</button>
+                    <div class="header-actions">
+                        <button id="export-orders-btn" class="btn-secondary"><i class="fas fa-file-excel"></i> 匯出 Excel</button>
+                        <button id="delete-all-orders-btn" class="btn-danger">刪除全部訂單</button>
+                    </div>
                 </div>
                 <div class="filter-bar">
                     <div class="filter-group">
@@ -118,7 +128,9 @@
             <section id="discount-management-section" class="management-section">
                 <div class="content-header">
                     <h1>折扣優惠管理</h1>
-                    <button id="add-discount-btn" class="btn-primary">＋ 新增折扣</button>
+                    <div class="header-actions">
+                        <button id="add-discount-btn" class="btn-primary">＋ 新增折扣</button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table id="discount-list-table">
@@ -140,9 +152,10 @@
                 </div>
             </section>
 
-
             <section id="reports-section" class="management-section">
-                <div class="content-header"><h1>報表分析</h1></div>
+                <div class="content-header">
+                    <h1>報表分析</h1>
+                    </div>
                 
                 <h2>營運總覽 (本日)</h2>
                 <div class="dashboard-stats-grid">
@@ -216,10 +229,13 @@
                     </div>
                 </div>
             </section>
+
             <section id="stocktake-section" class="management-section">
                 <div class="content-header">
                     <h1>庫存盤點</h1>
-                    <button id="update-all-stock-btn" class="btn-primary">✔ 一鍵更新庫存</button>
+                    <div class="header-actions">
+                        <button id="update-all-stock-btn" class="btn-primary">✔ 一鍵更新庫存</button>
+                    </div>
                 </div>
                 <div class="stocktake-instructions">
                     <p>請在「實際盤點數量」欄位輸入**實際庫存**。系統將自動計算差異。按下「一鍵更新庫存」後，將會用您輸入的數字覆蓋資料庫中的庫存。</p>

@@ -1,7 +1,8 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V27.0 - 新增總覽數字滾動動畫)
-   - [新增] 區塊 2: animateValue() 輔助函數
-   - [修改] 區塊 8: loadDashboardData() 更新 UI 時呼叫 animateValue()
+   後台管理 (Backend) 邏輯 (V32.0 - 實作匯出 Excel 功能)
+   - [新增] DOM 參照: 匯出按鈕
+   - [新增] 區塊 10: 匯出功能 (handleExportProducts, handleExportOrders)
+   - [修改] 區塊 11: DOMContentLoaded (綁定匯出按鈕點擊事件)
    ==================================================================== */
 
 // ====================================================================
@@ -20,24 +21,32 @@ const formatCurrency = (amount) => {
     return `NT$ ${Math.max(0, amount).toFixed(0)}`;
 }
 
+// [V32.0] 新增: 日期格式化 (用於 Excel)
+const formatDate = (isoString) => {
+    if (!isoString) return '';
+    try {
+        return new Date(isoString).toLocaleString('zh-Hant', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return isoString; // 格式化失敗時返回原字串
+    }
+};
+
+
 /**
- * [V27.0 新增] 數字滾動動畫函數
- * @param {HTMLElement} element - 要更新的 DOM 元素
- * @param {number} start - 開始數字
- * @param {number} end - 結束數字
- * @param {number} duration - 動畫時間 (毫秒)
- * @param {boolean} isCurrency - 是否加上 "NT$"
- * @param {boolean} isDecimal - 是否保留一位小數
+ * [V27.0] 數字滾動動畫函數
  */
 function animateValue(element, start, end, duration, isCurrency = false, isDecimal = false) {
     let startTimestamp = null;
     const step = (timestamp) => {
         if (!startTimestamp) startTimestamp = timestamp;
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        
         let currentValue = progress * (end - start) + start;
-        
-        // 根據類型格式化
         if (isCurrency) {
             if (isDecimal) {
                 element.textContent = `NT$ ${currentValue.toFixed(1)}`;
@@ -45,14 +54,11 @@ function animateValue(element, start, end, duration, isCurrency = false, isDecim
                 element.textContent = `NT$ ${Math.floor(currentValue)}`;
             }
         } else {
-            // 用於訂單數 (整數)
             element.textContent = Math.floor(currentValue);
         }
-
         if (progress < 1) {
             window.requestAnimationFrame(step);
         } else {
-            // 確保動畫結束時顯示最終的精確值
              if (isCurrency) {
                 if (isDecimal) {
                     element.textContent = `NT$ ${end.toFixed(1)}`;
@@ -69,7 +75,7 @@ function animateValue(element, start, end, duration, isCurrency = false, isDecim
 
 
 // ====================================================================
-// 3. [V26.0] DOM 元素參照
+// 3. [V32.0 修改] DOM 元素參照
 // ====================================================================
 const backToPosBtn = document.getElementById('back-to-pos-btn');
 const navLinks = document.querySelectorAll('.backend-nav li');
@@ -80,6 +86,7 @@ const productModal = document.getElementById('product-modal');
 const productForm = document.getElementById('product-form');
 const addProductBtn = document.getElementById('add-product-btn');
 const productFormErrorMessage = document.getElementById('product-form-error-message');
+const exportProductsBtn = document.getElementById('export-products-btn'); // [V32.0] 新增
 let currentProductList = []; 
 // 員工
 const employeeTableBody = document.getElementById('employee-list-tbody');
@@ -90,6 +97,7 @@ const employeeModalTitle = document.getElementById('employee-modal-title');
 const employeeFormErrorMessage = document.getElementById('employee-form-error-message');
 // 訂單
 const orderListTableBody = document.getElementById('order-list-tbody');
+const exportOrdersBtn = document.getElementById('export-orders-btn'); // [V32.0] 新增
 let allOrders = []; 
 const filterSequenceNumber = document.getElementById('filter-sequence-number');
 const filterSearchBtn = document.getElementById('filter-search-btn');
@@ -111,7 +119,7 @@ const dashboardTotalProfit = document.getElementById('dashboard-total-profit');
 // [V21.0] 報表 (內容)
 const topProductsTableBody = document.getElementById('top-products-tbody');
 const employeeSalesTableBody = document.getElementById('employee-sales-tbody');
-// [V26.0] 恢復 V22 的 Tabs DOM 參照
+// [V26.0] 報表 (分頁按鈕)
 const reportSubNavButtons = document.querySelectorAll('.report-sub-nav button');
 const reportContentSections = document.querySelectorAll('.report-content');
 // [V23.0] 庫存盤點
@@ -127,7 +135,7 @@ async function loadProducts() {
     try {
         const { data, error } = await db.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }); 
         if (error) throw error;
-        currentProductList = JSON.parse(JSON.stringify(data));
+        currentProductList = JSON.parse(JSON.stringify(data)); // [V32.0] 確保 currentProductList 是最新的
         renderProductTable(data); 
     } catch (err) {
         console.error("載入商品時發生錯誤:", err);
@@ -272,7 +280,7 @@ async function handleToggleEmployeeActive(id, newActiveState) {
 }
 async function handleEmployeeDelete(id) { 
     if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的員工嗎？\n\n警告：此操作無法復原。\n如果該員工已有訂單紀錄，請改用「停用」功能。`)) { return; } 
-    try { const { error } = await db.from('employees').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失败：該員工已有歷史訂單紀錄，無法永久刪除。\n\n提示：請使用「停用」功能來取代。`); } else { throw error; } } else { console.log(`員工 ${id} 刪除成功`); await loadEmployees(); } } catch (err) { console.error("刪除員工時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
+    try { const { error } = await db.from('employees').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失敗：該員工已有歷史訂單紀錄，無法永久刪除。\n\n提示：請使用「停用」功能來取代。`); } else { throw error; } } else { console.log(`員工 ${id} 刪除成功`); await loadEmployees(); } } catch (err) { console.error("刪除員工時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
 }
 async function handleEmployeeTableClick(e) { 
     const target = e.target.closest('button'); if (!target) return; const id = target.dataset.id; if (!id) return; if (target.classList.contains('edit-employee-btn')) { const { data, error } = await db.from('employees').select('*').eq('id', id).single(); if (error) { alert(`查詢員工資料失敗: ${error.message}`); return; } showEmployeeModal(data); } if (target.classList.contains('deactivate-employee-btn')) { await handleToggleEmployeeActive(id, false); } if (target.classList.contains('activate-employee-btn')) { await handleToggleEmployeeActive(id, true); } if (target.classList.contains('delete-employee-btn')) { await handleEmployeeDelete(id); }
@@ -287,7 +295,7 @@ async function loadAllOrdersForSequence() {
     try {
         const { data, error } = await db.from('orders').select(`id, sales_date, total_amount, employees ( employee_name )`).order('id', { ascending: false }); 
         if (error) throw error;
-        allOrders = data; 
+        allOrders = data; // [V32.0] 確保 allOrders 是最新的
         renderOrderTable(allOrders); 
     } catch (err) {
         console.error("載入所有訂單時發生錯誤:", err);
@@ -307,7 +315,7 @@ function renderOrderTable(ordersToRender) {
         const originalIndex = allOrders.findIndex(o => o.id === order.id);
         const sequenceNumber = totalOrders - originalIndex; 
         const empName = order.employees ? order.employees.employee_name : 'N/A';
-        const salesTime = new Date(order.sales_date).toLocaleString('zh-Hant', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const salesTime = formatDate(order.sales_date); // [V32.0] 使用新函數
         const row = document.createElement('tr');
         row.className = 'order-row';
         row.dataset.id = order.id; 
@@ -335,7 +343,7 @@ function renderOrderTable(ordersToRender) {
                     </div>
                     <div class="table-container modal-table-container">
                         <table id="order-details-table">
-                            <thead> <tr> <th>商品名稱</th> <th>售價</th> <th>数量</th> <th>小計</th> </tr> </thead>
+                            <thead> <tr> <th>商品名稱</th> <th>售價</th> <th>數量</th> <th>小計</th> </tr> </thead>
                             <tbody id="order-details-tbody-${order.id}">
                                 <tr><td colspan="4" class="loading-message">載入明細中...</td></tr>
                             </tbody>
@@ -551,14 +559,9 @@ async function handleDiscountTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  [V27.0 修改] 區塊 8: 報表分析功能
+//  [V27.0] 區塊 8: 報表分析功能
 // -----------------------------------------------------------
-
-/**
- * [V27.0 修改] 載入並顯示總覽 (Dashboard) 數據
- */
 async function loadDashboardData() {
-    // [V27.0] 先將文字設為 "計算中..."
     dashboardTotalSales.textContent = '計算中...';
     dashboardTotalOrders.textContent = '計算中...';
     dashboardAvgOrderValue.textContent = '計算中...';
@@ -566,12 +569,10 @@ async function loadDashboardData() {
     dashboardTotalProfit.textContent = '計算中...';
 
     try {
-        // 1. 設定本日的開始與結束時間
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
         const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
 
-        // 2. 查詢本日 "訂單 (orders)"
         const { data: orders, error: ordersError } = await db.from('orders')
             .select('id, total_amount')
             .gte('sales_date', todayStart)
@@ -579,12 +580,10 @@ async function loadDashboardData() {
         
         if (ordersError) throw ordersError;
 
-        // 3. 計算總覽數據
         const totalOrders = orders.length;
         const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0);
         const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-        // 4. 查詢本日 "訂單明細 (order_items)" 以計算成本
         const orderIds = orders.map(o => o.id);
         let totalCost = 0;
         
@@ -595,21 +594,18 @@ async function loadDashboardData() {
 
             if (itemsError) throw itemsError;
 
-            // 5. 計算總成本
             totalCost = items.reduce((sum, item) => {
                 const cost = (item.products && item.products.cost) ? item.products.cost : 0;
                 return sum + (cost * item.quantity);
             }, 0);
         }
 
-        // 6. 計算毛利
         const totalProfit = totalSales - totalCost;
 
-        // 7. [V27.0] 更新 UI (呼叫動畫)
-        const animDuration = 1000; // 動畫時間 1 秒
+        const animDuration = 1000; 
         animateValue(dashboardTotalSales, 0, totalSales, animDuration, true, false);
         animateValue(dashboardTotalOrders, 0, totalOrders, animDuration, false, false);
-        animateValue(dashboardAvgOrderValue, 0, avgOrderValue, animDuration, true, true); // 允許小數
+        animateValue(dashboardAvgOrderValue, 0, avgOrderValue, animDuration, true, true); 
         animateValue(dashboardTotalCost, 0, totalCost, animDuration, true, false);
         animateValue(dashboardTotalProfit, 0, totalProfit, animDuration, true, false);
 
@@ -622,7 +618,6 @@ async function loadDashboardData() {
         dashboardTotalProfit.textContent = 'N/A';
     }
 }
-
 async function loadTopSellingProducts() {
     topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入熱銷排行中...</td></tr>';
     try {
@@ -686,18 +681,15 @@ function renderEmployeeSalesTable(stats) {
 // -----------------------------------------------------------
 //  [V23.1] 區塊 9: 庫存盤點功能
 // -----------------------------------------------------------
-
 async function loadStocktakeList() {
     if (!stocktakeListTbody) return;
     stocktakeListTbody.innerHTML = '<tr><td colspan="6" class="loading-message">載入商品資料中...</td></tr>';
-    
     try {
         const { data, error } = await db
             .from('products')
             .select('id, name, category, stock')
             .order('category', { ascending: true })
             .order('name', { ascending: true });
-            
         if (error) throw error;
         renderStocktakeTable(data);
     } catch (err) {
@@ -710,12 +702,10 @@ function renderStocktakeTable(products) {
         stocktakeListTbody.innerHTML = '<tr><td colspan="6" class="loading-message">沒有商品可供盤點。</td></tr>';
         return;
     }
-
     stocktakeListTbody.innerHTML = '';
     products.forEach(product => {
         const row = document.createElement('tr');
         row.dataset.productId = product.id; 
-
         row.innerHTML = `
             <td>${product.id}</td>
             <td>${product.name}</td>
@@ -732,25 +722,19 @@ function renderStocktakeTable(products) {
 function handleStocktakeInputChange(e) {
     const target = e.target;
     if (!target.classList.contains('stocktake-input')) return;
-
     const row = target.closest('tr');
     if (!row) return;
-
     const dbStockEl = row.querySelector('.db-stock');
     const diffEl = row.querySelector('.stock-diff');
-    
     const dbStock = parseInt(dbStockEl.textContent, 10);
     const actualStock = parseInt(target.value, 10);
-
     if (isNaN(dbStock) || isNaN(actualStock) || actualStock < 0) {
         diffEl.textContent = 'N/A';
         diffEl.className = 'stock-diff';
         if (actualStock < 0) target.value = 0; // 防止負數
         return;
     }
-
     const diff = actualStock - dbStock;
-
     diffEl.textContent = diff;
     diffEl.className = 'stock-diff'; // Reset
     if (diff > 0) {
@@ -766,17 +750,13 @@ async function handleUpdateAllStock() {
     if (!confirm("您確定要使用目前輸入的「實際盤點數量」覆蓋所有商品庫存嗎？\n\n【警告】此操作無法復原。")) {
         return;
     }
-
     updateAllStockBtn.disabled = true;
     updateAllStockBtn.textContent = '更新中...';
-
     const payload = [];
     const rows = stocktakeListTbody.querySelectorAll('tr');
-
     rows.forEach(row => {
         const id = row.dataset.productId;
         const input = row.querySelector('.stocktake-input');
-        
         if (id && input) {
             const new_stock = parseInt(input.value, 10);
             if (!isNaN(new_stock) && new_stock >= 0) {
@@ -789,22 +769,17 @@ async function handleUpdateAllStock() {
             }
         }
     });
-
     if (payload.length === 0) {
         alert("沒有有效的庫存資料可更新。");
         updateAllStockBtn.disabled = false;
         updateAllStockBtn.textContent = '✔ 一鍵更新庫存';
         return;
     }
-
     try {
         const { error } = await db.rpc('bulk_update_stock', { updates: payload });
-        
         if (error) throw error;
-
         alert(`成功更新 ${payload.length} 項商品的庫存！`);
         await loadStocktakeList(); 
-
     } catch (err) {
         console.error("批次更新庫存時發生錯誤:", err);
         alert(`更新失敗: ${err.message}`);
@@ -816,9 +791,86 @@ async function handleUpdateAllStock() {
 
 
 // -----------------------------------------------------------
-//  [V26.0] 區塊 10: 事件監聽器
+//  [V32.0 新增] 區塊 10: 匯出功能
 // -----------------------------------------------------------
 
+/**
+ * [V32.0] 匯出商品列表到 Excel
+ */
+function handleExportProducts() {
+    if (typeof XLSX === 'undefined') {
+        alert("錯誤：Excel 匯出函式庫 (SheetJS) 尚未載入。");
+        return;
+    }
+    if (currentProductList.length === 0) {
+        alert("沒有商品資料可匯出。");
+        return;
+    }
+
+    // 1. 格式化資料 (使其符合人類閱讀)
+    const dataToExport = currentProductList.map(p => ({
+        '商品ID': p.id,
+        '名稱': p.name,
+        '分類': p.category,
+        '售價': p.price,
+        '成本': p.cost ?? 0,
+        '庫存 (浮動)': p.stock,
+        '正常庫存 (固定)': p.par_stock ?? 0,
+        '預警門檻': p.warning_threshold ?? 'N/A',
+        '狀態': p.is_active ? '上架中' : '已下架',
+        '排序值': p.sort_order
+    }));
+
+    // 2. 建立工作表 (Worksheet)
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    // 3. 建立工作簿 (Workbook)
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "商品列表");
+
+    // 4. 下載檔案
+    XLSX.writeFile(wb, "商品列表.xlsx");
+}
+
+/**
+ * [V32.0] 匯出訂單列表到 Excel
+ */
+function handleExportOrders() {
+    if (typeof XLSX === 'undefined') {
+        alert("錯誤：Excel 匯出函式庫 (SheetJS) 尚未載入。");
+        return;
+    }
+    if (allOrders.length === 0) {
+        alert("沒有訂單資料可匯出。");
+        return;
+    }
+
+    const totalOrders = allOrders.length; 
+
+    // 1. 格式化資料
+    const dataToExport = allOrders.map((order, index) => ({
+        '第幾筆': totalOrders - index, // V10.1 的邏輯
+        '訂單ID': order.id,
+        '銷售日期': formatDate(order.sales_date),
+        '經手員工': order.employees ? order.employees.employee_name : 'N/A',
+        '總金額': order.total_amount
+    }));
+
+    // 2. 建立工作表 (Worksheet)
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    // 3. 建立工作簿 (Workbook)
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "訂單列表");
+
+    // 4. 下載檔案
+    XLSX.writeFile(wb, "訂單列表.xlsx");
+}
+
+
+// -----------------------------------------------------------
+//  [V26.0] 區塊 11: 報表分頁功能 (原 10)
+// -----------------------------------------------------------
 /**
  * [V26.0] 報表分頁 (Sub-Tabs) 切換邏輯
  */
@@ -840,6 +892,11 @@ function setupReportTabs() {
         });
     });
 }
+
+
+// -----------------------------------------------------------
+//  [V32.0 修改] 區塊 12: 事件監聽器 (原 11)
+// -----------------------------------------------------------
 
 /**
  * [V26.0] 側邊主導航 (Main Nav) 的切換邏輯
@@ -868,12 +925,10 @@ function setupNavigation() {
             } else if (targetId === 'discount-management-section') {
                 loadDiscounts();
             } else if (targetId === 'reports-section') {
-                // [V26.0] 載入所有報表數據
                 loadDashboardData();
                 loadTopSellingProducts();
                 loadEmployeeSalesStats(); 
                 
-                // [V26.0] 恢復 V22 的 Tabs 重置邏輯
                 if (reportSubNavButtons.length > 0 && reportContentSections.length > 0) {
                     reportSubNavButtons.forEach(btn => {
                         btn.classList.toggle('active', btn.dataset.target === 'report-top-products');
@@ -892,7 +947,7 @@ function setupNavigation() {
 // 頁面載入完成後
 document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
-    setupReportTabs(); // [V26.0] 恢復 V22 的 Tabs 啟用
+    setupReportTabs(); 
     loadProducts(); // 預設載入商品
 
     backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
@@ -956,5 +1011,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // [V23.1] 庫存盤點: 綁定更新按鈕
     if (updateAllStockBtn) {
         updateAllStockBtn.addEventListener('click', handleUpdateAllStock);
+    }
+
+    // [V32.0] 匯出按鈕
+    if (exportProductsBtn) {
+        exportProductsBtn.addEventListener('click', handleExportProducts);
+    }
+    if (exportOrdersBtn) {
+        exportOrdersBtn.addEventListener('click', handleExportOrders);
     }
 });
