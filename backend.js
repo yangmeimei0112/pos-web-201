@@ -1,8 +1,7 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V32.0 - 實作匯出 Excel 功能)
-   - [新增] DOM 參照: 匯出按鈕
-   - [新增] 區塊 10: 匯出功能 (handleExportProducts, handleExportOrders)
-   - [修改] 區塊 11: DOMContentLoaded (綁定匯出按鈕點擊事件)
+   後台管理 (Backend) 邏輯 (V33.1 - 修正 V32.0 的 updateClock 錯誤)
+   - [修正] 區塊 12: 移除 DOMContentLoaded 中的 updateClock() 呼叫
+   - [保留] V33.0: 新增員工值班時段
    ==================================================================== */
 
 // ====================================================================
@@ -33,7 +32,7 @@ const formatDate = (isoString) => {
             minute: '2-digit'
         });
     } catch (e) {
-        return isoString; // 格式化失敗時返回原字串
+        return isoString; 
     }
 };
 
@@ -75,7 +74,7 @@ function animateValue(element, start, end, duration, isCurrency = false, isDecim
 
 
 // ====================================================================
-// 3. [V32.0 修改] DOM 元素參照
+// 3. [V32.0] DOM 元素參照
 // ====================================================================
 const backToPosBtn = document.getElementById('back-to-pos-btn');
 const navLinks = document.querySelectorAll('.backend-nav li');
@@ -86,7 +85,7 @@ const productModal = document.getElementById('product-modal');
 const productForm = document.getElementById('product-form');
 const addProductBtn = document.getElementById('add-product-btn');
 const productFormErrorMessage = document.getElementById('product-form-error-message');
-const exportProductsBtn = document.getElementById('export-products-btn'); // [V32.0] 新增
+const exportProductsBtn = document.getElementById('export-products-btn'); 
 let currentProductList = []; 
 // 員工
 const employeeTableBody = document.getElementById('employee-list-tbody');
@@ -97,7 +96,7 @@ const employeeModalTitle = document.getElementById('employee-modal-title');
 const employeeFormErrorMessage = document.getElementById('employee-form-error-message');
 // 訂單
 const orderListTableBody = document.getElementById('order-list-tbody');
-const exportOrdersBtn = document.getElementById('export-orders-btn'); // [V32.0] 新增
+const exportOrdersBtn = document.getElementById('export-orders-btn'); 
 let allOrders = []; 
 const filterSequenceNumber = document.getElementById('filter-sequence-number');
 const filterSearchBtn = document.getElementById('filter-search-btn');
@@ -135,7 +134,7 @@ async function loadProducts() {
     try {
         const { data, error } = await db.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }); 
         if (error) throw error;
-        currentProductList = JSON.parse(JSON.stringify(data)); // [V32.0] 確保 currentProductList 是最新的
+        currentProductList = JSON.parse(JSON.stringify(data)); 
         renderProductTable(data); 
     } catch (err) {
         console.error("載入商品時發生錯誤:", err);
@@ -257,22 +256,111 @@ async function handleProductTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  區塊 5: 員工管理功能 (CRUD)
+//  [V33.0 修改] 區塊 5: 員工管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadEmployees() { 
-    employeeTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入員工資料中...</td></tr>';
-    try { const { data, error } = await db.from('employees').select('*').order('id', { ascending: true }); if (error) throw error; renderEmployeeTable(data); } catch (err) { console.error("載入員工時發生錯誤:", err); employeeTableBody.innerHTML = `<tr><td colspan="5" class="loading-message error">資料載入失败: ${err.message}</td></tr>`; }
+    // [V33.0] 修改 colspan
+    employeeTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">載入員工資料中...</td></tr>';
+    try { 
+        const { data, error } = await db.from('employees').select('*').order('id', { ascending: true }); 
+        if (error) throw error; 
+        renderEmployeeTable(data); 
+    } catch (err) { 
+        console.error("載入員工時發生錯誤:", err); 
+        employeeTableBody.innerHTML = `<tr><td colspan="6" class="loading-message error">資料載入失败: ${err.message}</td></tr>`; 
+    }
 }
 function renderEmployeeTable(employees) { 
-    if (!employees || employees.length === 0) { employeeTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">目前沒有任何員工資料。</td></tr>'; return; } employeeTableBody.innerHTML = ''; employees.forEach(emp => { const row = document.createElement('tr'); const statusText = emp.is_active ? '<span class="status-active">✔ 在職中</span>' : '<span class="status-inactive">✘ 已停用</span>'; const toggleActiveButton = emp.is_active ? `<button class="btn-secondary deactivate-employee-btn" data-id="${emp.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">停用</button>` : `<button class="btn-primary activate-employee-btn" data-id="${emp.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">啟用</button>`; row.innerHTML = ` <td>${emp.id}</td><td>${emp.employee_name}</td><td>${emp.employee_code}</td><td>${statusText}</td><td> <button class="btn-secondary edit-employee-btn" data-id="${emp.id}">編輯</button> ${toggleActiveButton} <button class="btn-danger delete-employee-btn" data-id="${emp.id}">刪除</button> </td> `; employeeTableBody.appendChild(row); });
+    if (!employees || employees.length === 0) { 
+        // [V33.0] 修改 colspan
+        employeeTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">目前沒有任何員工資料。</td></tr>'; 
+        return; 
+    } 
+    employeeTableBody.innerHTML = ''; 
+    employees.forEach(emp => { 
+        const row = document.createElement('tr'); 
+        const statusText = emp.is_active ? '<span class="status-active">✔ 在職中</span>' : '<span class="status-inactive">✘ 已停用</span>'; 
+        const toggleActiveButton = emp.is_active 
+            ? `<button class="btn-secondary deactivate-employee-btn" data-id="${emp.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">停用</button>` 
+            : `<button class="btn-primary activate-employee-btn" data-id="${emp.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">啟用</button>`; 
+        
+        // [V33.0] 新增 <td> (shift_preference)
+        row.innerHTML = ` 
+            <td>${emp.id}</td>
+            <td>${emp.employee_name}</td>
+            <td>${emp.employee_code}</td>
+            <td>${emp.shift_preference || ''}</td>
+            <td>${statusText}</td>
+            <td> 
+                <button class="btn-secondary edit-employee-btn" data-id="${emp.id}">編輯</button> 
+                ${toggleActiveButton} 
+                <button class="btn-danger delete-employee-btn" data-id="${emp.id}">刪除</button> 
+            </td> 
+        `; 
+        employeeTableBody.appendChild(row); 
+    });
 }
 function showEmployeeModal(employee = null) { 
-    employeeFormErrorMessage.textContent = ''; employeeForm.reset(); if (employee) { employeeModalTitle.textContent = '編輯員工'; document.getElementById('employee-id').value = employee.id; document.getElementById('employee-name').value = employee.employee_name; document.getElementById('employee-code').value = employee.employee_code; document.getElementById('employee-is-active').checked = employee.is_active; } else { employeeModalTitle.textContent = '新增員工'; document.getElementById('employee-id').value = ''; document.getElementById('employee-is-active').checked = true; } employeeModal.classList.add('active');
+    employeeFormErrorMessage.textContent = ''; 
+    employeeForm.reset(); 
+    if (employee) { 
+        // 編輯
+        employeeModalTitle.textContent = '編輯員工'; 
+        document.getElementById('employee-id').value = employee.id; 
+        document.getElementById('employee-name').value = employee.employee_name; 
+        document.getElementById('employee-code').value = employee.employee_code; 
+        document.getElementById('employee-is-active').checked = employee.is_active;
+        // [V33.0] 新增
+        document.getElementById('employee-shift').value = employee.shift_preference || '';
+    } else { 
+        // 新增
+        employeeModalTitle.textContent = '新增員工'; 
+        document.getElementById('employee-id').value = ''; 
+        document.getElementById('employee-is-active').checked = true; 
+        // [V33.0] 新增
+        document.getElementById('employee-shift').value = '';
+    } 
+    employeeModal.classList.add('active');
 }
 function hideEmployeeModal() { employeeModal.classList.remove('active'); employeeForm.reset(); }
 async function handleEmployeeFormSubmit(e) { 
-    e.preventDefault(); employeeFormErrorMessage.textContent = ''; const saveBtn = document.getElementById('save-employee-btn'); saveBtn.disabled = true; saveBtn.textContent = '儲存中...'; const formData = new FormData(employeeForm); const employeeData = Object.fromEntries(formData.entries()); const employeeId = employeeData.id; employeeData.is_active = document.getElementById('employee-is-active').checked; 
-    try { let response; if (employeeId) { const { id, ...updateData } = employeeData; response = await db.from('employees').update(updateData).eq('id', employeeId).select(); } else { delete employeeData.id; response = await db.from('employees').insert([employeeData]).select(); } const { data, error } = response; if (error) { throw error; } console.log('員工儲存成功:', data); hideEmployeeModal(); await loadEmployees(); } catch (err) { console.error("儲存員工時發生錯誤:", err); employeeFormErrorMessage.textContent = `儲存失敗: ${err.message}`; } finally { saveBtn.disabled = false; saveBtn.textContent = '儲存'; }
+    e.preventDefault(); 
+    employeeFormErrorMessage.textContent = ''; 
+    const saveBtn = document.getElementById('save-employee-btn'); 
+    saveBtn.disabled = true; 
+    saveBtn.textContent = '儲存中...'; 
+    
+    const formData = new FormData(employeeForm); 
+    const employeeData = Object.fromEntries(formData.entries()); 
+    const employeeId = employeeData.id; 
+    employeeData.is_active = document.getElementById('employee-is-active').checked; 
+    
+    // [V33.0] 新增: 處理 shift_preference (空字串存為 null)
+    if (employeeData.shift_preference !== undefined) {
+        employeeData.shift_preference = employeeData.shift_preference.trim() || null;
+    }
+
+    try { 
+        let response; 
+        if (employeeId) { 
+            const { id, ...updateData } = employeeData; 
+            response = await db.from('employees').update(updateData).eq('id', employeeId).select(); 
+        } else { 
+            delete employeeData.id; 
+            response = await db.from('employees').insert([employeeData]).select(); 
+        } 
+        const { data, error } = response; 
+        if (error) { throw error; } 
+        console.log('員工儲存成功:', data); 
+        hideEmployeeModal(); 
+        await loadEmployees(); 
+    } catch (err) { 
+        console.error("儲存員工時發生錯誤:", err); 
+        employeeFormErrorMessage.textContent = `儲存失敗: ${err.message}`; 
+    } finally { 
+        saveBtn.disabled = false; 
+        saveBtn.textContent = '儲存'; 
+    }
 }
 async function handleToggleEmployeeActive(id, newActiveState) { 
     const actionText = newActiveState ? '啟用' : '停用'; if (!confirm(`您確定要 ${actionText} ID 為 ${id} 的員工嗎？\n(這將影響他們能否登入前台)`)) { return; } 
@@ -295,7 +383,7 @@ async function loadAllOrdersForSequence() {
     try {
         const { data, error } = await db.from('orders').select(`id, sales_date, total_amount, employees ( employee_name )`).order('id', { ascending: false }); 
         if (error) throw error;
-        allOrders = data; // [V32.0] 確保 allOrders 是最新的
+        allOrders = data; 
         renderOrderTable(allOrders); 
     } catch (err) {
         console.error("載入所有訂單時發生錯誤:", err);
@@ -315,7 +403,7 @@ function renderOrderTable(ordersToRender) {
         const originalIndex = allOrders.findIndex(o => o.id === order.id);
         const sequenceNumber = totalOrders - originalIndex; 
         const empName = order.employees ? order.employees.employee_name : 'N/A';
-        const salesTime = formatDate(order.sales_date); // [V32.0] 使用新函數
+        const salesTime = formatDate(order.sales_date); 
         const row = document.createElement('tr');
         row.className = 'order-row';
         row.dataset.id = order.id; 
@@ -389,7 +477,7 @@ async function handleOrderTableClick(e) {
 }
 async function handleDeleteOrder(id) { 
     if (!confirm(`您確定要「永久刪除」訂單 ID ${id} 嗎？\n\n警告：此操作無法復原，將一併刪除所有相關明細。`)) { return; } 
-    try { const { data, error } = await db.rpc('delete_order_and_items', { order_id_to_delete: id }); if (error) throw error; console.log(data); alert(`訂單 ${id} 已刪除。`); await loadAllOrdersForSequence(); } catch (err) { console.error("刪除單筆訂單時發生錯誤:", err); alert(`刪除失敗: ${err.message}`); }
+    try { const { data, error } = await db.rpc('delete_order_and_items', { order_id_to_delete: id }); if (error) throw error; console.log(data); alert(`訂單 ${id} 已刪除。`); await loadAllOrdersForSequence(); } catch (err) { console.error("刪除單筆訂單時發生錯誤:", err); alert(`刪除失败: ${err.message}`); }
 }
 async function handleDeleteAllOrders() { 
     if (!confirm("【極度危險】\n您確定要刪除「所有」訂單紀錄嗎？\n此操作將清空訂單和明細表。")) { return; } if (!confirm("【最終確認】\n此操作無法復原，所有銷售資料將被清除。是否繼續？")) { return; } 
@@ -791,12 +879,8 @@ async function handleUpdateAllStock() {
 
 
 // -----------------------------------------------------------
-//  [V32.0 新增] 區塊 10: 匯出功能
+//  [V32.0] 區塊 10: 匯出功能
 // -----------------------------------------------------------
-
-/**
- * [V32.0] 匯出商品列表到 Excel
- */
 function handleExportProducts() {
     if (typeof XLSX === 'undefined') {
         alert("錯誤：Excel 匯出函式庫 (SheetJS) 尚未載入。");
@@ -806,8 +890,6 @@ function handleExportProducts() {
         alert("沒有商品資料可匯出。");
         return;
     }
-
-    // 1. 格式化資料 (使其符合人類閱讀)
     const dataToExport = currentProductList.map(p => ({
         '商品ID': p.id,
         '名稱': p.name,
@@ -820,21 +902,11 @@ function handleExportProducts() {
         '狀態': p.is_active ? '上架中' : '已下架',
         '排序值': p.sort_order
     }));
-
-    // 2. 建立工作表 (Worksheet)
     const ws = XLSX.utils.json_to_sheet(dataToExport);
-
-    // 3. 建立工作簿 (Workbook)
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "商品列表");
-
-    // 4. 下載檔案
     XLSX.writeFile(wb, "商品列表.xlsx");
 }
-
-/**
- * [V32.0] 匯出訂單列表到 Excel
- */
 function handleExportOrders() {
     if (typeof XLSX === 'undefined') {
         alert("錯誤：Excel 匯出函式庫 (SheetJS) 尚未載入。");
@@ -844,46 +916,32 @@ function handleExportOrders() {
         alert("沒有訂單資料可匯出。");
         return;
     }
-
     const totalOrders = allOrders.length; 
-
-    // 1. 格式化資料
     const dataToExport = allOrders.map((order, index) => ({
-        '第幾筆': totalOrders - index, // V10.1 的邏輯
+        '第幾筆': totalOrders - index,
         '訂單ID': order.id,
         '銷售日期': formatDate(order.sales_date),
         '經手員工': order.employees ? order.employees.employee_name : 'N/A',
         '總金額': order.total_amount
     }));
-
-    // 2. 建立工作表 (Worksheet)
     const ws = XLSX.utils.json_to_sheet(dataToExport);
-
-    // 3. 建立工作簿 (Workbook)
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "訂單列表");
-
-    // 4. 下載檔案
     XLSX.writeFile(wb, "訂單列表.xlsx");
 }
 
 
 // -----------------------------------------------------------
-//  [V26.0] 區塊 11: 報表分頁功能 (原 10)
+//  [V26.0] 區塊 11: 報表分頁功能
 // -----------------------------------------------------------
-/**
- * [V26.0] 報表分頁 (Sub-Tabs) 切換邏輯
- */
 function setupReportTabs() {
     if (!reportSubNavButtons.length) return; // 防呆
     reportSubNavButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetId = button.dataset.target;
             if (!targetId) return;
-
             reportSubNavButtons.forEach(btn => btn.classList.remove('active'));
             reportContentSections.forEach(sec => sec.classList.remove('active'));
-
             button.classList.add('active');
             const targetContent = document.getElementById(targetId);
             if (targetContent) {
@@ -895,7 +953,7 @@ function setupReportTabs() {
 
 
 // -----------------------------------------------------------
-//  [V32.0 修改] 區塊 12: 事件監聽器 (原 11)
+//  [V33.1 修正] 區塊 12: 事件監聽器 (原 11)
 // -----------------------------------------------------------
 
 /**
@@ -915,7 +973,6 @@ function setupNavigation() {
             link.classList.add('active');
             document.getElementById(targetId).classList.add('active');
 
-            // 根據 targetId 載入對應資料
             if (targetId === 'product-management-section') {
                 loadProducts();
             } else if (targetId === 'employee-management-section') {
@@ -949,6 +1006,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
     setupReportTabs(); 
     loadProducts(); // 預設載入商品
+
+    // [V33.1] 移除錯誤的 updateClock() 呼叫
 
     backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
 

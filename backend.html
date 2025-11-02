@@ -79,12 +79,12 @@
                                 <th>員工ID</th>
                                 <th>姓名</th>
                                 <th>代碼/座號</th>
-                                <th>狀態</th>
+                                <th>值班時段 (備註)</th> <th>狀態</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="employee-list-tbody">
-                            <td colspan="5" class="loading-message">載入員工資料中...</td>
+                            <td colspan="6" class="loading-message">載入員工資料中...</td>
                         </tbody>
                     </table>
                 </div>
@@ -155,7 +155,7 @@
             <section id="reports-section" class="management-section">
                 <div class="content-header">
                     <h1>報表分析</h1>
-                    </div>
+                </div>
                 
                 <h2>營運總覽 (本日)</h2>
                 <div class="dashboard-stats-grid">
@@ -298,11 +298,19 @@
             <h1 id="employee-modal-title">新增員工</h1>
             <form id="employee-form">
                 <input type="hidden" id="employee-id" name="id">
-                <div class="form-grid form-grid-small">
+                
+                <div class="form-grid">
                     <div class="form-group"> <label for="employee-name">員工姓名*</label> <input type="text" id="employee-name" name="employee_name" required> </div>
                     <div class="form-group"> <label for="employee-code">代碼/座號*</label> <input type="text" id="employee-code" name="employee_code" required> </div>
+                    
+                    <div class="form-group">
+                        <label for="employee-shift">值班時段 (備註)</label>
+                        <input type="text" id="employee-shift" name="shift_preference" placeholder="例如: 早班、假日班">
+                    </div>
+
                     <div class="form-group form-group-checkbox"> <input type="checkbox" id="employee-is-active" name="is_active" checked> <label for="employee-is-active">保持在職狀態</label> </div>
                 </div>
+                
                 <div class="form-actions"> <button type="button" class="btn-secondary cancel-btn">取消</button> <button type="submit" id="save-employee-btn" class="btn-primary">儲存</button> </div>
                 <div id="employee-form-error-message" class="error-message"></div>
             </form>
