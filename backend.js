@@ -1,9 +1,10 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V39.1 - 恢復 CUD 手動刷新)
-   - [V39.1] 恢復 V35.0 的邏輯：在 CUD (Create, Update, Delete) 操作成功後，
-             立刻呼叫 load...() 函數，提供即時 UI 反饋。
-   - [V39.1] 保留 V37.7 的全局 Realtime，用於處理 "外部" (如 POS 機) 的資料變更。
-   - [V39.1] 保留 V39.0 的報表 RPC 優化 和 10 秒刷新。
+   後台管理 (Backend) 邏輯 (V41.3 - 修正折扣明細顯示)
+   - [V41.3] 修正 loadOrderDetails()：
+   - 移除 V41.1 的 "product_id IS NULL" 判斷 (因為 RPC 已修正)
+   - 改為分別查詢 "order_items" 和 "order_discounts"
+   - 將兩者合併顯示在明細表中
+   - (保留 V41.1 的折扣管理介面)
    ==================================================================== */
 
 // ====================================================================
@@ -16,10 +17,11 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 console.log("Supabase (後台) 初始化成功", db);
 const formatCurrency = (amount) => {
     if (amount === null || isNaN(amount)) return 'N/A';
+    // [V41.1] 允許顯示負數 (折扣金額)
     if (String(amount).includes('.')) {
-        return `NT$ ${Math.max(0, amount).toFixed(1)}`;
+        return `NT$ ${parseFloat(amount).toFixed(1)}`;
     }
-    return `NT$ ${Math.max(0, amount).toFixed(0)}`;
+    return `NT$ ${parseFloat(amount).toFixed(0)}`;
 }
 
 // [V32.0] 新增: 日期格式化 (用於 Excel)
@@ -148,26 +150,34 @@ let autoRefreshInterval = null;
 // -----------------------------------------------------------
 //  [V34.0] 區塊 4: 商品管理功能 (CRUD)
 // -----------------------------------------------------------
-async function loadProducts() { 
-    // [V37.6] 檢查是否在該頁面，不在則不刷新 (Realtime 呼叫時)
-    const activeSection = document.querySelector('.management-section.active');
-    if (!activeSection || activeSection.id !== 'product-management-section') {
-        console.log("[Realtime] 收到 products 刷新，但目前不在商品頁，跳過。");
-        // [V39.1] 如果是手動呼叫 (不在頁面)，也允許執行
-        // (此檢查僅適用於 Realtime)
+async function loadProducts(isRealtimeCall = false) { 
+    // [V37.6] 檢查是否在該頁面 (僅 Realtime 呼叫時)
+    if (isRealtimeCall) {
+        const activeSection = document.querySelector('.management-section.active');
+        if (!activeSection || (activeSection.id !== 'product-management-section' && activeSection.id !== 'stocktake-section')) {
+            console.log("[Realtime] 收到 products 刷新，但目前不在商品頁或盤點頁，跳過。");
+            return;
+        }
     }
 
     try {
         const { data, error } = await db.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }); 
         if (error) throw error;
         
-        // [V39.1] 移除 V37.6 的 Realtime 緩存檢查，恢復 V34.0 的檢查
+        // [V39.1] 恢復 V34.0 的檢查，防止 Realtime 重複渲染
         if (JSON.stringify(currentProductList) === JSON.stringify(data)) {
             return;
         }
         
         currentProductList = JSON.parse(JSON.stringify(data)); 
-        renderProductTable(data); 
+        
+        // [V39.1] 依據所在頁面刷新
+        if (document.getElementById('product-management-section').classList.contains('active')) {
+             renderProductTable(data); 
+        }
+        if (document.getElementById('stocktake-section').classList.contains('active')) {
+            renderStocktakeTable(data); // (使用相同 data 刷新盤點頁)
+        }
     } catch (err) {
         console.error("載入商品時發生錯誤:", err);
         productTableBody.innerHTML = `<tr><td colspan="11" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
@@ -292,12 +302,14 @@ async function handleProductTableClick(e) {
 // -----------------------------------------------------------
 //  [V33.0] 區塊 5: 員工管理功能 (CRUD)
 // -----------------------------------------------------------
-async function loadEmployees() { 
-    // [V37.6] 檢查是否在該頁面，不在則不刷新
-    const activeSection = document.querySelector('.management-section.active');
-    if (!activeSection || activeSection.id !== 'employee-management-section') {
-        console.log("[Realtime] 收到 employees 刷新，但目前不在員工頁，跳過。");
-        // [V39.1] (此檢查僅適用於 Realtime)
+async function loadEmployees(isRealtimeCall = false) { 
+    // [V37.6] 檢查是否在該頁面 (僅 Realtime 呼叫時)
+    if (isRealtimeCall) {
+        const activeSection = document.querySelector('.management-section.active');
+        if (!activeSection || activeSection.id !== 'employee-management-section') {
+            console.log("[Realtime] 收到 employees 刷新，但目前不在員工頁，跳過。");
+            return;
+        }
     }
 
     try { 
@@ -414,19 +426,21 @@ async function handleEmployeeTableClick(e) {
 // -----------------------------------------------------------
 //  [V34.0] 區塊 6: 訂單管理功能
 // -----------------------------------------------------------
-async function loadAllOrdersForSequence() {
-    // [V37.6] 檢查是否在該頁面，不在則不刷新
-    const activeSection = document.querySelector('.management-section.active');
-    if (!activeSection || activeSection.id !== 'orders-section') {
-        console.log("[Realtime] 收到 orders 刷新，但目前不在訂單頁，跳過。");
-        // [V39.1] (此檢查僅適用於 Realtime)
+async function loadAllOrdersForSequence(isRealtimeCall = false) {
+    // [V37.6] 檢查是否在該頁面 (僅 Realtime 呼叫時)
+    if (isRealtimeCall) {
+        const activeSection = document.querySelector('.management-section.active');
+        if (!activeSection || activeSection.id !== 'orders-section') {
+            console.log("[Realtime] 收到 orders 刷新，但目前不在訂單頁，跳過。");
+            return;
+        }
     }
 
     try {
         const { data, error } = await db.from('orders').select(`id, sales_date, total_amount, employees ( employee_name )`).order('id', { ascending: false }); 
         if (error) throw error;
         
-        // [V39.1] 移除 V37.6 的 Realtime 緩存檢查，恢復 V34.0 的檢查
+        // [V39.1] 恢復 V34.0 的檢查，防止 Realtime 重複渲染
         if (JSON.stringify(allOrders) === JSON.stringify(data)) {
             return;
         }
@@ -491,29 +505,68 @@ function renderOrderTable(ordersToRender) {
         orderListTableBody.appendChild(detailRow);
     });
 }
+
+// [V41.3] 重寫 loadOrderDetails
 async function loadOrderDetails(orderId, targetTbody) { 
-    if (!orderId || !targetTbody) return; if (targetTbody.dataset.loaded === 'true') { return; } 
+    if (!orderId || !targetTbody) return; 
+    if (targetTbody.dataset.loaded === 'true') { return; } 
+    
     try { 
-        const { data: items, error } = await db .from('order_items') .select(` quantity, price_at_sale, note, products ( name ) `) .eq('order_id', orderId); 
-        if (error) throw error; 
-        if (!items || items.length === 0) { 
-            targetTbody.innerHTML = '<tr><td colspan="4" class="loading-message">此訂單沒有品項。</td></tr>'; 
-        } else { 
-            targetTbody.innerHTML = ''; 
-            items.forEach(item => { 
-                const row = document.createElement('tr'); 
-                const prodName = item.products ? item.products.name : 'N/A';
-                const noteHtml = item.note ? `<span class="item-note-display-backend">備註: ${item.note}</span>` : '';
-                const subtotal = item.price_at_sale * item.quantity;
-                row.innerHTML = ` 
-                    <td>${prodName}${noteHtml}</td>
-                    <td>${formatCurrency(item.price_at_sale)}</td>
-                    <td>${item.quantity}</td>
-                    <td>${formatCurrency(subtotal)}</td> 
-                `; 
-                targetTbody.appendChild(row); 
-            }); 
-        } 
+        // [V41.3] 1. 查詢所有 "品項"
+        const { data: items, error: itemsError } = await db 
+            .from('order_items') 
+            .select(` quantity, price_at_sale, note, products ( name ) `) 
+            .eq('order_id', orderId)
+            .not('product_id', 'is', null); // 只選 product_id 不是 NULL 的
+            
+        if (itemsError) throw itemsError;
+
+        // [V41.3] 2. 查詢所有 "折扣"
+        const { data: discounts, error: discountsError } = await db
+            .from('order_discounts')
+            .select(` quantity, name_at_sale, amount_at_sale `)
+            .eq('order_id', orderId);
+            
+        if (discountsError) throw discountsError;
+
+        // [V41.3] 3. 渲染
+        targetTbody.innerHTML = ''; 
+        
+        if (items.length === 0 && discounts.length === 0) {
+             targetTbody.innerHTML = '<tr><td colspan="4" class="loading-message">此訂單沒有品項或折扣。</td></tr>'; 
+             return;
+        }
+
+        // 渲染品項
+        items.forEach(item => { 
+            const row = document.createElement('tr'); 
+            const prodName = item.products ? item.products.name : 'N/A';
+            const noteHtml = item.note ? `<span class="item-note-display-backend">備註: ${item.note}</span>` : '';
+            const subtotal = item.price_at_sale * item.quantity;
+            row.innerHTML = ` 
+                <td>${prodName}${noteHtml}</td>
+                <td>${formatCurrency(item.price_at_sale)}</td>
+                <td>${item.quantity}</td>
+                <td>${formatCurrency(subtotal)}</td> 
+            `; 
+            targetTbody.appendChild(row); 
+        }); 
+        
+        // 渲染折扣
+        discounts.forEach(discount => {
+            const row = document.createElement('tr');
+            const subtotal = -(discount.amount_at_sale * discount.quantity);
+            const nameHtml = `<span style="color: #28a745; font-weight: 700;">[折扣] ${discount.name_at_sale}</span>`;
+            
+            row.innerHTML = `
+                <td>${nameHtml}</td>
+                <td>${formatCurrency(-discount.amount_at_sale)}</td>
+                <td>${discount.quantity}</td>
+                <td style="color: #28a745;">${formatCurrency(subtotal)}</td>
+            `;
+            targetTbody.appendChild(row);
+        });
+
         targetTbody.dataset.loaded = 'true'; 
     } catch (err) { 
         console.error("載入訂單明細時發生錯誤:", err); 
@@ -538,14 +591,16 @@ async function handleDeleteAllOrders() {
 
 
 // -----------------------------------------------------------
-//  [V16.1] 區塊 7: 折扣管理功能 (CRUD)
+//  [V41.1 修改] 區塊 7: 折扣管理功能 (CRUD)
 // -----------------------------------------------------------
-async function loadDiscounts() {
-    // [V37.6] 檢查是否在該頁面，不在則不刷新
-    const activeSection = document.querySelector('.management-section.active');
-    if (!activeSection || activeSection.id !== 'discount-management-section') {
-        console.log("[Realtime] 收到 discounts 刷新，但目前不在折扣頁，跳過。");
-        // [V39.1] (此檢查僅適用於 Realtime)
+async function loadDiscounts(isRealtimeCall = false) {
+    // [V37.6] 檢查是否在該頁面 (僅 Realtime 呼叫時)
+    if (isRealtimeCall) {
+        const activeSection = document.querySelector('.management-section.active');
+        if (!activeSection || activeSection.id !== 'discount-management-section') {
+            console.log("[Realtime] 收到 discounts 刷新，但目前不在折扣頁，跳過。");
+            return;
+        }
     }
 
     try {
@@ -557,26 +612,36 @@ async function loadDiscounts() {
         renderDiscountTable(data); 
     } catch (err) {
         console.error("載入折扣時發生錯誤:", err);
-        discountTableBody.innerHTML = `<tr><td colspan="5" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
+        discountTableBody.innerHTML = `<tr><td colspan="6" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`; // [V41.1] colspan 5 -> 6
     }
 }
 function renderDiscountTable(discounts) {
     if (!discounts || discounts.length === 0) {
-        discountTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">目前沒有任何折扣。</td></tr>';
+        discountTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">目前沒有任何折扣。</td></tr>'; // [V41.1] colspan 5 -> 6
         return;
     }
     discountTableBody.innerHTML = ''; 
     discounts.forEach(item => {
         const row = document.createElement('tr');
         const statusText = item.is_active ? '<span class="status-active">✔ 啟用中</span>' : '<span class="status-inactive">✘ 已停用</span>';
+        
+        // [V41.1] 產生適用對象文字
+        let targetText = '全單適用';
+        if (item.target_product_id) {
+            targetText = `單品ID: ${item.target_product_id}`;
+        } else if (item.target_category) {
+            targetText = `分類: ${item.target_category}`;
+        }
+
         const toggleActiveButton = item.is_active
             ? `<button class="btn-secondary deactivate-discount-btn" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">停用</button>`
             : `<button class="btn-primary activate-discount-btn" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">啟用</button>`;
+        
         row.innerHTML = `
             <td>${item.id}</td>
             <td>${item.name}</td>
             <td>${formatCurrency(item.amount)}</td>
-            <td>${statusText}</td>
+            <td>${targetText}</td> <td>${statusText}</td>
             <td>
                 <button class="btn-secondary edit-discount-btn" data-id="${item.id}">編輯</button>
                 ${toggleActiveButton}
@@ -595,10 +660,16 @@ function showDiscountModal(discount = null) {
         document.getElementById('discount-name').value = discount.name;
         document.getElementById('discount-amount').value = discount.amount;
         document.getElementById('discount-is-active').checked = discount.is_active;
+        // [V41.1] 載入新欄位
+        document.getElementById('discount-target-category').value = discount.target_category || '';
+        document.getElementById('discount-target-product-id').value = discount.target_product_id || '';
     } else {
         discountModalTitle.textContent = '新增折扣';
         document.getElementById('discount-id').value = '';
         document.getElementById('discount-is-active').checked = true;
+        // [V41.1] 清空新欄位
+        document.getElementById('discount-target-category').value = '';
+        document.getElementById('discount-target-product-id').value = '';
     }
     discountModal.classList.add('active');
 }
@@ -612,11 +683,19 @@ async function handleDiscountFormSubmit(e) {
     const saveBtn = document.getElementById('save-discount-btn');
     saveBtn.disabled = true;
     saveBtn.textContent = '儲存中...';
+    
     const formData = new FormData(discountForm);
     const discountData = Object.fromEntries(formData.entries());
     const discountId = discountData.id;
+    
     discountData.is_active = document.getElementById('discount-is-active').checked;
     discountData.amount = parseFloat(discountData.amount);
+
+    // [V41.1] 處理新欄位的 null 值
+    // 如果輸入框為空字串，轉為 null 存入資料庫
+    discountData.target_category = discountData.target_category.trim() || null;
+    discountData.target_product_id = parseInt(discountData.target_product_id, 10) || null;
+
     try {
         let response;
         if (discountId) {
@@ -814,12 +893,14 @@ function renderEmployeeSalesTable(stats) {
 // -----------------------------------------------------------
 //  [V23.1] 區塊 9: 庫存盤點功能
 // -----------------------------------------------------------
-async function loadStocktakeList() {
-    // [V37.6] 檢查是否在該頁面，不在則不刷新
-    const activeSection = document.querySelector('.management-section.active');
-    if (!activeSection || activeSection.id !== 'stocktake-section') {
-        console.log("[Realtime] 收到 products 刷新，但目前不在盤點頁，跳過。");
-        // [V39.1] (此檢查僅適用於 Realtime)
+async function loadStocktakeList(isRealtimeCall = false) {
+    // [V37.6] 檢查是否在該頁面 (僅 Realtime 呼叫時)
+    if (isRealtimeCall) {
+        const activeSection = document.querySelector('.management-section.active');
+        if (!activeSection || activeSection.id !== 'stocktake-section') {
+            console.log("[Realtime] 收到 products 刷新，但目前不在盤點頁，跳過。");
+            return;
+        }
     }
 
     if (!stocktakeListTbody) return;
@@ -1047,14 +1128,7 @@ function setupGlobalRealtime() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'products' },
             (payload) => {
                 console.log('🔄 [Realtime] 偵測到 products 變更');
-                // 檢查是否在商品頁，是才刷新
-                if (document.getElementById('product-management-section').classList.contains('active')) {
-                    loadProducts(); 
-                }
-                // 檢查是否在盤點頁，是才刷新
-                if (document.getElementById('stocktake-section').classList.contains('active')) {
-                    loadStocktakeList();
-                }
+                loadProducts(true); // [V39.1] 傳入 isRealtimeCall=true
             }
         ).subscribe();
 
@@ -1062,9 +1136,7 @@ function setupGlobalRealtime() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' },
             () => {
                 console.log('🔄 [Realtime] 偵測到 employees 變更');
-                if (document.getElementById('employee-management-section').classList.contains('active')) {
-                    loadEmployees(); // 刷新員工
-                }
+                loadEmployees(true); // [V39.1] 傳入 isRealtimeCall=true
             }
         ).subscribe();
 
@@ -1072,9 +1144,7 @@ function setupGlobalRealtime() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },
             () => {
                 console.log('🔄 [Realtime] 偵測到 orders 變更');
-                if (document.getElementById('orders-section').classList.contains('active')) {
-                    loadAllOrdersForSequence(); // 刷新訂單
-                }
+                loadAllOrdersForSequence(true); // [V39.1] 傳入 isRealtimeCall=true
             }
         ).subscribe();
         
@@ -1083,9 +1153,7 @@ function setupGlobalRealtime() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' },
             () => {
                 console.log('🔄 [Realtime] 偵測到 order_items 變更');
-                if (document.getElementById('orders-section').classList.contains('active')) {
-                    loadAllOrdersForSequence(); // 刷新訂單
-                }
+                loadAllOrdersForSequence(true); // [V39.1] 傳入 isRealtimeCall=true
             }
         ).subscribe();
 
@@ -1094,9 +1162,16 @@ function setupGlobalRealtime() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'discounts' },
             () => {
                 console.log('🔄 [Realtime] 偵測到 discounts 變更');
-                if (document.getElementById('discount-management-section').classList.contains('active')) {
-                    loadDiscounts(); // 刷新折扣
-                }
+                loadDiscounts(true); // [V39.1] 傳入 isRealtimeCall=true
+            }
+        ).subscribe();
+    
+    // [V41.3] 新增: 監聽 order_discounts
+    db.channel('public:order_discounts')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'order_discounts' },
+            () => {
+                console.log('🔄 [Realtime] 偵測到 order_discounts 變更');
+                loadAllOrdersForSequence(true); // [V39.1] (同樣刷新訂單列表)
             }
         ).subscribe();
 }
