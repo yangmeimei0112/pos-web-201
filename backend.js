@@ -1,7 +1,10 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V33.1 - 修正 V32.0 的 updateClock 錯誤)
-   - [修正] 區塊 12: 移除 DOMContentLoaded 中的 updateClock() 呼叫
-   - [保留] V33.0: 新增員工值班時段
+   後台管理 (Backend) 邏輯 (V35.0 - 僅報表頁 30 秒刷新)
+   - [修改] 區塊 12: refreshActiveData() 改為只刷新報表
+   - [修改] 區塊 13: setupNavigation() 
+     - 點擊「報表分析」時，啟動 30 秒計時器
+     - 點擊「其他」頁籤時，清除計時器
+   - [移除] 區塊 13: DOMContentLoaded 中的全局 setInterval
    ==================================================================== */
 
 // ====================================================================
@@ -124,16 +127,25 @@ const reportContentSections = document.querySelectorAll('.report-content');
 // [V23.0] 庫存盤點
 const stocktakeListTbody = document.getElementById('stocktake-list-tbody');
 const updateAllStockBtn = document.getElementById('update-all-stock-btn');
+// [V34.0] 計時器
+let autoRefreshInterval = null; // [V35.0] 改為僅報表用
 
 
 // -----------------------------------------------------------
-//  [V24.0] 區塊 4: 商品管理功能 (CRUD)
+//  [V34.0] 區塊 4: 商品管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadProducts() { 
-    productTableBody.innerHTML = '<tr><td colspan="11" class="loading-message">載入商品資料中...</td></tr>';
+    // [V34.0] 刷新時不清空表格，避免閃爍
+    // productTableBody.innerHTML = '<tr><td colspan="11" class="loading-message">載入商品資料中...</td></tr>';
     try {
         const { data, error } = await db.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }); 
         if (error) throw error;
+        
+        // [V34.0] 檢查資料是否有變，避免不必要的重繪
+        if (JSON.stringify(currentProductList) === JSON.stringify(data)) {
+            return;
+        }
+        
         currentProductList = JSON.parse(JSON.stringify(data)); 
         renderProductTable(data); 
     } catch (err) {
@@ -256,11 +268,11 @@ async function handleProductTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  [V33.0 修改] 區塊 5: 員工管理功能 (CRUD)
+//  [V33.0] 區塊 5: 員工管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadEmployees() { 
-    // [V33.0] 修改 colspan
-    employeeTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">載入員工資料中...</td></tr>';
+    // [V34.0] 刷新時不清空
+    // employeeTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">載入員工資料中...</td></tr>';
     try { 
         const { data, error } = await db.from('employees').select('*').order('id', { ascending: true }); 
         if (error) throw error; 
@@ -272,7 +284,6 @@ async function loadEmployees() {
 }
 function renderEmployeeTable(employees) { 
     if (!employees || employees.length === 0) { 
-        // [V33.0] 修改 colspan
         employeeTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">目前沒有任何員工資料。</td></tr>'; 
         return; 
     } 
@@ -284,7 +295,6 @@ function renderEmployeeTable(employees) {
             ? `<button class="btn-secondary deactivate-employee-btn" data-id="${emp.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">停用</button>` 
             : `<button class="btn-primary activate-employee-btn" data-id="${emp.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">啟用</button>`; 
         
-        // [V33.0] 新增 <td> (shift_preference)
         row.innerHTML = ` 
             <td>${emp.id}</td>
             <td>${emp.employee_name}</td>
@@ -304,20 +314,16 @@ function showEmployeeModal(employee = null) {
     employeeFormErrorMessage.textContent = ''; 
     employeeForm.reset(); 
     if (employee) { 
-        // 編輯
         employeeModalTitle.textContent = '編輯員工'; 
         document.getElementById('employee-id').value = employee.id; 
         document.getElementById('employee-name').value = employee.employee_name; 
         document.getElementById('employee-code').value = employee.employee_code; 
         document.getElementById('employee-is-active').checked = employee.is_active;
-        // [V33.0] 新增
         document.getElementById('employee-shift').value = employee.shift_preference || '';
     } else { 
-        // 新增
         employeeModalTitle.textContent = '新增員工'; 
         document.getElementById('employee-id').value = ''; 
         document.getElementById('employee-is-active').checked = true; 
-        // [V33.0] 新增
         document.getElementById('employee-shift').value = '';
     } 
     employeeModal.classList.add('active');
@@ -335,7 +341,6 @@ async function handleEmployeeFormSubmit(e) {
     const employeeId = employeeData.id; 
     employeeData.is_active = document.getElementById('employee-is-active').checked; 
     
-    // [V33.0] 新增: 處理 shift_preference (空字串存為 null)
     if (employeeData.shift_preference !== undefined) {
         employeeData.shift_preference = employeeData.shift_preference.trim() || null;
     }
@@ -376,13 +381,18 @@ async function handleEmployeeTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  [V10.1] 區塊 6: 訂單管理功能
+//  [V34.0] 區塊 6: 訂單管理功能
 // -----------------------------------------------------------
 async function loadAllOrdersForSequence() {
-    orderListTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">載入訂單資料中...</td></tr>';
+    // orderListTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">載入訂單資料中...</td></tr>';
     try {
         const { data, error } = await db.from('orders').select(`id, sales_date, total_amount, employees ( employee_name )`).order('id', { ascending: false }); 
         if (error) throw error;
+        
+        if (JSON.stringify(allOrders) === JSON.stringify(data)) {
+            return;
+        }
+        
         allOrders = data; 
         renderOrderTable(allOrders); 
     } catch (err) {
@@ -489,7 +499,7 @@ async function handleDeleteAllOrders() {
 //  [V16.1] 區塊 7: 折扣管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadDiscounts() {
-    discountTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入折扣資料中...</td></tr>';
+    // discountTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入折扣資料中...</td></tr>';
     try {
         const { data, error } = await db
             .from('discounts')
@@ -647,15 +657,12 @@ async function handleDiscountTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  [V27.0] 區塊 8: 報表分析功能
+//  [V34.1] 區塊 8: 報表分析功能
 // -----------------------------------------------------------
 async function loadDashboardData() {
-    dashboardTotalSales.textContent = '計算中...';
-    dashboardTotalOrders.textContent = '計算中...';
-    dashboardAvgOrderValue.textContent = '計算中...';
-    dashboardTotalCost.textContent = '計算中...';
-    dashboardTotalProfit.textContent = '計算中...';
-
+    // [V34.0] 刷新時不清空
+    // dashboardTotalSales.textContent = '計算中...';
+    
     try {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
@@ -690,9 +697,19 @@ async function loadDashboardData() {
 
         const totalProfit = totalSales - totalCost;
 
-        const animDuration = 1000; 
-        animateValue(dashboardTotalSales, 0, totalSales, animDuration, true, false);
-        animateValue(dashboardTotalOrders, 0, totalOrders, animDuration, false, false);
+        // [V34.1] 縮短動畫時間
+        const animDuration = 1000; // [V35.0] 30秒刷新一次，1秒動畫是 OK 的
+        
+        const currentTotalSales = parseFloat(dashboardTotalSales.textContent.replace(/[^0-9.-]+/g,"")) || 0;
+        const currentTotalOrders = parseFloat(dashboardTotalOrders.textContent) || 0;
+
+        if (currentTotalSales !== totalSales) {
+            animateValue(dashboardTotalSales, currentTotalSales, totalSales, animDuration, true, false);
+        }
+        if (currentTotalOrders !== totalOrders) {
+            animateValue(dashboardTotalOrders, currentTotalOrders, totalOrders, animDuration, false, false);
+        }
+        
         animateValue(dashboardAvgOrderValue, 0, avgOrderValue, animDuration, true, true); 
         animateValue(dashboardTotalCost, 0, totalCost, animDuration, true, false);
         animateValue(dashboardTotalProfit, 0, totalProfit, animDuration, true, false);
@@ -707,7 +724,7 @@ async function loadDashboardData() {
     }
 }
 async function loadTopSellingProducts() {
-    topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入熱銷排行中...</td></tr>';
+    // topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入熱銷排行中...</td></tr>';
     try {
         const { data, error } = await db.rpc('get_top_selling_products', { limit_count: 10 });
         if (error) throw error;
@@ -736,8 +753,8 @@ function renderTopProductsTable(products) {
     });
 }
 async function loadEmployeeSalesStats() {
-    if (!employeeSalesTableBody) return; // 防呆
-    employeeSalesTableBody.innerHTML = '<tr><td colspan="4" class="loading-message">載入員工排行中...</td></tr>';
+    // if (!employeeSalesTableBody) return; 
+    // employeeSalesTableBody.innerHTML = '<tr><td colspan="4" class="loading-message">載入員工排行中...</td></tr>';
     try {
         const { data, error } = await db.rpc('get_employee_sales_stats');
         if (error) throw error;
@@ -953,17 +970,52 @@ function setupReportTabs() {
 
 
 // -----------------------------------------------------------
-//  [V33.1 修正] 區塊 12: 事件監聽器 (原 11)
+//  [V35.0 新增] 區塊 12: 自動刷新 (僅報表)
 // -----------------------------------------------------------
-
 /**
- * [V26.0] 側邊主導航 (Main Nav) 的切換邏輯
+ * [V35.0] 僅刷新報表資料
  */
+function refreshReportData() {
+    // 檢查是否有 Modal 開啟中，有則不刷新
+    if (document.querySelector('.modal.active')) {
+        console.log("[V35.0] Modal 開啟中，跳過報表刷新。");
+        return;
+    }
+    
+    // 檢查是否仍在報表頁
+    const activeSection = document.querySelector('.management-section.active');
+    if (activeSection && activeSection.id === 'reports-section') {
+        console.log("[V35.0] 30秒自動刷新: 報表");
+        // [V35.0] 報表區要刷新所有數據 (不清空，避免閃爍)
+        loadDashboardData();
+        loadTopSellingProducts();
+        loadEmployeeSalesStats();
+    } else {
+        // [V35.0] 用戶已離開報表頁，清除計時器
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+            console.log("[V35.0] 已離開報表頁，停止自動刷新。");
+        }
+    }
+}
+
+
+// -----------------------------------------------------------
+//  [V35.0 修改] 區塊 13: 事件監聽器 (原 12)
+// -----------------------------------------------------------
 function setupNavigation() {
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
-            const targetId = link.dataset.target;
             
+            // [V35.0] 點擊任何導航時，先清除舊的計時器
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                console.log("[V35.0] 切換頁面，停止自動刷新。");
+            }
+
+            const targetId = link.dataset.target;
             if (!targetId) {
                 return; 
             }
@@ -973,6 +1025,7 @@ function setupNavigation() {
             link.classList.add('active');
             document.getElementById(targetId).classList.add('active');
 
+            // 點擊時立即載入
             if (targetId === 'product-management-section') {
                 loadProducts();
             } else if (targetId === 'employee-management-section') {
@@ -994,6 +1047,11 @@ function setupNavigation() {
                         sec.classList.toggle('active', sec.id === 'report-top-products');
                     });
                 }
+                
+                // [V35.0] 新增: 僅在此頁面啟動 30 秒刷新
+                autoRefreshInterval = setInterval(refreshReportData, 30000); // 30秒
+                console.log("[V35.0] 進入報表頁，啟動 30 秒自動刷新。");
+
             } else if (targetId === 'stocktake-section') {
                 loadStocktakeList();
             }
@@ -1007,8 +1065,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupReportTabs(); 
     loadProducts(); // 預設載入商品
 
-    // [V33.1] 移除錯誤的 updateClock() 呼叫
-
+    // [V35.0] 移除 V34.1 的全局 setInterval
+    
     backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
 
     // 商品 Modal 控制 & 表單 & 表格點擊
