@@ -1,16 +1,10 @@
 /* ====================================================================
-   後台管理 (Backend) 樣式 (V32.0 - 匯出 Excel 按鈕)
+   後台管理 (Backend) 樣式 (V42.0 - 移除共用樣式)
    ==================================================================== */
 
-/* [V26.0] 佈局 */
+/* [V42.0] 補回 body 背景色 (原在 common) */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     background-color: #f8f9fa;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
 }
 
 /* ---------------------------------
@@ -98,7 +92,7 @@ body {
 }
 
 /* ---------------------------------
-   4. [V25.0] 主要內容區 (Content)
+   4. 主要內容區 (Content)
    --------------------------------- */
 .backend-content {
     flex-grow: 1;
@@ -113,7 +107,6 @@ body {
     display: block;
 }
 
-/* [V32.0] 修改: .content-header */
 .content-header {
     display: flex;
     justify-content: space-between;
@@ -127,7 +120,6 @@ body {
     font-size: 1.8rem;
     font-weight: 600;
 }
-/* [V32.0] 新增: .header-actions */
 .header-actions {
     display: flex;
     align-items: center;
@@ -136,40 +128,13 @@ body {
 
 
 /* ---------------------------------
-   5. [V32.0] 通用按鈕樣式
+   5. [V42.0 移除] 通用按鈕樣式 -> 已移至 common.css
    --------------------------------- */
-.btn-primary, .btn-secondary, .btn-danger, .btn-primary:disabled, .btn-secondary:disabled, .btn-danger:disabled {
-    padding: 10px 18px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s, opacity 0.2s;
-    text-decoration: none;
-    display: inline-block;
-    line-height: 1.5;
-}
-.btn-primary { background-color: #007bff; color: white; }
-.btn-primary:hover { background-color: #0056b3; }
-.btn-primary:disabled { background-color: #b0d7ff; cursor: not-allowed; }
-
-.btn-secondary { background-color: #6c757d; color: white; }
-.btn-secondary:hover { background-color: #5a6268; }
-.btn-secondary:disabled { background-color: #c8cbcf; cursor: not-allowed; }
-
-.btn-danger { background-color: #dc3545; color: white; }
-.btn-danger:hover { background-color: #c82333; }
-.btn-danger:disabled { background-color: #f3c4c8; cursor: not-allowed; }
-
-/* [V32.0] 新增: 按鈕圖示間距 */
-.btn-primary .fas, .btn-secondary .fas, .btn-danger .fas {
-    margin-right: 6px;
-}
+/* .btn-primary, .btn-secondary, ... */
 
 
 /* ---------------------------------
-   6. [V25.0] 表格 (Table) 樣式
+   6. 表格 (Table) 樣式
    --------------------------------- */
 .table-container {
     background-color: #ffffff;
@@ -196,7 +161,7 @@ table th {
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    white-space: nowrap; /* [V24.2] 保留: 強制表頭不換行 */
+    white-space: nowrap; 
 }
 table tbody tr:last-child td {
     border-bottom: none;
@@ -213,13 +178,7 @@ table td .btn-danger {
 table td .btn-danger { margin-right: 0; }
 .status-active { color: #28a745; font-weight: 600; }
 .status-inactive { color: #dc3545; font-weight: 500; }
-.loading-message {
-    text-align: center;
-    color: #6c757d;
-    font-style: italic;
-    padding: 40px;
-    font-size: 1.1rem;
-}
+/* [V42.0 移除] .loading-message -> 已移至 common.css */
 .loading-message.error { color: #dc3545; font-weight: 500; }
 .col-sort { width: 100px; }
 .product-sort { text-align: center; }
@@ -242,64 +201,25 @@ table td .btn-danger { margin-right: 0; }
 }
 
 /* ---------------------------------
-   7. 彈出視窗 (Modal)
+   7. [V42.0 移除] 彈出視窗 (Modal) -> 已移至 common.css
    --------------------------------- */
-.modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1000; 
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.6); 
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-.modal.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 1;
-}
-.modal-content {
-    background-color: #fefefe;
-    margin: auto;
-    padding: 32px;
-    border: 1px solid #888;
-    width: 90%;
+/* .modal { ... } */
+/* .modal.active { ... } */
+/* .modal-content { ... } */
+/* .modal.active .modal-content { ... } */
+/* .modal-content h1 { ... } */
+/* .close-btn { ... } */
+/* .close-btn:hover, .close-btn:focus { ... } */
+
+/* [V42.0] 保留 Modal 寬度設定 */
+#product-modal .modal-content,
+#employee-modal .modal-content,
+#discount-modal .modal-content {
     max-width: 800px;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    position: relative;
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
-}
-.modal.active .modal-content {
-    transform: scale(1);
-}
-.modal-content h1 {
-    font-size: 1.75rem;
-    font-weight: 600;
-    margin-top: 0;
-    margin-bottom: 24px;
-    color: #333;
-}
-.close-btn {
-    color: #aaa;
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.close-btn:hover, .close-btn:focus {
-    color: #000;
-    text-decoration: none;
 }
 
 /* ---------------------------------
-   8. [V24.1] 表單 (Form)
+   8. [V42.0 移除] 表單 (Form) -> 已移至 common.css
    --------------------------------- */
 .form-grid {
     display: grid;
@@ -310,65 +230,21 @@ table td .btn-danger { margin-right: 0; }
     #product-modal .form-grid {
         grid-template-columns: repeat(3, 1fr);
     }
+    /* [V42.0] 新增：折扣 modal 也使用 3 欄 */
+    #discount-modal .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 .form-grid-small {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-.form-group label {
-    font-weight: 500;
-    margin-bottom: 8px;
-    color: #495057;
-    font-size: 0.95rem;
-}
-.form-group input[type="text"],
-.form-group input[type="number"] {
-    padding: 10px 12px;
-    font-size: 1rem;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-.form-group input:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-    outline: none;
-}
-.form-group-checkbox {
-    flex-direction: row;
-    align-items: center;
-    margin-top: 10px;
-}
-.form-group-checkbox input {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
-}
-.form-group-checkbox label {
-    margin-bottom: 0;
-    font-weight: normal;
-    color: #333;
-}
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid #e9ecef;
-}
-.error-message {
-    color: #dc3545;
-    font-weight: 500;
-    margin-top: 15px;
-    text-align: right;
-}
+/* [V42.0 移除] .form-group, .form-group input, ... -> 已移至 common.css */
+/* .form-actions { ... } */
+/* .error-message { ... } */
+
 
 /* ---------------------------------
-   9. [V10.1] 訂單查詢
+   9. 訂單查詢
    --------------------------------- */
 .filter-bar {
     display: flex;
@@ -401,9 +277,7 @@ table td .btn-danger { margin-right: 0; }
     padding: 8px 16px;
     font-size: 0.9rem;
 }
-#delete-all-orders-btn {
-    /* (樣式已由 .header-actions 控制) */
-}
+
 tr.order-row {
     cursor: pointer;
 }
@@ -465,7 +339,7 @@ tr.order-detail-row.expanded {
 }
 
 /* ---------------------------------
-   10. [V26.0] 報表分析樣式
+   10. 報表分析樣式
    --------------------------------- */
 .management-section#reports-section h2 {
     font-size: 1.5rem; 
@@ -595,7 +469,6 @@ tr.order-detail-row.expanded {
         align-items: flex-start;
         gap: 15px;
     }
-    /* [V32.0] 讓 header-actions 在手機上堆疊 */
     .header-actions {
         flex-direction: column;
         align-items: flex-start;
@@ -605,7 +478,7 @@ tr.order-detail-row.expanded {
     .header-actions .btn-secondary,
     .header-actions .btn-danger {
         width: 100%;
-        box-sizing: border-box; /* 確保按鈕 100% 寬 */
+        box-sizing: border-box; 
         text-align: center;
     }
 
@@ -619,10 +492,14 @@ tr.order-detail-row.expanded {
     #product-modal .form-grid {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
+    /* [V42.0] 新增：折扣 modal 響應式 */
+    #discount-modal .form-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ---------------------------------
-   12. [V23.0] 庫存盤點
+   12. 庫存盤點
    --------------------------------- */
 .stocktake-instructions {
     background-color: #e6f7ff;

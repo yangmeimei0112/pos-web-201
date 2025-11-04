@@ -1,69 +1,8 @@
 ﻿/* ====================================================================
-   POS 系統樣式表 (V31.1 - 重新設計員工 Modal)
-   - [修改] V31.1: 區塊 9 (Modal) 樣式，使其更簡約
+   POS 系統樣式表 (V42.0 - 移除共用樣式)
    ==================================================================== */
 
-/* -----------------------------------------------------------
-   區塊 1: 基礎設定與變數
-   ----------------------------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500;700&display=swap');
-
-:root {
-    --primary-color: #3498db; 
-    --primary-color-light: #5dade2; 
-    --secondary-color: #2c3e50; 
-    --secondary-color-light: #ecf0f1; 
-    --success-color: #2ecc71; 
-    --danger-color: #e74c3c; 
-    --warning-color: #f39c12; 
-    --text-color-dark: #333; 
-    --text-color-light: #95a5a6; 
-    --border-color: #bdc3c7; 
-    --button-bg-light: #f4f7f6; 
-    --border-radius: 5px; 
-    --soft-border: #f0f0f0; 
-    --row-padding: 15px; 
-}
-
-/* -----------------------------------------------------------
-   區塊 2: 全域佈局與應用程式主體
-   ----------------------------------------------------------- */
-html, body {
-    height: 100%; 
-    margin: 0; 
-    padding: 0; 
-}
-
-body {
-    font-family: 'Noto Sans TC', sans-serif; 
-    background-color: var(--secondary-color-light); 
-    color: var(--text-color-dark); 
-    display: flex; 
-    flex-direction: column; 
-    overflow: hidden; 
-}
-
-.hidden {
-    display: none !important; 
-}
-
-.pos-app {
-    flex-grow: 1; 
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 1400px; 
-    margin: 0 auto; 
-    overflow: hidden;
-}
-
-.pos-content {
-    flex-grow: 1; 
-    display: flex; 
-    overflow: hidden; 
-    background-color: #ecf0f1;
-}
+/* [V42.0] 移除 區塊 1 (基礎設定) & 區塊 2 (全域佈局) -> 已移至 common.css */
 
 /* -----------------------------------------------------------
    區塊 3: 頂部導航與標頭 (.pos-header)
@@ -125,6 +64,29 @@ body {
 .backend-button:hover {
     background-color: var(--secondary-color); 
 }
+
+/* [V42.0] 補回 body 背景色 (原在 common) */
+body {
+    background-color: var(--secondary-color-light); 
+}
+
+.pos-app {
+    flex-grow: 1; 
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1400px; 
+    margin: 0 auto; 
+    overflow: hidden;
+}
+
+.pos-content {
+    flex-grow: 1; 
+    display: flex; 
+    overflow: hidden; 
+    background-color: #ecf0f1;
+}
+
 
 /* -----------------------------------------------------------
    區塊 4: 商品選擇區 (Product Selection)
@@ -231,7 +193,7 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 5: [V29.0 修改] 訂單總結區塊主體
+   區塊 5: 訂單總結區塊主體
    ----------------------------------------------------------- */
 .order-summary-area {
     flex: 1.5; 
@@ -441,17 +403,15 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 8: [V31.0 修改] 訂單總計與結帳按鈕
+   區塊 8: [V41.2 修改] 訂單總計與結帳按鈕
    ----------------------------------------------------------- */
 .order-totals {
     border-top: 1px dashed var(--border-color); 
     padding-top: 5px; 
     margin-bottom: 10px; 
     flex-shrink: 0;
-    /* [V31.0] 移除 V30 的 flex 佈局 */
 }
 
-/* [V31.0] 總數量 (左側) */
 .total-row-quantity {
     display: flex;
     justify-content: space-between;
@@ -472,30 +432,28 @@ body {
     text-align: right;
 }
 
-/* [V31.0] 小計/折扣 (右側) */
 .total-row {
     display: flex;
     justify-content: space-between;
     align-items: center; 
-    padding: 1px 0; /* [V31.0] 縮小垂直間距 */
-    font-size: 1.05em; /* 較小字體 */
+    padding: 1px 0; 
+    font-size: 1.05em; 
 }
 .total-row dt {
     color: var(--text-color-light);
     font-weight: 300;
-    flex-basis: 40%; /* 標題佔 40% */
+    flex-basis: 40%; 
     text-align: left;
 }
 .total-row dd {
     font-weight: 700;
     font-family: 'Roboto Mono', monospace;
-    flex-basis: 60%; /* 數字佔 60% */
+    flex-basis: 60%; 
     text-align: right;
 }
 
-/* [V31.0] 應付金額 (最大) */
 .final-total-row {
-    font-size: 1.8em; /* 放大 */
+    font-size: 1.8em; 
     font-weight: bold;
     color: var(--danger-color); 
     border-top: 2px solid var(--secondary-color); 
@@ -503,7 +461,7 @@ body {
     padding-top: 6px; 
 }
 .final-total-row dt {
-    font-size: 0.9em; /* 標題縮小一點 */
+    font-size: 0.9em; 
     font-weight: 700;
     color: var(--danger-color);
 }
@@ -511,13 +469,48 @@ body {
     font-size: 1em;
 }
 
-/* [V31.0] 確保折扣下拉選單垂直對齊 */
 .discount-row {
     align-items: center;
 }
-/* [V31.0] 讓折扣的 <dd> 佔滿空間 */
 .discount-row dd {
     flex-grow: 1;
+}
+
+/* [V41.2] 修改：折扣按鈕樣式 */
+.discount-button {
+    width: 100%;
+    background-color: white;
+    border: 1px dashed var(--warning-color);
+    color: var(--warning-color);
+    padding: 8px 10px;
+    border-radius: var(--border-radius);
+    font-size: 0.95em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+.discount-button i {
+    margin-right: 5px;
+}
+.discount-button:hover:not(:disabled) {
+    background-color: #fffaf0;
+    color: #e67e22;
+}
+.discount-button:disabled {
+    border-color: var(--border-color);
+    color: var(--border-color);
+    cursor: not-allowed;
+}
+/* [V41.2] 套用折扣後的總結文字 */
+.discount-summary-text {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--success-color);
+    text-align: right;
+    cursor: pointer;
+}
+.discount-summary-text:hover {
+    text-decoration: underline;
 }
 
 .checkout-area {
@@ -549,77 +542,56 @@ body {
 }
 
 /* -----------------------------------------------------------
-   區塊 9: [V31.1 修改] 模態視窗 (Modals - Employee/Checkout)
+   區塊 9: [V42.0 移除] 模態視窗 -> 已移至 common.css
    ----------------------------------------------------------- */
-.modal {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.8); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden; 
-    transition: opacity 0.3s, visibility 0.3s;
-}
+/* .modal { ... } */
+/* .modal.active { ... } */
+/* .modal-content { ... } */
+/* .modal-content h1 { ... } */
+/* .close-btn { ... } */
+/* .loading-message { ... } */
 
-.modal.active {
-    opacity: 1;
-    visibility: visible; 
-}
-
+/* [V31.1] 員工 Modal 樣式 */
 .modal-content {
-    background-color: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: 90%;
-    max-width: 700px; /* [V31.1] 加寬以容納新版型 */
-    text-align: center;
-    position: relative;
+    max-width: 700px; 
 }
-
-.modal-content h1 {
-    color: var(--secondary-color); /* [V31.1] 改為深色 */
-    margin-top: 0;
+#employee-selection-modal .modal-content h1 {
+     color: var(--secondary-color);
 }
 
 .employee-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* [V31.1] 加寬按鈕最小寬度 */
-    gap: 20px; /* [V31.1] 增加間距 */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+    gap: 20px; 
     margin-top: 20px;
-    max-height: 450px; /* [V31.1] 增加最大高度 */
+    max-height: 450px; 
     overflow-y: auto; 
     padding: 10px;
 }
 
 .employee-button {
-    background-color: #ffffff; /* [V31.1] 改為白色 */
-    color: var(--text-color-dark); /* [V31.1] 改為深色文字 */
+    background-color: #ffffff; 
+    color: var(--text-color-dark); 
     padding: 20px 15px;
-    border-radius: 10px; /* [V31.1] 圓角加大 */
+    border-radius: 10px; 
     font-weight: bold;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* [V31.1] 陰影變淡 */
-    border: 2px solid var(--border-color); /* [V31.1] 加上邊框 */
-    display: flex; /* [V31.1] 使用 flex 佈局 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); 
+    border: 2px solid var(--border-color); 
+    display: flex; 
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 120px; /* [V31.1] 設定最小高度 */
+    min-height: 120px; 
 }
 
 .employee-button:hover {
-    transform: translateY(-5px); /* [V31.1] 懸浮上移 */
+    transform: translateY(-5px); 
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    border-color: var(--primary-color); /* [V31.1] 邊框變色 */
+    border-color: var(--primary-color); 
 }
 
-/* [V31.1] 新增：按鈕內部樣式 */
 .employee-button i {
     font-size: 2.2em;
     color: var(--primary-color);
@@ -636,23 +608,12 @@ body {
     margin-top: 4px;
 }
 
-
-.loading-message {
-    margin-top: 20px;
-    color: var(--text-color-light);
-}
-
+/* 結帳 Modal 樣式 */
 #checkout-modal .modal-content {
     max-width: 450px; 
     padding: 30px 25px;
-}
-
-#checkout-modal .close-btn {
-    position: absolute;
-    top: 10px; right: 15px;
-    font-size: 1.5em;
-    color: var(--text-color-light);
-    cursor: pointer;
+    max-height: 90vh;
+    overflow: auto; 
 }
 
 #checkout-modal h1 {
@@ -667,7 +628,6 @@ body {
     border-radius: 5px;
 }
 
-/* [V31.0] 修正: 結帳 Modal 內的 .summary-row */
 #checkout-modal .summary-row {
     display: flex;
     justify-content: space-between;
@@ -715,57 +675,9 @@ body {
     text-align: center;
 }
 
-/* ====================================================================
-   V11: 前台訂單數量修改按鈕樣式 (V18 需保留)
-   ==================================================================== */
-.item-quantity-control { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.quantity-btn { background-color: var(--button-bg-light); border: 1px solid var(--border-color); color: var(--text-color-dark); font-weight: bold; font-size: 1.1em; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; line-height: 26px; text-align: center; padding: 0; transition: background-color 0.2s, color 0.2s; user-select: none; }
-.quantity-btn:hover { background-color: var(--primary-color-light); color: var(--primary-color); border-color: var(--primary-color-light); }
-.quantity-btn:active { background-color: var(--primary-color); color: white; }
-.quantity-btn.decrease-btn[disabled] { background-color: #f0f0f0; color: #ccc; cursor: not-allowed; border-color: #eee; }
-
-/* ====================================================================
-   V12: 訂單數量手動輸入框樣式 (V18 需保留)
-   ==================================================================== */
-.quantity-input { width: 45px; text-align: center; font-weight: 700; font-size: 1em; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 4px 2px; -moz-appearance: textfield; }
-.quantity-input::-webkit-outer-spin-button,
-.quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
-/* ====================================================================
-   V14: 商品備註 (Note) 樣式 (V18 需保留)
-   ==================================================================== */
-.note-btn { background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.9em; padding: 2px 5px; margin-top: 4px; display: block; transition: color 0.2s; }
-.note-btn:hover { color: #2980b9; text-decoration: underline; }
-.note-btn i { margin-right: 4px; }
-.item-note-display { font-size: 0.9em; color: var(--danger-color); font-weight: 700; margin-top: 4px; display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* ====================================================================
-   V17.1: [V31.0 修改] 折扣 (Discount) 下拉選單樣式
-   ==================================================================== */
-.discount-select {
-    font-size: 0.95em;
-    font-weight: 700; 
-    padding: 5px 8px;
-    border-radius: var(--border-radius);
-    background-color: white;
-    /* [V31.0] 移除 max-width: 150px; */
-    width: 100%; /* [V31.0] 讓其自動填滿 dd 區域 */
-    box-sizing: border-box; /* 確保 padding 不會溢出 */
-    cursor: pointer;
-    vertical-align: middle; 
-    color: var(--warning-color); 
-    border: 1px solid var(--warning-color); 
-}
-.discount-select:focus {
-    outline: none;
-    border-color: var(--warning-color);
-    box-shadow: 0 0 5px rgba(243, 156, 18, 0.3); 
-}
-
-/* ====================================================================
-   V18.2: [V29.0 修改] 暫掛/取單 (Hold/Retrieve) 樣式
-   ==================================================================== */
-/* [V29.0] 移除原 V18.2 .system-buttons 樣式 */
+/* -----------------------------------------------------------
+   區塊 10: 暫掛/取單 (Hold/Retrieve) 樣式
+   ----------------------------------------------------------- */
 .system-button {
     background-color: var(--button-bg-light);
     border: 1px solid var(--border-color);
@@ -785,7 +697,7 @@ body {
     margin-right: 5px;
 }
 #retrieve-order-btn {
-    position: relative; /* 為了定位計數器 */
+    position: relative; 
 }
 .held-order-count {
     position: absolute;
@@ -856,33 +768,30 @@ body {
     font-size: 0.9em;
 }
 
-/* ====================================================================
-   [V29.0] 新增: Header 內的按鈕佈局
-   ==================================================================== */
 .order-header-actions {
     display: flex;
     align-items: center;
-    gap: 5px; /* 暫掛群組 和 清空按鈕 的間距 */
+    gap: 5px; 
 }
 .order-header-actions .system-buttons {
-    display: flex; /* 讓兩個暫掛按鈕水平排列 */
+    display: flex; 
     gap: 5px;
     margin: 0;
 }
 .order-header-actions .system-button,
 .order-header-actions .clear-button {
-    padding: 5px 10px; /* 縮小按鈕 */
+    padding: 5px 10px; 
     font-size: 0.9em; 
     font-weight: 700;
 }
 .order-header-actions .system-button i,
 .order-header-actions .clear-button i {
-     margin-right: 3px; /* 縮小圖示間距 */
+     margin-right: 3px; 
 }
 
-/* ====================================================================
-   V28.2: [新增] 庫存預警鈴鐺
-   ==================================================================== */
+/* -----------------------------------------------------------
+   區塊 11: 庫存預警
+   ----------------------------------------------------------- */
 .notification-bell {
     position: relative;
     cursor: pointer;
@@ -893,10 +802,10 @@ body {
 .notification-bell span {
     font-size: 1.6rem;
     display: inline-block;
-    transform: translateY(4px); /* 垂直對齊 */
+    transform: translateY(4px); 
 }
 .notification-dot {
-    display: none; /* 預設隱藏 */
+    display: none; 
     position: absolute;
     top: 5px;
     right: 3px;
@@ -904,25 +813,16 @@ body {
     height: 10px;
     background-color: var(--danger-color);
     border-radius: 50%;
-    border: 2px solid var(--secondary-color); /* 與 header 同色 */
+    border: 2px solid var(--secondary-color); 
 }
 .notification-bell.active .notification-dot {
     display: block;
 }
 
-/* ====================================================================
-   V28.2: [新增] 庫存預警 Modal 樣式
-   ==================================================================== */
 #stock-warning-modal .modal-content {
     max-width: 450px; 
 }
-#stock-warning-modal .close-btn {
-    position: absolute;
-    top: 10px; right: 15px;
-    font-size: 1.5em;
-    color: var(--text-color-light);
-    cursor: pointer;
-}
+
 #stock-warning-table {
     width: 100%;
     border-collapse: collapse;
@@ -958,4 +858,130 @@ body {
 }
 #stock-warning-tbody td:nth-child(3) {
     color: var(--text-color-light);
+}
+
+/* ====================================================================
+   [V41.2 新增] 區塊 12: 新折扣 Modal 樣式
+   ==================================================================== */
+.modal-content.large {
+    max-width: 800px;
+}
+.discount-modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    overflow-y: auto; /* [V41.2] 內容滾動 */
+    padding: 15px 5px;
+    border-top: 1px solid var(--soft-border);
+    border-bottom: 1px solid var(--soft-border);
+    min-height: 250px;
+}
+.discount-section h2 {
+    font-size: 1.2em;
+    color: var(--success-color);
+    margin: 0 0 10px 0;
+    text-align: left;
+}
+.discount-section h2.disabled {
+    color: var(--text-color-light);
+}
+.discount-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px; 
+    overflow-y: auto;
+}
+.discount-list-container.disabled {
+    opacity: 0.6;
+}
+.discount-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--button-bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 12px 15px;
+}
+.discount-info {
+    text-align: left;
+}
+.discount-name {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-color-dark);
+}
+.discount-amount {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--danger-color);
+    font-family: 'Roboto Mono', monospace;
+}
+.discount-target {
+    font-size: 0.85em;
+    color: var(--text-color-light);
+    margin-top: 3px;
+}
+
+/* 折扣數量控制 */
+.discount-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.discount-controls .qty-btn { /* (借用 .qty-btn 樣式) */
+    width: 32px;
+    height: 32px;
+    font-size: 1.3em;
+}
+.discount-quantity {
+    font-size: 1.3em;
+    font-weight: 700;
+    font-family: 'Roboto Mono', monospace;
+    min-width: 20px;
+    text-align: center;
+}
+.discount-item.disabled .discount-controls {
+    visibility: hidden;
+}
+.discount-reason {
+    font-size: 0.9em;
+    font-weight: 700;
+    color: var(--danger-color);
+}
+
+
+/* Modal 頁腳總計 */
+.discount-modal-footer {
+    padding-top: 20px;
+    flex-shrink: 0; 
+}
+.discount-modal-footer .summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.1em;
+    padding: 4px 0;
+}
+.discount-modal-footer .summary-row span:first-child {
+    color: var(--text-color-light);
+    font-weight: 500;
+}
+.discount-modal-footer .summary-row span:last-child {
+    font-weight: 700;
+    font-family: 'Roboto Mono', monospace;
+}
+.discount-modal-footer .summary-row.applied span:last-child {
+    color: var(--success-color);
+    font-size: 1.1em;
+}
+.discount-modal-footer .summary-row.final {
+    font-size: 1.5em;
+    font-weight: 700;
+    border-top: 2px solid var(--secondary-color);
+    margin-top: 10px;
+    padding-top: 10px;
+}
+.discount-modal-footer .summary-row.final span:last-child {
+    color: var(--danger-color);
 }

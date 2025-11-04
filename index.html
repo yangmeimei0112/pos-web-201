@@ -7,7 +7,9 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -79,6 +81,42 @@
                     <tbody id="stock-warning-tbody">
                         </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+    
+    <div id="discount-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="discount-modal-title">
+        <div class="modal-content large">
+            <button class="close-btn" id="close-discount-modal" aria-label="關閉折扣視窗">&times;</button>
+            <h1 id="discount-modal-title">套用折扣</h1>
+            
+            <div class="discount-modal-body">
+                <div class="discount-section">
+                    <h2><i class="fas fa-check-circle"></i> 可用折扣</h2>
+                    <div id="applicable-discounts-list" class="discount-list-container">
+                        </div>
+                </div>
+                
+                <div class="discount-section">
+                    <h2 class="disabled"><i class="fas fa-times-circle"></i> 不可用折扣 (未達條件)</h2>
+                    <div id="inapplicable-discounts-list" class="discount-list-container disabled">
+                         </div>
+                </div>
+            </div>
+
+            <div class="discount-modal-footer">
+                <div class="summary-row">
+                    <span>小計:</span>
+                    <span id="modal-subtotal">NT$ 0</span>
+                </div>
+                <div class="summary-row applied">
+                    <span>已套用折扣:</span>
+                    <span id="modal-discount-total">NT$ 0</span>
+                </div>
+                <div class="summary-row final">
+                    <span>結帳金額:</span>
+                    <span id="modal-final-total">NT$ 0</span>
+                </div>
             </div>
         </div>
     </div>
@@ -179,7 +217,10 @@
                     <div class="total-row discount-row">
                         <dt>折扣:</dt>
                         <dd id="order-discount">
-                            </dd>
+                            <button id="open-discount-modal-btn" class="discount-button" disabled>
+                                <i class="fas fa-tags"></i> 套用折扣
+                            </button>
+                        </dd>
                     </div>
                     <div class="total-row final-total-row">
                         <dt>應付金額:</dt>
@@ -197,6 +238,6 @@
         </main>
     </div> 
     
-    <script src="script.js"></script>
-</body> 
+    <script src="js/frontend/main.js" type="module"></script>
+    </body> 
 </html>
