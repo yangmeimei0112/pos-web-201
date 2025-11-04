@@ -1,10 +1,9 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V35.0 - 僅報表頁 30 秒刷新)
-   - [修改] 區塊 12: refreshActiveData() 改為只刷新報表
-   - [修改] 區塊 13: setupNavigation() 
-     - 點擊「報表分析」時，啟動 30 秒計時器
-     - 點擊「其他」頁籤時，清除計時器
-   - [移除] 區塊 13: DOMContentLoaded 中的全局 setInterval
+   後台管理 (Backend) 邏輯 (V39.0 - 報表 RPC 優化)
+   - [V39.0] 重寫 loadDashboardData() 函數
+   - [V39.0] 移除 V37.7 中 loadDashboardData() 的多次 select，
+             改為呼叫 RPC 'fn_get_dashboard_stats'
+   - (保留 V37.7 的全局 Realtime + 報表 10 秒刷新 + 報表滾動動畫)
    ==================================================================== */
 
 // ====================================================================
@@ -44,6 +43,20 @@ const formatDate = (isoString) => {
  * [V27.0] 數字滾動動畫函數
  */
 function animateValue(element, start, end, duration, isCurrency = false, isDecimal = false) {
+    // [V37.6] 如果值沒有變化，則不執行動畫
+    if (start === end) {
+        if (isCurrency) {
+            if (isDecimal) {
+                element.textContent = `NT$ ${end.toFixed(1)}`;
+            } else {
+                element.textContent = `NT$ ${Math.floor(end)}`;
+            }
+        } else {
+            element.textContent = Math.floor(end);
+        }
+        return;
+    }
+
     let startTimestamp = null;
     const step = (timestamp) => {
         if (!startTimestamp) startTimestamp = timestamp;
@@ -68,7 +81,7 @@ function animateValue(element, start, end, duration, isCurrency = false, isDecim
                     element.textContent = `NT$ ${Math.floor(end)}`;
                 }
             } else {
-                element.textContent = Math.floor(end);
+                element.textContent = Math.floor(end); // [V37.6] 修正為 end
             }
         }
     };
@@ -127,21 +140,27 @@ const reportContentSections = document.querySelectorAll('.report-content');
 // [V23.0] 庫存盤點
 const stocktakeListTbody = document.getElementById('stocktake-list-tbody');
 const updateAllStockBtn = document.getElementById('update-all-stock-btn');
-// [V34.0] 計時器
-let autoRefreshInterval = null; // [V35.0] 改為僅報表用
+
+// [V37.6] 計時器 (V37.5 移除 Realtime 頻道變數)
+let autoRefreshInterval = null; 
 
 
 // -----------------------------------------------------------
 //  [V34.0] 區塊 4: 商品管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadProducts() { 
-    // [V34.0] 刷新時不清空表格，避免閃爍
-    // productTableBody.innerHTML = '<tr><td colspan="11" class="loading-message">載入商品資料中...</td></tr>';
+    // [V37.6] 檢查是否在該頁面，不在則不刷新
+    const activeSection = document.querySelector('.management-section.active');
+    if (!activeSection || activeSection.id !== 'product-management-section') {
+        console.log("[Realtime] 收到 products 刷新，但目前不在商品頁，跳過。");
+        return;
+    }
+
     try {
         const { data, error } = await db.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }); 
         if (error) throw error;
         
-        // [V34.0] 檢查資料是否有變，避免不必要的重繪
+        // [V37.6] Realtime 觸發時，檢查資料是否有真的變動
         if (JSON.stringify(currentProductList) === JSON.stringify(data)) {
             return;
         }
@@ -245,7 +264,8 @@ async function handleProductFormSubmit(e) {
         if (error) { throw error; } 
         console.log('商品儲存成功:', data); 
         hideProductModal(); 
-        await loadProducts();
+        // [V37.6] 移除手動 load (Realtime 會自動觸發)
+        // await loadProducts();
     } catch (err) { 
         console.error("儲存商品時發生錯誤:", err); 
         productFormErrorMessage.textContent = `儲存失敗: ${err.message}`; 
@@ -256,7 +276,10 @@ async function handleProductFormSubmit(e) {
 }
 async function handleProductDelete(id) { 
     if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的商品嗎？\n\n注意：此操作無法復原。\n如果只是暫時不賣，請使用「編輯/上下架」功能。`)) { return; } 
-    try { const { error } = await db.from('products').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失敗：該商品已有銷售紀錄，無法永久刪除。\n\n提示：請使用「編輯/上下架」功能將其「下架」，即可在前台隱藏該商品。`); } else { throw error; } } else { console.log(`商品 ${id} 刪除成功`); await loadProducts(); } } catch (err) { console.error("刪除商品時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
+    try { const { error } = await db.from('products').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失敗：該商品已有銷售紀錄，無法永久刪除。\n\n提示：請使用「編輯/上下架」功能將其「下架」，即可在前台隱藏該商品。`); } else { throw error; } } else { console.log(`商品 ${id} 刪除成功`); 
+    // [V37.6] 移除手動 load
+    // await loadProducts(); 
+    } } catch (err) { console.error("刪除商品時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
 }
 async function handleProductSortSwap(productId, direction) { 
     const productIndex = currentProductList.findIndex(p => p.id == productId); if (productIndex === -1) return; const newIndex = (direction === 'up') ? productIndex - 1 : productIndex + 1; if (newIndex < 0 || newIndex >= currentProductList.length) return; const [item] = currentProductList.splice(productIndex, 1); currentProductList.splice(newIndex, 0, item); renderProductTable(currentProductList); document.querySelectorAll('.sort-btn, .edit-btn, .delete-btn').forEach(btn => btn.disabled = true); 
@@ -271,8 +294,13 @@ async function handleProductTableClick(e) {
 //  [V33.0] 區塊 5: 員工管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadEmployees() { 
-    // [V34.0] 刷新時不清空
-    // employeeTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">載入員工資料中...</td></tr>';
+    // [V37.6] 檢查是否在該頁面，不在則不刷新
+    const activeSection = document.querySelector('.management-section.active');
+    if (!activeSection || activeSection.id !== 'employee-management-section') {
+        console.log("[Realtime] 收到 employees 刷新，但目前不在員工頁，跳過。");
+        return;
+    }
+
     try { 
         const { data, error } = await db.from('employees').select('*').order('id', { ascending: true }); 
         if (error) throw error; 
@@ -358,7 +386,8 @@ async function handleEmployeeFormSubmit(e) {
         if (error) { throw error; } 
         console.log('員工儲存成功:', data); 
         hideEmployeeModal(); 
-        await loadEmployees(); 
+        // [V37.6] 移除手動 load
+        // await loadEmployees(); 
     } catch (err) { 
         console.error("儲存員工時發生錯誤:", err); 
         employeeFormErrorMessage.textContent = `儲存失敗: ${err.message}`; 
@@ -368,12 +397,18 @@ async function handleEmployeeFormSubmit(e) {
     }
 }
 async function handleToggleEmployeeActive(id, newActiveState) { 
-    const actionText = newActiveState ? '啟用' : '停用'; if (!confirm(`您確定要 ${actionText} ID 為 ${id} 的員工嗎？\n(這將影響他們能否登入前台)`)) { return; } 
-    try { const { error } = await db.from('employees').update({ is_active: newActiveState }).eq('id', id); if (error) { if (error.code === '23503') { alert(`${actionText} 失敗：此員工可能仍被歷史訂單關聯中。`); } else { throw error; } } else { console.log(`員工 ${id} ${actionText} 成功`); await loadEmployees(); } } catch (err) { console.error(`員工 ${actionText} 時發生錯誤:`, err); alert(`${actionText} 失敗: ${err.message}`); }
+    const actionText = newActiveState ? '啟用' : '停用'; if (!confirm(`您確定要 ${actionText} ID 為 ${id} の員工嗎？\n(這將影響他們能否登入前台)`)) { return; } 
+    try { const { error } = await db.from('employees').update({ is_active: newActiveState }).eq('id', id); if (error) { if (error.code === '23503') { alert(`${actionText} 失敗：此員工可能仍被歷史訂單關聯中。`); } else { throw error; } } else { console.log(`員工 ${id} ${actionText} 成功`); 
+    // [V37.6] 移除手動 load
+    // await loadEmployees(); 
+    } } catch (err) { console.error(`員工 ${actionText} 時發生錯誤:`, err); alert(`${actionText} 失敗: ${err.message}`); }
 }
 async function handleEmployeeDelete(id) { 
-    if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的員工嗎？\n\n警告：此操作無法復原。\n如果該員工已有訂單紀錄，請改用「停用」功能。`)) { return; } 
-    try { const { error } = await db.from('employees').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失敗：該員工已有歷史訂單紀錄，無法永久刪除。\n\n提示：請使用「停用」功能來取代。`); } else { throw error; } } else { console.log(`員工 ${id} 刪除成功`); await loadEmployees(); } } catch (err) { console.error("刪除員工時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
+    if (!confirm(`您確定要「永久刪除」ID 為 ${id} の員工嗎？\n\n警告：此操作無法復原。\n如果該員工已有訂單紀錄，請改用「停用」功能。`)) { return; } 
+    try { const { error } = await db.from('employees').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失敗：該員工已有歷史訂單紀錄，無法永久刪除。\n\n提示：請使用「停用」功能來取代。`); } else { throw error; } } else { console.log(`員工 ${id} 刪除成功`); 
+    // [V37.6] 移除手動 load
+    // await loadEmployees(); 
+    } } catch (err) { console.error("刪除員工時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
 }
 async function handleEmployeeTableClick(e) { 
     const target = e.target.closest('button'); if (!target) return; const id = target.dataset.id; if (!id) return; if (target.classList.contains('edit-employee-btn')) { const { data, error } = await db.from('employees').select('*').eq('id', id).single(); if (error) { alert(`查詢員工資料失敗: ${error.message}`); return; } showEmployeeModal(data); } if (target.classList.contains('deactivate-employee-btn')) { await handleToggleEmployeeActive(id, false); } if (target.classList.contains('activate-employee-btn')) { await handleToggleEmployeeActive(id, true); } if (target.classList.contains('delete-employee-btn')) { await handleEmployeeDelete(id); }
@@ -384,11 +419,18 @@ async function handleEmployeeTableClick(e) {
 //  [V34.0] 區塊 6: 訂單管理功能
 // -----------------------------------------------------------
 async function loadAllOrdersForSequence() {
-    // orderListTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">載入訂單資料中...</td></tr>';
+    // [V37.6] 檢查是否在該頁面，不在則不刷新
+    const activeSection = document.querySelector('.management-section.active');
+    if (!activeSection || activeSection.id !== 'orders-section') {
+        console.log("[Realtime] 收到 orders 刷新，但目前不在訂單頁，跳過。");
+        return;
+    }
+
     try {
         const { data, error } = await db.from('orders').select(`id, sales_date, total_amount, employees ( employee_name )`).order('id', { ascending: false }); 
         if (error) throw error;
         
+        // [V37.6] Realtime 觸發時，檢查資料是否有真的變動
         if (JSON.stringify(allOrders) === JSON.stringify(data)) {
             return;
         }
@@ -487,11 +529,17 @@ async function handleOrderTableClick(e) {
 }
 async function handleDeleteOrder(id) { 
     if (!confirm(`您確定要「永久刪除」訂單 ID ${id} 嗎？\n\n警告：此操作無法復原，將一併刪除所有相關明細。`)) { return; } 
-    try { const { data, error } = await db.rpc('delete_order_and_items', { order_id_to_delete: id }); if (error) throw error; console.log(data); alert(`訂單 ${id} 已刪除。`); await loadAllOrdersForSequence(); } catch (err) { console.error("刪除單筆訂單時發生錯誤:", err); alert(`刪除失败: ${err.message}`); }
+    try { const { data, error } = await db.rpc('delete_order_and_items', { order_id_to_delete: id }); if (error) throw error; console.log(data); alert(`訂單 ${id} 已刪除。`); 
+    // [V37.6] 移除手動 load
+    // await loadAllOrdersForSequence(); 
+    } catch (err) { console.error("刪除單筆訂單時發生錯誤:", err); alert(`刪除失败: ${err.message}`); }
 }
 async function handleDeleteAllOrders() { 
     if (!confirm("【極度危險】\n您確定要刪除「所有」訂單紀錄嗎？\n此操作將清空訂單和明細表。")) { return; } if (!confirm("【最終確認】\n此操作無法復原，所有銷售資料將被清除。是否繼續？")) { return; } 
-    try { const { data, error } = await db.rpc('delete_all_orders_and_items'); if (error) throw error; console.log(data); alert('所有訂單均已成功刪除。'); await loadAllOrdersForSequence(); } catch (err) { console.error("刪除所有訂單時發生錯誤:", err); alert(`刪除失敗: ${err.message}`); }
+    try { const { data, error } = await db.rpc('delete_all_orders_and_items'); if (error) throw error; console.log(data); alert('所有訂單均已成功刪除。'); 
+    // [V37.6] 移除手動 load
+    // await loadAllOrdersForSequence(); 
+    } catch (err) { console.error("刪除所有訂單時發生錯誤:", err); alert(`刪除失敗: ${err.message}`); }
 }
 
 
@@ -499,7 +547,13 @@ async function handleDeleteAllOrders() {
 //  [V16.1] 區塊 7: 折扣管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadDiscounts() {
-    // discountTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入折扣資料中...</td></tr>';
+    // [V37.6] 檢查是否在該頁面，不在則不刷新
+    const activeSection = document.querySelector('.management-section.active');
+    if (!activeSection || activeSection.id !== 'discount-management-section') {
+        console.log("[Realtime] 收到 discounts 刷新，但目前不在折扣頁，跳過。");
+        return;
+    }
+
     try {
         const { data, error } = await db
             .from('discounts')
@@ -582,7 +636,8 @@ async function handleDiscountFormSubmit(e) {
         if (error) { throw error; }
         console.log('折扣儲存成功:', data);
         hideDiscountModal();
-        await loadDiscounts();
+        // [V37.6] 移除手動 load
+        // await loadDiscounts();
     } catch (err) {
         console.error("儲存折扣時發生錯誤:", err);
         discountFormErrorMessage.textContent = `儲存失敗: ${err.message}`;
@@ -593,7 +648,7 @@ async function handleDiscountFormSubmit(e) {
 }
 async function handleToggleDiscountActive(id, newActiveState) {
     const actionText = newActiveState ? '啟用' : '停用';
-    if (!confirm(`您確定要 ${actionText} ID 為 ${id} 的折扣嗎？\n(這將影響前台能否選取)`)) {
+    if (!confirm(`您確定要 ${actionText} ID 為 ${id} の折扣嗎？\n(這將影響前台能否選取)`)) {
         return;
     }
     try {
@@ -603,14 +658,15 @@ async function handleToggleDiscountActive(id, newActiveState) {
             .eq('id', id);
         if (error) throw error;
         console.log(`折扣 ${id} ${actionText} 成功`);
-        await loadDiscounts(); 
+        // [V37.6] 移除手動 load
+        // await loadDiscounts(); 
     } catch (err) {
         console.error(`折扣 ${actionText} 時發生錯誤:`, err);
         alert(`${actionText} 失敗: ${err.message}`);
     }
 }
 async function handleDiscountDelete(id) {
-    if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的折扣嗎？\n\n警告：此操作無法復原。\n如果已有訂單使用此折扣，建議改用「停用」。`)) {
+    if (!confirm(`您確定要「永久刪除」ID 為 ${id} の折扣嗎？\n\n警告：此操作無法復原。\n如果已有訂單使用此折扣，建議改用「停用」。`)) {
         return;
     }
     try {
@@ -626,7 +682,8 @@ async function handleDiscountDelete(id) {
             }
         } else {
             console.log(`折扣 ${id} 刪除成功`);
-            await loadDiscounts(); 
+            // [V37.6] 移除手動 load
+            // await loadDiscounts(); 
         }
     } catch (err) {
         console.error("刪除折扣時發生未預期的錯誤:", err);
@@ -657,62 +714,51 @@ async function handleDiscountTableClick(e) {
 
 
 // -----------------------------------------------------------
-//  [V34.1] 區塊 8: 報表分析功能
+//  [V39.0 重寫] 區塊 8: 報表分析功能 (改用 RPC)
 // -----------------------------------------------------------
 async function loadDashboardData() {
-    // [V34.0] 刷新時不清空
-    // dashboardTotalSales.textContent = '計算中...';
-    
     try {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
         const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
 
-        const { data: orders, error: ordersError } = await db.from('orders')
-            .select('id, total_amount')
-            .gte('sales_date', todayStart)
-            .lte('sales_date', todayEnd);
-        
-        if (ordersError) throw ordersError;
+        // [V39.0] 呼叫 RPC 函數
+        const { data, error } = await db.rpc('fn_get_dashboard_stats', {
+            p_start_date: todayStart,
+            p_end_date: todayEnd
+        });
 
-        const totalOrders = orders.length;
-        const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0);
+        if (error) throw error;
+        
+        // [V39.0] 移除 V37.6 的前端計算
+        // const { data: orders, error: ordersError } = await db.from('orders')...
+        // const totalOrders = orders.length;
+        // const totalSales = orders.reduce(...);
+        // ... (移除所有前端計算) ...
+        
+        // [V39.0] 直接從 RPC 結果獲取數據
+        const stats = data;
+        const totalOrders = stats.total_orders;
+        const totalSales = stats.total_sales;
         const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-
-        const orderIds = orders.map(o => o.id);
-        let totalCost = 0;
+        const totalCost = stats.total_cost;
+        const totalProfit = stats.total_profit;
         
-        if (orderIds.length > 0) {
-            const { data: items, error: itemsError } = await db.from('order_items')
-                .select('quantity, products (cost)') 
-                .in('order_id', orderIds);
-
-            if (itemsError) throw itemsError;
-
-            totalCost = items.reduce((sum, item) => {
-                const cost = (item.products && item.products.cost) ? item.products.cost : 0;
-                return sum + (cost * item.quantity);
-            }, 0);
-        }
-
-        const totalProfit = totalSales - totalCost;
-
-        // [V34.1] 縮短動畫時間
-        const animDuration = 1000; // [V35.0] 30秒刷新一次，1秒動畫是 OK 的
+        const animDuration = 1000; 
         
+        // [V37.6] 獲取所有 DOM 上的*目前*數字
         const currentTotalSales = parseFloat(dashboardTotalSales.textContent.replace(/[^0-9.-]+/g,"")) || 0;
         const currentTotalOrders = parseFloat(dashboardTotalOrders.textContent) || 0;
+        const currentAvgOrderValue = parseFloat(dashboardAvgOrderValue.textContent.replace(/[^0-9.-]+/g,"")) || 0;
+        const currentTotalCost = parseFloat(dashboardTotalCost.textContent.replace(/[^0-9.-]+/g,"")) || 0;
+        const currentTotalProfit = parseFloat(dashboardTotalProfit.textContent.replace(/[^0-9.-]+/g,"")) || 0;
 
-        if (currentTotalSales !== totalSales) {
-            animateValue(dashboardTotalSales, currentTotalSales, totalSales, animDuration, true, false);
-        }
-        if (currentTotalOrders !== totalOrders) {
-            animateValue(dashboardTotalOrders, currentTotalOrders, totalOrders, animDuration, false, false);
-        }
-        
-        animateValue(dashboardAvgOrderValue, 0, avgOrderValue, animDuration, true, true); 
-        animateValue(dashboardTotalCost, 0, totalCost, animDuration, true, false);
-        animateValue(dashboardTotalProfit, 0, totalProfit, animDuration, true, false);
+        // [V37.6] 修正：全部都使用 (current, new) 進行動畫
+        animateValue(dashboardTotalSales, currentTotalSales, totalSales, animDuration, true, false);
+        animateValue(dashboardTotalOrders, currentTotalOrders, totalOrders, animDuration, false, false);
+        animateValue(dashboardAvgOrderValue, currentAvgOrderValue, avgOrderValue, animDuration, true, true); 
+        animateValue(dashboardTotalCost, currentTotalCost, totalCost, animDuration, true, false);
+        animateValue(dashboardTotalProfit, currentTotalProfit, totalProfit, animDuration, true, false);
 
     } catch (err) {
         console.error("載入總覽數據時發生錯誤:", err);
@@ -724,7 +770,6 @@ async function loadDashboardData() {
     }
 }
 async function loadTopSellingProducts() {
-    // topProductsTableBody.innerHTML = '<tr><td colspan="5" class="loading-message">載入熱銷排行中...</td></tr>';
     try {
         const { data, error } = await db.rpc('get_top_selling_products', { limit_count: 10 });
         if (error) throw error;
@@ -753,8 +798,6 @@ function renderTopProductsTable(products) {
     });
 }
 async function loadEmployeeSalesStats() {
-    // if (!employeeSalesTableBody) return; 
-    // employeeSalesTableBody.innerHTML = '<tr><td colspan="4" class="loading-message">載入員工排行中...</td></tr>';
     try {
         const { data, error } = await db.rpc('get_employee_sales_stats');
         if (error) throw error;
@@ -787,6 +830,13 @@ function renderEmployeeSalesTable(stats) {
 //  [V23.1] 區塊 9: 庫存盤點功能
 // -----------------------------------------------------------
 async function loadStocktakeList() {
+    // [V37.6] 檢查是否在該頁面，不在則不刷新
+    const activeSection = document.querySelector('.management-section.active');
+    if (!activeSection || activeSection.id !== 'stocktake-section') {
+        console.log("[Realtime] 收到 products 刷新，但目前不在盤點頁，跳過。");
+        return;
+    }
+
     if (!stocktakeListTbody) return;
     stocktakeListTbody.innerHTML = '<tr><td colspan="6" class="loading-message">載入商品資料中...</td></tr>';
     try {
@@ -870,7 +920,7 @@ async function handleUpdateAllStock() {
                     new_stock: new_stock
                 });
             } else {
-                console.warn(`ID ${id} 的庫存值無效 (${input.value})，已跳過。`);
+                console.warn(`ID ${id} の庫存值無效 (${input.value})，已跳過。`);
             }
         }
     });
@@ -884,6 +934,7 @@ async function handleUpdateAllStock() {
         const { error } = await db.rpc('bulk_update_stock', { updates: payload });
         if (error) throw error;
         alert(`成功更新 ${payload.length} 項商品的庫存！`);
+        // [V37.6] 盤點頁在 RPC 成功後仍需手動載入，因為 Realtime 只會觸發 loadProducts
         await loadStocktakeList(); 
     } catch (err) {
         console.error("批次更新庫存時發生錯誤:", err);
@@ -970,62 +1021,118 @@ function setupReportTabs() {
 
 
 // -----------------------------------------------------------
-//  [V35.0 新增] 區塊 12: 自動刷新 (僅報表)
+//  [V37.6 修改] 區塊 12: 自動刷新 (僅報表)
 // -----------------------------------------------------------
 /**
- * [V35.0] 僅刷新報表資料
+ * [V37.6] 僅刷新報表資料 (保留 V35.0 的邏輯)
  */
 function refreshReportData() {
     // 檢查是否有 Modal 開啟中，有則不刷新
     if (document.querySelector('.modal.active')) {
-        console.log("[V35.0] Modal 開啟中，跳過報表刷新。");
+        console.log("[V37.6] Modal 開啟中，跳過報表刷新。");
         return;
     }
     
     // 檢查是否仍在報表頁
     const activeSection = document.querySelector('.management-section.active');
     if (activeSection && activeSection.id === 'reports-section') {
-        console.log("[V35.0] 30秒自動刷新: 報表");
-        // [V35.0] 報表區要刷新所有數據 (不清空，避免閃爍)
+        console.log("[V37.6] 10秒自動刷新: 報表");
         loadDashboardData();
         loadTopSellingProducts();
         loadEmployeeSalesStats();
     } else {
-        // [V35.0] 用戶已離開報表頁，清除計時器
-        if (autoRefreshInterval) {
-            clearInterval(autoRefreshInterval);
-            autoRefreshInterval = null;
-            console.log("[V35.0] 已離開報表頁，停止自動刷新。");
-        }
+        // [V37.6] 不在報表頁，安靜跳過
     }
 }
 
 
 // -----------------------------------------------------------
-//  [V35.0 修改] 區塊 13: 事件監聽器 (原 12)
+//  [V37.6 修改] 區塊 13: 事件監聽器
 // -----------------------------------------------------------
+
+/**
+ * [V37.6 新增]
+ * 啟動全局 Realtime 監聽 (一次性)
+ */
+function setupGlobalRealtime() {
+    console.log("✅ [Realtime] 啟動全局監聽...");
+    
+    // [V37.7] 修復: 使用 'db.channel' 而不是 'supabase.channel'
+    db.channel('public:products')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' },
+            (payload) => {
+                console.log('🔄 [Realtime] 偵測到 products 變更');
+                // 檢查是否在商品頁，是才刷新
+                if (document.getElementById('product-management-section').classList.contains('active')) {
+                    loadProducts(); 
+                }
+                // 檢查是否在盤點頁，是才刷新
+                if (document.getElementById('stocktake-section').classList.contains('active')) {
+                    loadStocktakeList();
+                }
+            }
+        ).subscribe();
+
+    db.channel('public:employees')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' },
+            () => {
+                console.log('🔄 [Realtime] 偵測到 employees 變更');
+                if (document.getElementById('employee-management-section').classList.contains('active')) {
+                    loadEmployees(); // 刷新員工
+                }
+            }
+        ).subscribe();
+
+    db.channel('public:orders')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },
+            () => {
+                console.log('🔄 [Realtime] 偵測到 orders 變更');
+                if (document.getElementById('orders-section').classList.contains('active')) {
+                    loadAllOrdersForSequence(); // 刷新訂單
+                }
+            }
+        ).subscribe();
+        
+    // [V37.6] 監聽 order_items 變化時，也刷新訂單列表 (因為刪除訂單會觸發)
+    db.channel('public:order_items')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' },
+            () => {
+                console.log('🔄 [Realtime] 偵測到 order_items 變更');
+                if (document.getElementById('orders-section').classList.contains('active')) {
+                    loadAllOrdersForSequence(); // 刷新訂單
+                }
+            }
+        ).subscribe();
+
+
+    db.channel('public:discounts')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'discounts' },
+            () => {
+                console.log('🔄 [Realtime] 偵測到 discounts 變更');
+                if (document.getElementById('discount-management-section').classList.contains('active')) {
+                    loadDiscounts(); // 刷新折扣
+                }
+            }
+        ).subscribe();
+}
+
+/**
+ * [V37.6 修改] 簡化導航，只管切換和單次載入
+ */
 function setupNavigation() {
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
             
-            // [V35.0] 點擊任何導航時，先清除舊的計時器
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-                console.log("[V35.0] 切換頁面，停止自動刷新。");
-            }
-
+            // [V37.6] 簡化：只管切換頁面，不管監聽/計時器
             const targetId = link.dataset.target;
-            if (!targetId) {
-                return; 
-            }
+            if (!targetId) { return; }
 
             navLinks.forEach(nav => nav.classList.remove('active'));
             managementSections.forEach(sec => sec.classList.remove('active'));
             link.classList.add('active');
             document.getElementById(targetId).classList.add('active');
 
-            // 點擊時立即載入
+            // 點擊時立即載入 (Realtime 會保持更新)
             if (targetId === 'product-management-section') {
                 loadProducts();
             } else if (targetId === 'employee-management-section') {
@@ -1035,6 +1142,7 @@ function setupNavigation() {
             } else if (targetId === 'discount-management-section') {
                 loadDiscounts();
             } else if (targetId === 'reports-section') {
+                // 報表頁在點擊時也立即刷新一次
                 loadDashboardData();
                 loadTopSellingProducts();
                 loadEmployeeSalesStats(); 
@@ -1048,10 +1156,6 @@ function setupNavigation() {
                     });
                 }
                 
-                // [V35.0] 新增: 僅在此頁面啟動 30 秒刷新
-                autoRefreshInterval = setInterval(refreshReportData, 30000); // 30秒
-                console.log("[V35.0] 進入報表頁，啟動 30 秒自動刷新。");
-
             } else if (targetId === 'stocktake-section') {
                 loadStocktakeList();
             }
@@ -1064,8 +1168,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
     setupReportTabs(); 
     loadProducts(); // 預設載入商品
-
-    // [V35.0] 移除 V34.1 的全局 setInterval
+    
+    // [V37.6] 啟動全局 Realtime 監聽
+    setupGlobalRealtime(); 
+    
+    // [V37.6] 啟動報表 10 秒刷新計時器
+    autoRefreshInterval = setInterval(refreshReportData, 10000); // 10秒
+    console.log("[V37.6] 全局 10 秒報表刷新已啟動。");
     
     backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
 

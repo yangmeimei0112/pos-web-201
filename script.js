@@ -1,6 +1,12 @@
 /* ====================================================================
-   POS 系統核心 JS 邏輯 - script.js (V30.1 - 1 秒自動刷新版)
-   - [修改] V30.1: 將 5000ms 刷新間隔改為 1000ms
+   POS 系統核心 JS 邏輯 - script.js (V38.0 - 結帳改用 RPC)
+   - [V38.0] 重大安全更新：
+   - [V38.0] 移除 V37.0 (Realtime) 功能 (使用者回報不需要)
+   - [V38.0] 恢復 V30.1 的 1 秒 setInterval 輪詢
+   - [V38.0] 重寫 processCheckout() 函數
+   - [V38.0] 移除前端庫存檢查 (改由 RPC 處理)
+   - [V38.0] 移除前端寫入 orders, order_items, update stock 的邏輯
+   - [V38.0] processCheckout() 改為呼叫 Supabase RPC 'fn_process_checkout'
    ==================================================================== */
 
 // ====================================================================
@@ -32,12 +38,14 @@ let currentDiscountAmount = 0;
 let heldOrders = []; // [V18] 儲存暫掛訂單
 let currentHeldOrderName = null; // [V18] 標記當前是否為 "取回" 的訂單
 let lowStockItems = []; // [V28.2] 新增: 低庫存商品
-let productLoadInterval = null; // [V30.0] 刷新計時器
+let productLoadInterval = null; // [V38.0] 恢復 V30.1 的 1 秒輪詢
+// let productRealtimeChannel = null; // [V38.0] 移除 V37.0 的 Realtime
 
 
 // ===============================================
-// 3. DOM 元素
+// 3. DOM 元素 (與 V37.0 相同)
 // ===============================================
+// ... (DOM 元素定義，無變更) ...
 // 員工模組
 const employeeModal = document.getElementById('employee-selection-modal');
 const employeeList = document.getElementById('employee-list');
@@ -97,7 +105,7 @@ const formatCurrency = (amount) => {
 };
 
 // ===============================================
-// 5. [V30.0 修改] 員工、折扣、時鐘函數
+// 5. [V38.0 修改] 員工、折扣、時鐘函數 (恢復 V30.1 邏輯)
 // ===============================================
 function updateClock() {
     const now = new Date();
@@ -124,6 +132,9 @@ async function loadDiscounts() {
         updateOrderTotals();
     }
 }
+
+// [V38.0] 移除 V37.0 的 setupRealtimeProductListener()
+
 function selectEmployee(id, name) {
     currentEmployee = { id, name };
     if (currentEmployeeDisplay) {
@@ -143,10 +154,10 @@ function selectEmployee(id, name) {
         loadDiscounts(); 
     }
 
-    // [V30.1] 修改: 登入成功時，啟動 1 秒刷新
+    // [V38.0] 恢復 V30.1 的 1 秒刷新
     if (!productLoadInterval) {
-        productLoadInterval = setInterval(loadProducts, 1000); // 5000 -> 1000
-        console.log("[V30.1] 1秒庫存自動刷新已啟動。");
+        productLoadInterval = setInterval(loadProducts, 1000); 
+        console.log("[V38.0] 1秒庫存自動刷新已啟動。");
     }
 }
 async function loadEmployees() {
@@ -204,11 +215,11 @@ const handleEmployeeSwitch = () => {
     if (posMainApp) posMainApp.classList.add('hidden');
     if (employeeModal) employeeModal.classList.add('active');
     
-    // [V30.0] 新增: 切換員工時，清除刷新
+    // [V38.0] 恢復 V30.1 的清除 interval
     if (productLoadInterval) {
         clearInterval(productLoadInterval);
         productLoadInterval = null;
-        console.log("[V30.0] 庫存自動刷新已停止。");
+        console.log("[V38.0] 庫存自動刷新已停止。");
     }
 
     loadEmployees();
@@ -220,7 +231,7 @@ const handleBackendRedirect = () => {
 
 
 // ===============================================
-// 6. [V29.3] 商品載入與渲染函數
+// 6. [V29.3] 商品載入與渲染函數 (與 V37.0 相同)
 // ===============================================
 async function loadProducts() {
     if (!productLoadingMessage || !productList) {
@@ -250,6 +261,7 @@ async function loadProducts() {
         }
         if (error) throw error;
         
+        // [V38.0] 恢復 V30.1 的檢查
         if (!isInitialLoad && JSON.stringify(allProducts) === JSON.stringify(data)) {
             return; 
         }
@@ -335,7 +347,7 @@ function filterAndRenderProducts(category) {
 }
 
 // ===============================================
-// 7. 訂單處理核心函數 - [V18.2 修改]
+// 7. 訂單處理核心函數 (與 V37.0 相同)
 // ===============================================
 function getProductStock(productId) {
     const product = allProducts.find(p => p.id === productId);
@@ -553,7 +565,7 @@ function clearOrder(force = false) {
 
 
 // ===============================================
-// 8. [V28.3] 結帳邏輯
+// 8. [V38.0 重寫] 結帳邏輯 (改用 RPC)
 // ===============================================
 function showCheckoutModal() {
     if (orderItems.length === 0) return;
@@ -597,94 +609,76 @@ async function processCheckout() {
     finalConfirmBtn.disabled = true;
     finalConfirmBtn.textContent = '處理中...';
 
-    // [V28.3] 結帳前重新載入商品，以獲取最新庫存
-    await loadProducts(); 
-    
-    let inventoryError = false;
-    for (const item of orderItems) {
-        const currentStock = getProductStock(item.product_id); 
-        if (item.quantity > currentStock) {
-            alert(`結帳失敗：商品「${item.name}」庫存不足 (僅剩 ${currentStock})！\n請返回修改訂單。`);
-            inventoryError = true;
-            break; 
-        }
-    }
-    if (inventoryError) {
-        finalConfirmBtn.disabled = false;
-        finalConfirmBtn.textContent = '確認結帳';
-        checkoutModal.classList.remove('active'); 
-        renderOrderItems(); // 重新渲染訂單 (也許庫存已變)
-        return; 
-    }
+    // [V38.0] 移除前端庫存檢查，交給 RPC 處理
+    // await loadProducts(); 
+    // let inventoryError = false; ...
 
     const totalAmount = parseFloat(checkoutBtn.dataset.total);
     const employeeId = currentEmployee.id;
     const paidAmount = parseFloat(paidAmountInput.value) || 0;
     const changeAmount = Math.max(0, paidAmount - totalAmount);
-    const transactionTime = new Date().toISOString();
+    // const transactionTime = new Date().toISOString(); // [V38.0] RPC 會自動使用 NOW()
+
+    // [V38.0] 準備傳送給 RPC 的 JSON 陣列
+    const rpcItemsPayload = orderItems.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+        note: item.note || "" // 確保 note 不是 null
+    }));
 
     try {
-        // 1. 寫入 orders
-        const { data: orderData, error: orderError } = await supabase
-            .from('orders')
-            .insert([{
-                employee_id: employeeId,
-                total_amount: totalAmount,
-                discount_amount: currentDiscountAmount, 
-                discount_id: currentDiscountId > 0 ? currentDiscountId : null, 
-                status: 'Completed',
-                paid_amount: paidAmount,
-                change_amount: changeAmount,
-                sales_date: transactionTime
-            }])
-            .select('id') 
-            .single(); 
-
-        if (orderError) throw new Error(`寫入訂單主表失敗: ${orderError.message}`);
-        const orderId = orderData.id;
-        console.log(`訂單 ${orderId} 寫入成功 (含折扣)。`);
-
-        // 2. 寫入 order_items
-        const itemsPayload = orderItems.map(item => ({
-            order_id: orderId,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            price_at_sale: item.price,
-            subtotal: item.price * item.quantity,
-            note: item.note 
-        }));
-        const { error: itemsError } = await supabase.from('order_items').insert(itemsPayload);
-        if (itemsError) throw new Error(`寫入訂單明細失敗: ${itemsError.message}`);
-        console.log('訂單明細寫入成功 (含商品備註)。');
-
-        // 3. [V28.3 修正] 扣減庫存 (還原 V18.2 的 update 邏輯)
-        const updatePromises = orderItems.map(item => {
-            const newStock = getProductStock(item.product_id) - item.quantity;
-            return supabase
-                .from('products')
-                .update({ stock: newStock })
-                .eq('id', item.product_id);
+        // [V38.0] 呼叫 RPC 函數
+        const { data: newOrderId, error } = await supabase.rpc('fn_process_checkout', {
+            p_employee_id: employeeId,
+            p_total_amount: totalAmount,
+            p_discount_amount: currentDiscountAmount,
+            p_discount_id: currentDiscountId > 0 ? currentDiscountId : null,
+            p_paid_amount: paidAmount,
+            p_change_amount: changeAmount,
+            p_items: rpcItemsPayload
         });
 
-        const results = await Promise.allSettled(updatePromises);
-        const stockErrors = results.filter(res => res.status === 'rejected');
-        if (stockErrors.length > 0) {
-            console.error('部分庫存更新失敗:', stockErrors.map(e => e.reason));
-        } else {
-            console.log('庫存扣減成功。');
+        if (error) throw error; // 拋出網路或權限錯誤
+
+        // [V38.0] 檢查 RPC 回傳值
+        if (newOrderId === -1 || !newOrderId) {
+            // 這是我們在 RPC 中定義的失敗 (例如庫存不足)
+             throw new Error("資料庫回傳結帳失敗，可能是庫存不足或商品不存在。");
         }
 
+        // [V38.0] 移除 V28.3 的手動 寫入/扣減 邏輯
+        // (supabase.from('orders').insert(...))
+        // (supabase.from('order_items').insert(...))
+        // (supabase.from('products').update(...))
+
         // 4. 交易完成
-        alert(`結帳成功！訂單號碼: ${orderId}\n應收金額: ${formatCurrency(totalAmount)}\n實收金額: ${formatCurrency(paidAmount)}\n找零金額: ${formatCurrency(changeAmount)}`);
+        alert(`結帳成功！訂單號碼: ${newOrderId}\n應收金額: ${formatCurrency(totalAmount)}\n實收金額: ${formatCurrency(paidAmount)}\n找零金額: ${formatCurrency(changeAmount)}`);
         checkoutModal.classList.remove('active');
         clearOrder(true); 
         
-        // [V28.3] 再次載入商品，確保UI (鈴鐺 和 庫存數字) 顯示最新狀態
+        // [V38.0] 手動觸發一次 loadProducts()，讓 1 秒輪詢立即反應庫存
         await loadProducts(); 
 
     } catch (err) {
         console.error('結帳過程中發生錯誤:', err);
-        alert(`結帳失敗：${err.message}\n請稍後再試或聯繫管理員。`);
+        
+        // [V38.0] 解析 RPC 丟出的錯誤訊息
+        let alertMessage = `結帳失敗：${err.message}\n請稍後再試或聯繫管理員。`;
+        if (err.message.includes("庫存不足")) {
+             // 從 "庫存不足：「商品A」(ID: 1) 僅剩 5，訂單需要 10" 中提取訊息
+             const match = err.message.match(/EXCEPTION: (.*)/);
+             if (match && match[1]) {
+                 alertMessage = `結帳失敗：\n${match[1]}\n\n訂單未成立，請返回修改訂單。`;
+             } else {
+                 alertMessage = "結帳失敗：商品庫存不足！\n請返回修改訂單。";
+             }
+             // 庫存不足時，強制刷新一次
+             await loadProducts(); 
+        }
+        
+        alert(alertMessage);
+
     } finally {
         finalConfirmBtn.disabled = false;
         finalConfirmBtn.textContent = '確認結帳';
@@ -693,7 +687,7 @@ async function processCheckout() {
 
 
 // ===============================================
-// [V18.2 修改] 區塊 9: 暫掛/取單功能
+// [V18.2 修改] 區塊 9: 暫掛/取單功能 (與 V37.0 相同)
 // ===============================================
 const HELD_ORDERS_KEY = 'posHeldOrders';
 
@@ -816,7 +810,7 @@ function handleRetrieveModalClick(e) {
 
 
 // ===============================================
-// [V28.2] 區塊 10: 庫存預警功能
+// [V28.2] 區塊 10: 庫存預警功能 (與 V37.0 相同)
 // ===============================================
 function setupWarningBell() {
     if (stockWarningBell) {
@@ -871,7 +865,7 @@ function hideStockWarningModal() {
 
 
 // ===============================================
-// 11. [V30.1 修改] 應用程式啟動與事件監聽
+// 11. [V38.0 修改] 應用程式啟動與事件監聽
 // ===============================================
 
 function initializeEmployeeModule() {
@@ -879,9 +873,7 @@ function initializeEmployeeModule() {
     if (employeeModal) {
         const firstEmployeeModal = document.getElementById('employee-selection-modal');
         if (firstEmployeeModal) {
-            window.requestAnimationFrame(() => {
-                firstEmployeeModal.classList.add('active');
-            });
+            firstEmployeeModal.classList.add('active');
         }
     }
 }
@@ -896,29 +888,29 @@ function initializeApp() {
     if (!currentEmployee) {
         initializeEmployeeModule();
     } else {
-        // [V30.0] 如果是已登入狀態 (例如: 重新整理)，也啟動計時器
+        // [V38.0] 如果是已登入狀態 (例如: 重新整理)，也啟動計時器
         loadProducts(); 
         if (posMainApp) posMainApp.classList.remove('hidden');
         if (!productLoadInterval) {
-            productLoadInterval = setInterval(loadProducts, 1000); // [V30.1] 5000 -> 1000
-            console.log("[V30.1] 1秒庫存自動刷新已啟動。");
+            productLoadInterval = setInterval(loadProducts, 1000); 
+            console.log("[V38.0] 1秒庫存自動刷新已啟動。");
         }
     }
     
-    // [V29.1] 修正: 重新綁定 selectEmployee 函數
+    // [V38.0] 恢復 V30.1 的 selectEmployee 綁定
     const originalSelectEmployee = selectEmployee;
     selectEmployee = (id, name) => {
         originalSelectEmployee(id, name); // 執行原始的登入邏輯
         
         if (!productLoadInterval) {
-             productLoadInterval = setInterval(loadProducts, 1000); // [V30.1] 5000 -> 1000
-             console.log("[V30.1] 1秒庫存自動刷新已啟動。");
+             productLoadInterval = setInterval(loadProducts, 1000); 
+             console.log("[V38.0] 1秒庫存自動刷新已啟動。");
         }
     };
 
     // --- 事件綁定 ---
     if (goToBackendBtn) goToBackendBtn.onclick = handleBackendRedirect;
-    if (changeEmployeeBtn) changeEmployeeBtn.onclick = handleEmployeeSwitch; // [V29.1] handleEmployeeSwitch 內部已包含清除計時器邏輯
+    if (changeEmployeeBtn) changeEmployeeBtn.onclick = handleEmployeeSwitch; 
     if (clearOrderBtn) clearOrderBtn.addEventListener('click', () => clearOrder());
 
     // 結帳 Modal
@@ -1039,7 +1031,7 @@ function initializeApp() {
     renderOrderItems();
     updateOrderTotals(); 
 
-    console.log('🚀 POS 系統腳本 (V30.1) 已啟動。');
+    console.log('🚀 POS 系統腳本 (V38.0) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化
