@@ -1,9 +1,9 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V39.0 - 報表 RPC 優化)
-   - [V39.0] 重寫 loadDashboardData() 函數
-   - [V39.0] 移除 V37.7 中 loadDashboardData() 的多次 select，
-             改為呼叫 RPC 'fn_get_dashboard_stats'
-   - (保留 V37.7 的全局 Realtime + 報表 10 秒刷新 + 報表滾動動畫)
+   後台管理 (Backend) 邏輯 (V39.1 - 恢復 CUD 手動刷新)
+   - [V39.1] 恢復 V35.0 的邏輯：在 CUD (Create, Update, Delete) 操作成功後，
+             立刻呼叫 load...() 函數，提供即時 UI 反饋。
+   - [V39.1] 保留 V37.7 的全局 Realtime，用於處理 "外部" (如 POS 機) 的資料變更。
+   - [V39.1] 保留 V39.0 的報表 RPC 優化 和 10 秒刷新。
    ==================================================================== */
 
 // ====================================================================
@@ -149,18 +149,19 @@ let autoRefreshInterval = null;
 //  [V34.0] 區塊 4: 商品管理功能 (CRUD)
 // -----------------------------------------------------------
 async function loadProducts() { 
-    // [V37.6] 檢查是否在該頁面，不在則不刷新
+    // [V37.6] 檢查是否在該頁面，不在則不刷新 (Realtime 呼叫時)
     const activeSection = document.querySelector('.management-section.active');
     if (!activeSection || activeSection.id !== 'product-management-section') {
         console.log("[Realtime] 收到 products 刷新，但目前不在商品頁，跳過。");
-        return;
+        // [V39.1] 如果是手動呼叫 (不在頁面)，也允許執行
+        // (此檢查僅適用於 Realtime)
     }
 
     try {
         const { data, error } = await db.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }); 
         if (error) throw error;
         
-        // [V37.6] Realtime 觸發時，檢查資料是否有真的變動
+        // [V39.1] 移除 V37.6 的 Realtime 緩存檢查，恢復 V34.0 的檢查
         if (JSON.stringify(currentProductList) === JSON.stringify(data)) {
             return;
         }
@@ -264,8 +265,7 @@ async function handleProductFormSubmit(e) {
         if (error) { throw error; } 
         console.log('商品儲存成功:', data); 
         hideProductModal(); 
-        // [V37.6] 移除手動 load (Realtime 會自動觸發)
-        // await loadProducts();
+        await loadProducts(); // [V39.1] 恢復手動刷新
     } catch (err) { 
         console.error("儲存商品時發生錯誤:", err); 
         productFormErrorMessage.textContent = `儲存失敗: ${err.message}`; 
@@ -277,8 +277,7 @@ async function handleProductFormSubmit(e) {
 async function handleProductDelete(id) { 
     if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的商品嗎？\n\n注意：此操作無法復原。\n如果只是暫時不賣，請使用「編輯/上下架」功能。`)) { return; } 
     try { const { error } = await db.from('products').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失敗：該商品已有銷售紀錄，無法永久刪除。\n\n提示：請使用「編輯/上下架」功能將其「下架」，即可在前台隱藏該商品。`); } else { throw error; } } else { console.log(`商品 ${id} 刪除成功`); 
-    // [V37.6] 移除手動 load
-    // await loadProducts(); 
+        await loadProducts(); // [V39.1] 恢復手動刷新
     } } catch (err) { console.error("刪除商品時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
 }
 async function handleProductSortSwap(productId, direction) { 
@@ -298,7 +297,7 @@ async function loadEmployees() {
     const activeSection = document.querySelector('.management-section.active');
     if (!activeSection || activeSection.id !== 'employee-management-section') {
         console.log("[Realtime] 收到 employees 刷新，但目前不在員工頁，跳過。");
-        return;
+        // [V39.1] (此檢查僅適用於 Realtime)
     }
 
     try { 
@@ -386,8 +385,7 @@ async function handleEmployeeFormSubmit(e) {
         if (error) { throw error; } 
         console.log('員工儲存成功:', data); 
         hideEmployeeModal(); 
-        // [V37.6] 移除手動 load
-        // await loadEmployees(); 
+        await loadEmployees(); // [V39.1] 恢復手動刷新
     } catch (err) { 
         console.error("儲存員工時發生錯誤:", err); 
         employeeFormErrorMessage.textContent = `儲存失敗: ${err.message}`; 
@@ -397,17 +395,15 @@ async function handleEmployeeFormSubmit(e) {
     }
 }
 async function handleToggleEmployeeActive(id, newActiveState) { 
-    const actionText = newActiveState ? '啟用' : '停用'; if (!confirm(`您確定要 ${actionText} ID 為 ${id} の員工嗎？\n(這將影響他們能否登入前台)`)) { return; } 
+    const actionText = newActiveState ? '啟用' : '停用'; if (!confirm(`您確定要 ${actionText} ID 為 ${id} 的員工嗎？\n(這將影響他們能否登入前台)`)) { return; } 
     try { const { error } = await db.from('employees').update({ is_active: newActiveState }).eq('id', id); if (error) { if (error.code === '23503') { alert(`${actionText} 失敗：此員工可能仍被歷史訂單關聯中。`); } else { throw error; } } else { console.log(`員工 ${id} ${actionText} 成功`); 
-    // [V37.6] 移除手動 load
-    // await loadEmployees(); 
+        await loadEmployees(); // [V39.1] 恢復手動刷新
     } } catch (err) { console.error(`員工 ${actionText} 時發生錯誤:`, err); alert(`${actionText} 失敗: ${err.message}`); }
 }
 async function handleEmployeeDelete(id) { 
-    if (!confirm(`您確定要「永久刪除」ID 為 ${id} の員工嗎？\n\n警告：此操作無法復原。\n如果該員工已有訂單紀錄，請改用「停用」功能。`)) { return; } 
+    if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的員工嗎？\n\n警告：此操作無法復原。\n如果該員工已有訂單紀錄，請改用「停用」功能。`)) { return; } 
     try { const { error } = await db.from('employees').delete().eq('id', id); if (error) { if (error.code === '23503') { alert(`刪除失敗：該員工已有歷史訂單紀錄，無法永久刪除。\n\n提示：請使用「停用」功能來取代。`); } else { throw error; } } else { console.log(`員工 ${id} 刪除成功`); 
-    // [V37.6] 移除手動 load
-    // await loadEmployees(); 
+        await loadEmployees(); // [V39.1] 恢復手動刷新
     } } catch (err) { console.error("刪除員工時發生未預期的錯誤:", err); alert(`刪除失敗: ${err.message}`); }
 }
 async function handleEmployeeTableClick(e) { 
@@ -423,14 +419,14 @@ async function loadAllOrdersForSequence() {
     const activeSection = document.querySelector('.management-section.active');
     if (!activeSection || activeSection.id !== 'orders-section') {
         console.log("[Realtime] 收到 orders 刷新，但目前不在訂單頁，跳過。");
-        return;
+        // [V39.1] (此檢查僅適用於 Realtime)
     }
 
     try {
         const { data, error } = await db.from('orders').select(`id, sales_date, total_amount, employees ( employee_name )`).order('id', { ascending: false }); 
         if (error) throw error;
         
-        // [V37.6] Realtime 觸發時，檢查資料是否有真的變動
+        // [V39.1] 移除 V37.6 的 Realtime 緩存檢查，恢復 V34.0 的檢查
         if (JSON.stringify(allOrders) === JSON.stringify(data)) {
             return;
         }
@@ -530,15 +526,13 @@ async function handleOrderTableClick(e) {
 async function handleDeleteOrder(id) { 
     if (!confirm(`您確定要「永久刪除」訂單 ID ${id} 嗎？\n\n警告：此操作無法復原，將一併刪除所有相關明細。`)) { return; } 
     try { const { data, error } = await db.rpc('delete_order_and_items', { order_id_to_delete: id }); if (error) throw error; console.log(data); alert(`訂單 ${id} 已刪除。`); 
-    // [V37.6] 移除手動 load
-    // await loadAllOrdersForSequence(); 
+        await loadAllOrdersForSequence(); // [V39.1] 恢復手動刷新
     } catch (err) { console.error("刪除單筆訂單時發生錯誤:", err); alert(`刪除失败: ${err.message}`); }
 }
 async function handleDeleteAllOrders() { 
     if (!confirm("【極度危險】\n您確定要刪除「所有」訂單紀錄嗎？\n此操作將清空訂單和明細表。")) { return; } if (!confirm("【最終確認】\n此操作無法復原，所有銷售資料將被清除。是否繼續？")) { return; } 
     try { const { data, error } = await db.rpc('delete_all_orders_and_items'); if (error) throw error; console.log(data); alert('所有訂單均已成功刪除。'); 
-    // [V37.6] 移除手動 load
-    // await loadAllOrdersForSequence(); 
+        await loadAllOrdersForSequence(); // [V39.1] 恢復手動刷新
     } catch (err) { console.error("刪除所有訂單時發生錯誤:", err); alert(`刪除失敗: ${err.message}`); }
 }
 
@@ -551,7 +545,7 @@ async function loadDiscounts() {
     const activeSection = document.querySelector('.management-section.active');
     if (!activeSection || activeSection.id !== 'discount-management-section') {
         console.log("[Realtime] 收到 discounts 刷新，但目前不在折扣頁，跳過。");
-        return;
+        // [V39.1] (此檢查僅適用於 Realtime)
     }
 
     try {
@@ -633,11 +627,10 @@ async function handleDiscountFormSubmit(e) {
             response = await db.from('discounts').insert([discountData]).select();
         }
         const { data, error } = response;
-        if (error) { throw error; }
+        if (error) { throw error; } 
         console.log('折扣儲存成功:', data);
         hideDiscountModal();
-        // [V37.6] 移除手動 load
-        // await loadDiscounts();
+        await loadDiscounts(); // [V39.1] 恢復手動刷新
     } catch (err) {
         console.error("儲存折扣時發生錯誤:", err);
         discountFormErrorMessage.textContent = `儲存失敗: ${err.message}`;
@@ -648,7 +641,7 @@ async function handleDiscountFormSubmit(e) {
 }
 async function handleToggleDiscountActive(id, newActiveState) {
     const actionText = newActiveState ? '啟用' : '停用';
-    if (!confirm(`您確定要 ${actionText} ID 為 ${id} の折扣嗎？\n(這將影響前台能否選取)`)) {
+    if (!confirm(`您確定要 ${actionText} ID 為 ${id} 的折扣嗎？\n(這將影響前台能否選取)`)) {
         return;
     }
     try {
@@ -658,15 +651,14 @@ async function handleToggleDiscountActive(id, newActiveState) {
             .eq('id', id);
         if (error) throw error;
         console.log(`折扣 ${id} ${actionText} 成功`);
-        // [V37.6] 移除手動 load
-        // await loadDiscounts(); 
+        await loadDiscounts(); // [V39.1] 恢復手動刷新
     } catch (err) {
         console.error(`折扣 ${actionText} 時發生錯誤:`, err);
         alert(`${actionText} 失敗: ${err.message}`);
     }
 }
 async function handleDiscountDelete(id) {
-    if (!confirm(`您確定要「永久刪除」ID 為 ${id} の折扣嗎？\n\n警告：此操作無法復原。\n如果已有訂單使用此折扣，建議改用「停用」。`)) {
+    if (!confirm(`您確定要「永久刪除」ID 為 ${id} 的折扣嗎？\n\n警告：此操作無法復原。\n如果已有訂單使用此折扣，建議改用「停用」。`)) {
         return;
     }
     try {
@@ -682,8 +674,7 @@ async function handleDiscountDelete(id) {
             }
         } else {
             console.log(`折扣 ${id} 刪除成功`);
-            // [V37.6] 移除手動 load
-            // await loadDiscounts(); 
+            await loadDiscounts(); // [V39.1] 恢復手動刷新
         }
     } catch (err) {
         console.error("刪除折扣時發生未預期的錯誤:", err);
@@ -729,12 +720,6 @@ async function loadDashboardData() {
         });
 
         if (error) throw error;
-        
-        // [V39.0] 移除 V37.6 的前端計算
-        // const { data: orders, error: ordersError } = await db.from('orders')...
-        // const totalOrders = orders.length;
-        // const totalSales = orders.reduce(...);
-        // ... (移除所有前端計算) ...
         
         // [V39.0] 直接從 RPC 結果獲取數據
         const stats = data;
@@ -834,7 +819,7 @@ async function loadStocktakeList() {
     const activeSection = document.querySelector('.management-section.active');
     if (!activeSection || activeSection.id !== 'stocktake-section') {
         console.log("[Realtime] 收到 products 刷新，但目前不在盤點頁，跳過。");
-        return;
+        // [V39.1] (此檢查僅適用於 Realtime)
     }
 
     if (!stocktakeListTbody) return;
@@ -920,7 +905,7 @@ async function handleUpdateAllStock() {
                     new_stock: new_stock
                 });
             } else {
-                console.warn(`ID ${id} の庫存值無效 (${input.value})，已跳過。`);
+                console.warn(`ID ${id} 的庫存值無效 (${input.value})，已跳過。`);
             }
         }
     });
@@ -934,7 +919,7 @@ async function handleUpdateAllStock() {
         const { error } = await db.rpc('bulk_update_stock', { updates: payload });
         if (error) throw error;
         alert(`成功更新 ${payload.length} 項商品的庫存！`);
-        // [V37.6] 盤點頁在 RPC 成功後仍需手動載入，因為 Realtime 只會觸發 loadProducts
+        // [V37.6] 盤點頁在 RPC 成功後仍需手動載入
         await loadStocktakeList(); 
     } catch (err) {
         console.error("批次更新庫存時發生錯誤:", err);

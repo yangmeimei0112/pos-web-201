@@ -1,12 +1,7 @@
 /* ====================================================================
-   POS 系統核心 JS 邏輯 - script.js (V38.0 - 結帳改用 RPC)
-   - [V38.0] 重大安全更新：
-   - [V38.0] 移除 V37.0 (Realtime) 功能 (使用者回報不需要)
-   - [V38.0] 恢復 V30.1 的 1 秒 setInterval 輪詢
-   - [V38.0] 重寫 processCheckout() 函數
-   - [V38.0] 移除前端庫存檢查 (改由 RPC 處理)
-   - [V38.0] 移除前端寫入 orders, order_items, update stock 的邏輯
-   - [V38.0] processCheckout() 改為呼叫 Supabase RPC 'fn_process_checkout'
+   POS 系統核心 JS 邏輯 - script.js (V38.1 - 員工 Modal 介面優化)
+   - [V38.1] 修改 loadEmployees() 函數，產生新的按鈕 HTML 結構
+   - (保留 V38.0 的 RPC 結帳安全機制)
    ==================================================================== */
 
 // ====================================================================
@@ -105,7 +100,7 @@ const formatCurrency = (amount) => {
 };
 
 // ===============================================
-// 5. [V38.0 修改] 員工、折扣、時鐘函數 (恢復 V30.1 邏輯)
+// 5. [V38.1 修改] 員工、折扣、時鐘函數
 // ===============================================
 function updateClock() {
     const now = new Date();
@@ -185,11 +180,14 @@ async function loadEmployees() {
             button.classList.add('employee-button');
             button.dataset.id = employee.id;
             button.dataset.name = employee.employee_name;
+            
+            // [V38.1] 修改按鈕 HTML 結構以匹配新 CSS
             button.innerHTML = `
-                ${employee.employee_name}
-                <br>
-                <span style="font-size:0.8em; opacity: 0.8;">(${employee.employee_code})</span>
+                <i class="fas fa-user"></i>
+                <span class="employee-name-display">${employee.employee_name}</span>
+                <span class="employee-code-display">${employee.employee_code}</span>
             `;
+            
             button.addEventListener('click', () => selectEmployee(employee.id, employee.employee_name));
             employeeList.appendChild(button);
         });
@@ -1031,7 +1029,7 @@ function initializeApp() {
     renderOrderItems();
     updateOrderTotals(); 
 
-    console.log('🚀 POS 系統腳本 (V38.0) 已啟動。');
+    console.log('🚀 POS 系統腳本 (V38.1) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化
