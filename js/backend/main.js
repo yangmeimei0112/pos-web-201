@@ -1,5 +1,6 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V43.2 - 修正模組路徑)
+   後台管理 (Backend) 邏輯 (V49.0 - 5秒報表刷新)
+   - [V49.0] 將 setInterval 改為 5000 (5秒)
    ==================================================================== */
 
 // [V43.2] 修正 import 路徑
@@ -27,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 3. 啟動即時功能
     setupGlobalRealtime(); 
-    setInterval(refreshReportData, 10000); // 10秒報表刷新
-    console.log("[V43.2] 後台模組化已啟動 (路徑已修正)。");
+    setInterval(refreshReportData, 5000); // [V49.0] 10000 -> 5000
+    console.log("[V49.0] 後台模組化已啟動 (5秒刷新)。"); // [V49.0] 修改日誌
     
     // 4. 綁定頂層事件
     DOM.backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
