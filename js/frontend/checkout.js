@@ -1,9 +1,8 @@
 /*
  * ====================================================================
- * [V46.0] 前台 結帳模組 (checkout.js)
- * - [V45.0] 匯入 showCustomAlert
+ * [V47.0] 前台 結帳模組 (checkout.js)
  * - [V46.0] 新增 showCheckoutSuccess / closeCheckoutSuccess 函數
- * - [V46.0] processCheckout 成功時呼叫 showCheckoutSuccess
+ * - [V47.0] 修正 V46.0 中 showCheckoutSuccess 的錯字 (formatCSSCurrency)
  * ====================================================================
  */
 import { supabase } from '../supabaseClient.js';
@@ -14,7 +13,7 @@ import { clearOrder } from './order.js';
 import { loadProducts } from './products.js';
 import { showCustomAlert } from './alert.js'; 
 
-let successResolve = null; // [V46.0] 用於儲存 "結帳成功" 的 Promise
+let successResolve = null; 
 
 /**
  * [V46.0] 顯示精美的結帳成功視窗
@@ -25,7 +24,8 @@ export function showCheckoutSuccess(orderId, total, paid, change) {
         DOM.successOrderId.textContent = `訂單號碼: #${orderId}`;
         DOM.successTotal.textContent = formatCurrency(total);
         DOM.successPaid.textContent = formatCurrency(paid);
-        DOM.successChange.textContent = formatCurrency(change);
+        // [V47.0] 修正 V46.0 錯字
+        DOM.successChange.textContent = formatCurrency(change); 
         
         // 2. 儲存 resolve
         successResolve = resolve;
@@ -133,11 +133,9 @@ export async function processCheckout() {
              throw new Error("資料庫回傳結帳失敗，可能是庫存不足或商品不存在。");
         }
 
-        // [V46.0] 結帳成功改用 新的精美視窗
         DOM.checkoutModal.classList.remove('active');
         await showCheckoutSuccess(newOrderId, totalAmount, paidAmount, changeAmount);
 
-        // (等待使用者按下 "完成" 後，才執行以下)
         clearOrder(true); 
         await loadProducts(); 
 
@@ -155,7 +153,7 @@ export async function processCheckout() {
              await loadProducts(); 
         }
         
-        // [V45.0] 失敗時使用通用的 Alert 視窗
+        // [V47.0] 失敗時使用 V45.0 的 alert (現在已是紅色樣式)
         await showCustomAlert(alertMessage, "結帳失敗");
 
     } finally {

@@ -1,7 +1,7 @@
 /* ====================================================================
-   [V46.0] 前台 CSS - 彈出視窗 (modals.css)
-   - [V45.0] 新增 自訂 Alert Modal 樣式
-   - [V46.0] 新增 結帳成功 Modal 樣式
+   [V48.0] 前台 CSS - 彈出視窗 (modals.css)
+   - [V47.0] Alert Modal 樣式
+   - [V48.0] 新增 @media 響應式佈局
    ==================================================================== */
 
 /* ---------------------------------
@@ -211,7 +211,7 @@
 }
 .hold-input-section .btn-primary {
     flex-shrink: 0;
-    padding: 10px 15px;
+    padding: 10px 15px; 
 }
 #hold-order-error {
     text-align: left;
@@ -459,17 +459,31 @@
 }
 
 /* ---------------------------------
-   [V45.0] 自訂提示 (Alert) Modal 樣式
+   [V47.0] 錯誤提示 (Alert/Fail) Modal 樣式
    --------------------------------- */
 .modal-content.small {
     max-width: 400px; 
     padding: 30px 25px 25px 25px;
 }
 
+/* [V47.0] 新增失敗圖示 */
+.fail-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--danger-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px auto;
+    font-size: 2.5em;
+}
+
 #alert-modal h1 {
-    color: var(--primary-color);
+    color: var(--danger-color); /* [V47.0] 改為紅色 */
     margin-bottom: 15px;
-    font-size: 1.5em;
+    font-size: 1.8em; /* [V47.0] 放大 */
 }
 
 #alert-modal p {
@@ -478,18 +492,20 @@
     line-height: 1.6;
     white-space: pre-wrap; 
     margin: 0 0 25px 0;
-    text-align: left; 
+    text-align: center; /* [V47.0] 改為置中 */
+    font-weight: 500; /* [V47.0] 加粗 */
 }
 
 .modal-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center; /* [V47.0] 改為置中 */
     margin-top: 10px;
-    /* [V45.0] 繼承自 common.css 的 .form-actions */
 }
 
 #alert-modal-confirm {
-    min-width: 100px;
+    min-width: 150px; /* [V47.0] 放大按鈕 */
+    padding: 12px 20px;
+    font-size: 1.1em;
 }
 
 /* ---------------------------------
@@ -561,4 +577,28 @@
 }
 #checkout-success-modal .modal-actions {
     justify-content: center;
+}
+
+/* ---------------------------------
+   [V48.0] RWD 響應式
+   --------------------------------- */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-height: 90vh;
+        padding: 20px 15px;
+    }
+    #checkout-modal .modal-content {
+        padding: 20px 15px;
+    }
+    .employee-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 讓按鈕更小 */
+        gap: 15px;
+    }
+    .modal-content.large {
+         max-width: 95vw; /* 讓折扣 modal 佔滿螢幕 */
+    }
+    .discount-modal-body {
+        grid-template-columns: 1fr; /* 垂直堆疊折扣區 */
+    }
 }

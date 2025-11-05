@@ -1,5 +1,6 @@
 /* ====================================================================
-   [V43.0] 後台 CSS - 表格 (tables.css)
+   [V48.0] 後台 CSS - 表格 (tables.css)
+   - [V48.0] 新增 @media 響應式佈局
    ==================================================================== */
 
 .table-container {
@@ -7,7 +8,7 @@
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    overflow-x: auto; 
+    overflow-x: auto; /* [V48.0] 確保表格可以水平滾動 */
 }
 table {
     width: 100%;
@@ -158,4 +159,14 @@ tr.order-detail-row.expanded {
     color: #555;
     font-style: italic;
     margin-top: 4px;
+}
+
+/* ---------------------------------
+   [V48.0] RWD 響應式
+   --------------------------------- */
+@media (max-width: 768px) {
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }

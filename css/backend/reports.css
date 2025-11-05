@@ -1,6 +1,6 @@
 /* ====================================================================
-   [V43.3] 後台 CSS - 報表 (reports.css)
-   - [V43.3] 補回 V41.3 遺失的 @media 響應式排版
+   [V48.0] 後台 CSS - 報表 (reports.css)
+   - [V43.3] 補回 RWD
    ==================================================================== */
 
 .management-section#reports-section h2 {
@@ -83,17 +83,23 @@
 }
 
 /* ---------------------------------
-   [V43.3] 補回 響應式排版
+   [V43.3 / V48.0] RWD 響應式
    --------------------------------- */
 @media (min-width: 600px) {
     .dashboard-stats-grid {
-        /* 平板：自動適應 */
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .report-sub-nav {
+        overflow-x: auto; /* [V48.0] 確保平板也能滾動 */
     }
 }
 @media (min-width: 992px) {
     .dashboard-stats-grid {
-        /* 電腦：恢復 5 欄 */
         grid-template-columns: repeat(5, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    .report-sub-nav {
+        overflow-x: auto; /* [V48.0] 確保手機也能滾動 */
     }
 }

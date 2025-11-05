@@ -1,5 +1,6 @@
 /* ====================================================================
-   [V43.0] 前台 CSS - 基礎佈局 (layout.css)
+   [V48.0] 前台 CSS - 基礎佈局 (layout.css)
+   - [V48.0] 新增 @media 響應式佈局
    ==================================================================== */
 
 /* [V42.0] 補回 body 背景色 (原在 common) */
@@ -152,4 +153,39 @@ body {
 .order-header-actions .system-button i,
 .order-header-actions .clear-button i {
      margin-right: 3px; 
+}
+
+/* ---------------------------------
+   [V48.0] RWD 響應式
+   --------------------------------- */
+@media (max-width: 768px) {
+    .pos-content {
+        flex-direction: column; /* 垂直堆疊 */
+    }
+    .product-selection-area {
+        flex: 1 1 50%; /* 佔 50% 高度 */
+        border-right: none;
+        border-bottom: 2px solid var(--border-color);
+    }
+    .order-summary-area {
+        flex: 1 1 50%; /* 佔 50% 高度 */
+        width: auto;
+    }
+    .designer-note {
+        display: none; /* 手機上隱藏 */
+    }
+    .system-title {
+        font-size: 1.2em; /* 縮小標題 */
+    }
+    .pos-header {
+        padding: 10px;
+        min-height: 0;
+    }
+    .utility-info {
+        gap: 8px;
+    }
+    .backend-button {
+        padding: 6px 10px;
+        font-size: 0.9em;
+    }
 }

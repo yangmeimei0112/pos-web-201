@@ -1,5 +1,6 @@
 /* ====================================================================
-   [V43.0] 前台 CSS - 商品區 (products.css)
+   [V48.0] 前台 CSS - 商品區 (products.css)
+   - [V48.0] 新增 @media 響應式佈局
    ==================================================================== */
 
 .product-selection-area {
@@ -101,4 +102,32 @@
 .product-card.out-of-stock {
     opacity: 0.5;
     pointer-events: none; 
+}
+
+/* ---------------------------------
+   [V48.0] RWD 響應式
+   --------------------------------- */
+@media (max-width: 768px) {
+    .product-grid {
+        /* 手機上改為 3 欄 */
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    .product-card {
+        padding: 8px;
+    }
+    .product-card h3 {
+        font-size: 0.9em;
+    }
+    .category-button {
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 400px) {
+    .product-grid {
+        /* 螢幕更小時改為 2 欄 */
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
