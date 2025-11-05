@@ -1,8 +1,10 @@
 /*
  * ====================================================================
  * [V42.1] 後台 員工管理 (employees.js)
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import * as DOM from './dom.js';
 import { showEmployeeModal } from './ui.js';
@@ -82,7 +84,7 @@ export async function handleEmployeeFormSubmit(e) {
         const { data, error } = response; 
         if (error) { throw error; } 
         console.log('員工儲存成功:', data); 
-        DOM.employeeModal.classList.remove('active'); // [V42.1] 直接呼叫
+        DOM.employeeModal.classList.remove('active');
         DOM.employeeForm.reset();
         await loadEmployees(); 
     } catch (err) { 

@@ -6,12 +6,15 @@
     <title>後台管理 - 201S POS系統</title>
     
     <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/backend.css">
-    
+    <link rel="stylesheet" href="css/backend/layout.css">
+    <link rel="stylesheet" href="css/backend/tables.css">
+    <link rel="stylesheet" href="css/backend/reports.css">
+    <link rel="stylesheet" href="css/backend/stocktake.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
+
     <header class="pos-header">
         <div class="employee-info">
             <span class="system-title">201S 專用後台管理</span>
@@ -141,13 +144,15 @@
                                 <th>折扣ID</th>
                                 <th>折扣名稱</th>
                                 <th>折扣金額 (NT$)</th>
-                                <th>適用對象 (選填)</th> <th>狀態 (啟用/停用)</th>
+                                <th>適用對象 (選填)</th>
+                                <th>狀態 (啟用/停用)</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="discount-list-tbody">
                             <tr>
-                                <td colspan="6" class="loading-message">載入折扣資料中...</td> </tr>
+                                <td colspan="6" class="loading-message">載入折扣資料中...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -262,7 +267,7 @@
 
         </main>
     </div>
-
+    
     <div id="product-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
@@ -361,6 +366,6 @@
 
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="backend.js" type="module"></script>
+    <script src="js/backend/main.js" type="module"></script>
 </body>
 </html>

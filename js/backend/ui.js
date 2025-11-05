@@ -1,10 +1,11 @@
 /*
  * ====================================================================
  * [V42.1] 後台 UI 操作 (ui.js)
- * 包含：導航、報表分頁、Modal 顯示/隱藏
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
 
+// [V43.2] 修正 import 路徑
 import * as DOM from './dom.js';
 import { loadProducts } from './products.js';
 import { loadEmployees } from './employees.js';

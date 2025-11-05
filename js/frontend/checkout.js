@@ -1,6 +1,9 @@
 /*
  * ====================================================================
- * [V42.3] 前台 結帳模組 (checkout.js)
+ * [V46.0] 前台 結帳模組 (checkout.js)
+ * - [V45.0] 匯入 showCustomAlert
+ * - [V46.0] 新增 showCheckoutSuccess / closeCheckoutSuccess 函數
+ * - [V46.0] processCheckout 成功時呼叫 showCheckoutSuccess
  * ====================================================================
  */
 import { supabase } from '../supabaseClient.js';
@@ -9,6 +12,44 @@ import * as State from './state.js';
 import { formatCurrency } from './utils.js';
 import { clearOrder } from './order.js';
 import { loadProducts } from './products.js';
+import { showCustomAlert } from './alert.js'; 
+
+let successResolve = null; // [V46.0] 用於儲存 "結帳成功" 的 Promise
+
+/**
+ * [V46.0] 顯示精美的結帳成功視窗
+ */
+export function showCheckoutSuccess(orderId, total, paid, change) {
+    return new Promise((resolve) => {
+        // 1. 填入收據資訊
+        DOM.successOrderId.textContent = `訂單號碼: #${orderId}`;
+        DOM.successTotal.textContent = formatCurrency(total);
+        DOM.successPaid.textContent = formatCurrency(paid);
+        DOM.successChange.textContent = formatCurrency(change);
+        
+        // 2. 儲存 resolve
+        successResolve = resolve;
+
+        // 3. 顯示視窗
+        DOM.checkoutSuccessModal.classList.add('active');
+        
+        // 4. 聚焦確認按鈕
+        setTimeout(() => DOM.successModalConfirm.focus(), 50);
+    });
+}
+
+/**
+ * [V46.0] 關閉結帳成功視窗
+ */
+export function closeCheckoutSuccess() {
+    if (!DOM.checkoutSuccessModal.classList.contains('active')) return;
+
+    DOM.checkoutSuccessModal.classList.remove('active');
+    if (successResolve) {
+        successResolve();
+        successResolve = null;
+    }
+}
 
 export function showCheckoutModal() {
     if (State.state.orderItems.length === 0) return;
@@ -49,7 +90,7 @@ export function handlePaymentInput() {
 
 export async function processCheckout() {
     if (!State.state.currentEmployee) {
-        alert('錯誤：未選擇值班員工！');
+        await showCustomAlert('錯誤：未選擇值班員工！', '錯誤');
         return;
     }
     if (DOM.finalConfirmBtn.disabled) return; 
@@ -92,10 +133,12 @@ export async function processCheckout() {
              throw new Error("資料庫回傳結帳失敗，可能是庫存不足或商品不存在。");
         }
 
-        alert(`結帳成功！訂單號碼: ${newOrderId}\n應收金額: ${formatCurrency(totalAmount)}\n實收金額: ${formatCurrency(paidAmount)}\n找零金額: ${formatCurrency(changeAmount)}`);
+        // [V46.0] 結帳成功改用 新的精美視窗
         DOM.checkoutModal.classList.remove('active');
+        await showCheckoutSuccess(newOrderId, totalAmount, paidAmount, changeAmount);
+
+        // (等待使用者按下 "完成" 後，才執行以下)
         clearOrder(true); 
-        
         await loadProducts(); 
 
     } catch (err) {
@@ -107,12 +150,13 @@ export async function processCheckout() {
              if (match && match[1]) {
                  alertMessage = `結帳失敗：\n${match[1]}\n\n訂單未成立，請返回修改訂單。`;
              } else {
-                 alertMessage = "結帳失敗：商品庫存不足！\n請返回修改訂單。";
+                 alertMessage = "結帳失敗：商品庫存不足！\n訂單未成立，請返回修改訂單。";
              }
              await loadProducts(); 
         }
         
-        alert(alertMessage);
+        // [V45.0] 失敗時使用通用的 Alert 視窗
+        await showCustomAlert(alertMessage, "結帳失敗");
 
     } finally {
         DOM.finalConfirmBtn.disabled = false;

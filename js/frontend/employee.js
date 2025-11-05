@@ -1,12 +1,13 @@
 /*
  * ====================================================================
- * [V42.3] 前台 員工模組 (employee.js)
+ * [V46.0] 前台 員工模組 (employee.js)
+ * - [V46.0] 修正 V45.0 遺漏的 loadProducts 匯入
  * ====================================================================
  */
 import { supabase } from '../supabaseClient.js';
 import * as DOM from './dom.js';
 import * as State from './state.js';
-import { loadProducts, renderProducts } from './products.js';
+import { loadProducts } from './products.js'; // [V46.0] 修正：匯入 loadProducts
 import { loadDiscounts } from './discounts.js';
 
 export function selectEmployee(id, name) {
@@ -26,7 +27,7 @@ export function selectEmployee(id, name) {
     }
 
     if (!State.state.productLoadInterval) {
-        const interval = setInterval(loadProducts, 1000); 
+        const interval = setInterval(loadProducts, 1000); // [V46.0] 現在 loadProducts 已定義
         State.setProductLoadInterval(interval);
         console.log("[V42.3] 1秒庫存自動刷新已啟動。");
     }
@@ -77,7 +78,7 @@ export function handleEmployeeSwitch(clearOrderFn) {
     if (!confirm("確定要切換員工或登出嗎？這將清空當前訂單。")) {
         return;
     }
-    clearOrderFn(true); // 呼叫從 main.js 傳入的 clearOrder 函數
+    clearOrderFn(true); 
     State.setCurrentEmployee(null);
     
     DOM.currentEmployeeDisplay.innerHTML = '<i class="fas fa-user-circle"></i> 請先選擇值班人員';

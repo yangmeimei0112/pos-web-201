@@ -1,0 +1,155 @@
+/* ====================================================================
+   [V43.0] 前台 CSS - 基礎佈局 (layout.css)
+   ==================================================================== */
+
+/* [V42.0] 補回 body 背景色 (原在 common) */
+body {
+    background-color: var(--secondary-color-light); 
+}
+
+.pos-app {
+    flex-grow: 1; 
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1400px; 
+    margin: 0 auto; 
+    overflow: hidden;
+}
+
+.pos-content {
+    flex-grow: 1; 
+    display: flex; 
+    overflow: hidden; 
+    background-color: #ecf0f1;
+}
+
+/* ---------------------------------
+   頂部導航與標頭 (.pos-header)
+   --------------------------------- */
+.pos-header {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 20px;
+    background-color: var(--secondary-color); 
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+    min-height: 35px;
+    flex-shrink: 0; 
+}
+
+.employee-info, .utility-info {
+    display: flex;
+    align-items: center;
+    gap: 15px; 
+}
+
+.designer-note {
+    font-size: 0.8em; 
+    opacity: 0.6; 
+    color: #e9ecef; 
+    margin-right: 20px; 
+}
+
+.system-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin: 0;
+    color: var(--warning-color); 
+}
+
+#current-employee-display {
+    font-weight: 700;
+    color: var(--warning-color); 
+    font-size: 1.0em;
+}
+
+#current-time {
+    font-size: 0.9em;
+    opacity: 0.8; 
+}
+
+.backend-button {
+    background-color: #34495e;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s;
+}
+
+.backend-button:hover {
+    background-color: var(--secondary-color); 
+}
+
+/* ---------------------------------
+   訂單總結區塊主體 (order-summary-area)
+   --------------------------------- */
+.order-summary-area {
+    flex: 1.5; 
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    padding: 15px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05); 
+    flex-shrink: 0;
+    min-height: 0;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 2px solid var(--secondary-color); 
+    padding-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.order-header h2 {
+    color: var(--secondary-color);
+    font-size: 1.3em;
+    margin: 0;
+}
+
+.order-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px; 
+}
+
+.order-header-actions .clear-button {
+    background: none;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    padding: 5px 10px; 
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+    font-size: 0.9em; 
+    font-weight: 700;
+}
+.order-header-actions .clear-button:hover {
+    background-color: var(--danger-color); 
+    color: white;
+}
+
+.order-header-actions .system-buttons {
+    display: flex; 
+    gap: 5px;
+    margin: 0;
+}
+.order-header-actions .system-button,
+.order-header-actions .clear-button {
+    padding: 5px 10px; 
+    font-size: 0.9em; 
+    font-weight: 700;
+}
+.order-header-actions .system-button i,
+.order-header-actions .clear-button i {
+     margin-right: 3px; 
+}

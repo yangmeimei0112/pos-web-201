@@ -1,6 +1,7 @@
 /*
  * ====================================================================
- * [V42.3] 前台 暫掛模組 (hold.js)
+ * [V44.0] 前台 暫掛模組 (hold.js)
+ * - [V44.0] 重構為單一 Modal 介面
  * ====================================================================
  */
 import * as DOM from './dom.js';
@@ -28,29 +29,10 @@ export function updateHeldOrderCount() {
     }
 }
 
-export function handleHoldOrder() {
-    if (State.state.orderItems.length === 0) {
-        alert("目前訂單為空，無需暫掛。");
-        return;
-    }
-    const defaultName = State.state.currentHeldOrderName || `訂單 ${State.state.heldOrders.length + 1}`;
-    let holdName = prompt("請為這筆暫掛訂單命名:", defaultName);
-    
-    if (holdName) {
-        holdName = holdName.trim();
-        const newHold = {
-            name: holdName,
-            items: State.state.orderItems,
-            discounts: State.state.appliedDiscounts
-        };
-        State.state.heldOrders.push(newHold);
-        saveHeldOrders();
-        alert(`訂單 "${holdName}" 已暫掛！`);
-        clearOrder(true);
-    }
-}
-
-export function showRetrieveModal() {
+/**
+ * [V44.0] 渲染 Modal 內的列表
+ */
+function renderHeldOrderList() {
     DOM.heldOrderListContainer.innerHTML = '';
     if (State.state.heldOrders.length === 0) {
         DOM.heldOrderListContainer.innerHTML = '<p class="empty-order-message">沒有暫掛中的訂單</p>';
@@ -70,7 +52,7 @@ export function showRetrieveModal() {
                 </div>
                 <div class="held-order-actions">
                     <button class="btn-danger delete-held-btn" data-index="${index}" title="刪除此暫掛單">
-                        <i class="fas fa-trash-alt"></i>
+                        <i class="fas fa-trash-alt"></i> 刪除
                     </button>
                     <button class="btn-primary retrieve-held-btn" data-index="${index}">
                         取回
@@ -80,13 +62,76 @@ export function showRetrieveModal() {
             DOM.heldOrderListContainer.appendChild(itemEl);
         });
     }
-    DOM.retrieveOrderModal.classList.add('active');
 }
 
-export function hideRetrieveModal() {
-    DOM.retrieveOrderModal.classList.remove('active');
+/**
+ * [V44.0] 開啟 "暫掛/取單" 視窗 (取代舊的 handleHoldOrder 和 showRetrieveModal)
+ */
+export function openHoldRetrieveModal() {
+    // 1. 根據目前訂單狀態，決定 "暫掛" 功能是否可用
+    if (State.state.orderItems.length === 0) {
+        // 沒有訂單，禁用暫掛區
+        DOM.holdOrderInputSection.setAttribute('disabled', true);
+        DOM.holdOrderNameInput.value = "目前訂單為空";
+    } else {
+        // 有訂單，啟用暫掛區
+        DOM.holdOrderInputSection.removeAttribute('disabled');
+        DOM.holdOrderError.classList.add('hidden');
+        // 預填名稱
+        DOM.holdOrderNameInput.value = State.state.currentHeldOrderName || `訂單 ${State.state.heldOrders.length + 1}`;
+    }
+    
+    // 2. 渲染 "取單" 列表
+    renderHeldOrderList();
+    
+    // 3. 開啟 Modal
+    DOM.holdRetrieveModal.classList.add('active');
 }
 
+/**
+ * [V44.0] 關閉 Modal
+ */
+export function closeHoldRetrieveModal() {
+    DOM.holdRetrieveModal.classList.remove('active');
+}
+
+/**
+ * [V44.0] 處理 Modal 內 "儲存目前訂單" 按鈕
+ */
+export function handleSaveHeldOrderClick() {
+    const holdName = DOM.holdOrderNameInput.value.trim();
+    if (!holdName) {
+        DOM.holdOrderError.classList.remove('hidden');
+        return;
+    }
+    DOM.holdOrderError.classList.add('hidden');
+
+    // 檢查名稱是否重複
+    if (State.state.heldOrders.some(order => order.name === holdName)) {
+        if (!confirm(`已有名為 "${holdName}" 的暫掛單，您要覆蓋它嗎？`)) {
+            return;
+        }
+        // 刪除舊的
+        const index = State.state.heldOrders.findIndex(order => order.name === holdName);
+        State.state.heldOrders.splice(index, 1);
+    }
+    
+    const newHold = {
+        name: holdName,
+        items: State.state.orderItems,
+        discounts: State.state.appliedDiscounts
+    };
+    State.state.heldOrders.push(newHold);
+    saveHeldOrders();
+    
+    alert(`訂單 "${holdName}" 已暫掛！`);
+    clearOrder(true);
+    closeHoldRetrieveModal();
+}
+
+/**
+ * [V44.0] 處理 Modal 內 "列表" 的點擊 (取單 / 刪除)
+ */
 export function handleRetrieveModalClick(e) {
     const target = e.target.closest('button');
     if (!target) return;
@@ -95,6 +140,7 @@ export function handleRetrieveModalClick(e) {
     if (isNaN(index)) return;
 
     if (target.classList.contains('retrieve-held-btn')) {
+        // 點擊 "取回"
         if (State.state.orderItems.length > 0) {
             if (!confirm("您目前有未結帳的訂單，取回訂單將會覆蓋它。確定要繼續嗎？")) {
                 return;
@@ -114,14 +160,15 @@ export function handleRetrieveModalClick(e) {
 
         renderOrderItems();
         updateOrderTotals(); 
-        hideRetrieveModal();
+        closeHoldRetrieveModal();
 
     } else if (target.classList.contains('delete-held-btn')) {
+        // 點擊 "刪除"
         const orderName = State.state.heldOrders[index].name;
         if (confirm(`確定要永久刪除暫掛訂單 "${orderName}" 嗎？`)) {
             State.state.heldOrders.splice(index, 1);
             saveHeldOrders();
-            showRetrieveModal();
+            renderHeldOrderList(); // 僅刷新列表
         }
     }
 }

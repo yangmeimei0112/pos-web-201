@@ -1,7 +1,9 @@
 /*
  * ====================================================================
- * [V42.3] 前台 主入口 (main.js)
- * - 負責匯入所有模組並綁定事件
+ * [V46.0] 前台 主入口 (main.js)
+ * - [V45.0] 匯入並綁定 showCustomAlert
+ * - [V46.0] 匯入並綁定 結帳成功 Modal
+ * - [V46.0] 修正 V45.0 的 loadProducts 匯入錯誤
  * ====================================================================
  */
 import * as DOM from './dom.js';
@@ -9,10 +11,13 @@ import * as State from './state.js';
 import { updateClock } from './utils.js';
 import { initializeEmployeeModule, handleEmployeeSwitch } from './employee.js';
 import { renderOrderItems, updateOrderTotals, clearOrder, increaseItemQuantity, decreaseItemQuantity, handleQuantityChange, handleEditNote, removeItem } from './order.js';
-import { showCheckoutModal, handlePaymentInput, processCheckout } from './checkout.js';
+// [V46.0] 匯入新函數
+import { showCheckoutModal, handlePaymentInput, processCheckout, closeCheckoutSuccess } from './checkout.js'; 
 import { openDiscountModal, closeDiscountModal, handleDiscountAdd, handleDiscountRemove } from './discounts.js';
-import { loadHeldOrdersFromStorage, handleHoldOrder, showRetrieveModal, hideRetrieveModal, handleRetrieveModalClick } from './hold.js';
+import { loadHeldOrdersFromStorage, openHoldRetrieveModal, closeHoldRetrieveModal, handleSaveHeldOrderClick, handleRetrieveModalClick } from './hold.js';
 import { setupWarningBell } from './warnings.js';
+import { setupAlertModal, closeAlert } from './alert.js';
+import { loadProducts } from './products.js'; // [V46.0] 修正：在頂層匯入
 
 function initializeApp() {
     // 1. 啟動基礎功能
@@ -20,14 +25,15 @@ function initializeApp() {
     setInterval(updateClock, 1000);
     loadHeldOrdersFromStorage(); 
     setupWarningBell(); 
+    setupAlertModal(); 
     
     // 2. 檢查登入狀態
     if (!State.state.currentEmployee) {
         initializeEmployeeModule();
     } else {
-        // (此邏輯理論上不會執行，因為 V38.1 登出時會清空 interval)
         DOM.posMainApp.classList.remove('hidden');
         if (!State.state.productLoadInterval) {
+            // [V46.0] 修正 V45.0 錯誤
             const interval = setInterval(loadProducts, 1000); 
             State.setProductLoadInterval(interval);
         }
@@ -44,8 +50,10 @@ function initializeApp() {
     DOM.paidAmountInput.addEventListener('input', handlePaymentInput);
     DOM.finalConfirmBtn.addEventListener('click', processCheckout);
     
+    // [V46.0] 結帳成功 Modal
+    DOM.successModalConfirm.addEventListener('click', closeCheckoutSuccess);
+
     // 折扣 Modal
-    // (按鈕 'open-discount-modal-btn' 是動態產生的，在 order.js 中綁定)
     DOM.closeDiscountModalBtn.addEventListener('click', closeDiscountModal);
     DOM.discountModal.addEventListener('click', (e) => {
         if (e.target === DOM.discountModal) {
@@ -94,19 +102,34 @@ function initializeApp() {
         }
     });
 
-    // 暫掛 Modal
-    DOM.holdOrderBtn.addEventListener('click', handleHoldOrder);
-    DOM.retrieveOrderBtn.addEventListener('click', showRetrieveModal);
-    DOM.closeRetrieveModalBtn.addEventListener('click', hideRetrieveModal);
-    DOM.heldOrderListContainer.addEventListener('click', handleRetrieveModalClick);
+    // 暫掛/取單 Modal
+    DOM.holdOrderBtn.addEventListener('click', openHoldRetrieveModal);
+    DOM.retrieveOrderBtn.addEventListener('click', openHoldRetrieveModal);
+    DOM.closeHoldRetrieveModalBtn.addEventListener('click', closeHoldRetrieveModal);
+    DOM.heldOrderListContainer.addEventListener('click', handleRetrieveModalClick); 
+    DOM.saveHeldOrderBtn.addEventListener('click', handleSaveHeldOrderClick); 
 
     // 全局 Enter 鍵
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return; 
         
+        // [V46.0] 檢查結帳成功視窗
+        if (DOM.checkoutSuccessModal.classList.contains('active')) {
+            e.preventDefault();
+            closeCheckoutSuccess();
+            return;
+        }
+
+        // [V45.0] 檢查 Alert 視窗
+        if (DOM.alertModal.classList.contains('active')) {
+            e.preventDefault();
+            closeAlert();
+            return;
+        }
+
         const isCheckoutActive = DOM.checkoutModal.classList.contains('active');
         const isEmployeeActive = DOM.employeeModal.classList.contains('active');
-        const isRetrieveActive = DOM.retrieveOrderModal.classList.contains('active'); 
+        const isRetrieveActive = DOM.holdRetrieveModal.classList.contains('active');
         const isWarningActive = DOM.stockWarningModal.classList.contains('active');
         const isDiscountActive = DOM.discountModal.classList.contains('active');
         
@@ -117,6 +140,7 @@ function initializeApp() {
             }
             return; 
         }
+        // [V46.0] 更新判斷
         if (isEmployeeActive || isRetrieveActive || isWarningActive || isDiscountActive) { 
             return;
         }
@@ -136,7 +160,7 @@ function initializeApp() {
     renderOrderItems();
     updateOrderTotals(); 
 
-    console.log('🚀 POS 系統腳本 (V42.3) 已啟動。');
+    console.log('🚀 POS 系統腳本 (V46.0) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化

@@ -1,15 +1,15 @@
 /*
  * ====================================================================
  * [V42.2] 後台 訂單管理 (orders.js)
- * - [V42.2] 新增 export getAllOrders() 供匯出功能使用
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import { formatCurrency, formatDate } from '../common/utils.js';
 import * as DOM from './dom.js';
 
 let allOrders = []; 
-// [V42.2] 新增 Getter 函數
 export function getAllOrders() {
     return allOrders;
 }

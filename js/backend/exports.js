@@ -1,19 +1,20 @@
 /*
  * ====================================================================
  * [V42.2] 後台 匯出 (exports.js)
- * - [V42.2] 匯入 getCurrentProductList 和 getAllOrders
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import { formatDate } from '../common/utils.js';
-import { getCurrentProductList } from './products.js'; // [V42.2]
-import { getAllOrders } from './orders.js'; // [V42.2]
+import { getCurrentProductList } from './products.js';
+import { getAllOrders } from './orders.js';
 
 export function handleExportProducts() {
     if (typeof XLSX === 'undefined') {
         alert("錯誤：Excel 匯出函式庫 (SheetJS) 尚未載入。");
         return;
     }
-    const currentProductList = getCurrentProductList(); // [V42.2]
+    const currentProductList = getCurrentProductList(); 
     if (currentProductList.length === 0) {
         alert("沒有商品資料可匯出。");
         return;
@@ -41,7 +42,7 @@ export function handleExportOrders() {
         alert("錯誤：Excel 匯出函式庫 (SheetJS) 尚未載入。");
         return;
     }
-    const allOrders = getAllOrders(); // [V42.2]
+    const allOrders = getAllOrders(); 
     if (allOrders.length === 0) {
         alert("沒有訂單資料可匯出。");
         return;

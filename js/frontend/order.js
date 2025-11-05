@@ -1,8 +1,10 @@
 /*
  * ====================================================================
- * [V42.3] 前台 訂單模組 (order.js)
+ * [V42.4] 前台 訂單模組 (order.js)
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import * as DOM from './dom.js';
 import * as State from './state.js';
 import { formatCurrency } from './utils.js';
@@ -122,7 +124,7 @@ export function renderOrderItems() {
     if (State.state.orderItems.length === 0) {
         DOM.orderItemsTableBody.innerHTML = `<tr><td colspan="5" class="empty-order-message">尚未加入商品</td></tr>`;
         DOM.checkoutBtn.disabled = true;
-        updateDiscountButton(0); // [V42.3] 更新折扣按鈕狀態
+        updateDiscountButton(0); 
         return;
     }
     DOM.checkoutBtn.disabled = false;
@@ -133,20 +135,28 @@ export function renderOrderItems() {
         const row = document.createElement('tr');
         row.className = 'order-item-row';
         row.dataset.index = index; 
+        
         let noteHtml;
         if (item.note) {
             noteHtml = `
-                <span class="item-note-display" title="${item.note}">${item.note}</span>
-                <button class="note-btn edit-note-btn" data-index="${index}"><i class="fas fa-pen"></i> 編輯備註</button>
+                <div class="item-note-wrapper">
+                    <span class="item-note-display" title="${item.note}">${item.note}</span>
+                    <button class="note-btn edit-note-btn" data-index="${index}" title="編輯備註">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
             `;
         } else {
             noteHtml = `
-                <button class="note-btn add-note-btn" data-index="${index}"><i class="fas fa-plus"></i> 新增備註</button>
+                <button class="note-btn add-note-btn" data-index="${index}">
+                    <i class="fas fa-plus"></i> 新增備註
+                </button>
             `;
         }
+        
         row.innerHTML = `
             <td class="item-name">
-                ${item.name}
+                <span class="item-name-display">${item.name}</span>
                 ${noteHtml} 
             </td>
             <td class="item-price">${formatCurrency(item.price)}</td>

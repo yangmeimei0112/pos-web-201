@@ -9,7 +9,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/frontend/layout.css">
+    <link rel="stylesheet" href="css/frontend/products.css">
+    <link rel="stylesheet" href="css/frontend/order.css">
+    <link rel="stylesheet" href="css/frontend/modals.css">
 </head>
 <body>
 
@@ -53,13 +56,28 @@
         </div>
     </div>
     
-    <div id="retrieve-order-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="retrieve-modal-title">
+    <div id="hold-retrieve-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hold-modal-title">
         <div class="modal-content">
-            <button class="close-btn" id="close-retrieve-modal" aria-label="關閉取單視窗">&times;</button>
-            <h1 id="retrieve-modal-title">取回暫掛訂單</h1>
+            <button class="close-btn" id="close-hold-modal" aria-label="關閉視窗">&times;</button>
+            <h1 id="hold-modal-title">暫掛 / 取單管理</h1>
+            
+            <div id="hold-order-input-section" class="hold-input-section">
+                <label for="hold-order-name">為目前訂單命名：</label>
+                <div class="input-group">
+                    <input type="text" id="hold-order-name" placeholder="例如: 1號桌 / 客人忘記帶錢">
+                    <button id="save-held-order-btn" class="btn-primary">
+                        <i class="fas fa-save"></i> 儲存目前訂單
+                    </button>
+                </div>
+                <p id="hold-order-error" class="error-message hidden" style="text-align: left; margin-top: 5px;">請先輸入名稱</p>
+            </div>
+            
+            <h2 class="hold-list-title">
+                <i class="fas fa-list-ul"></i> 已暫掛的訂單
+            </h2>
             
             <div id="held-order-list-container" class="held-order-list-container">
-                </div>
+            </div>
         </div>
     </div>
     
@@ -94,13 +112,12 @@
                 <div class="discount-section">
                     <h2><i class="fas fa-check-circle"></i> 可用折扣</h2>
                     <div id="applicable-discounts-list" class="discount-list-container">
-                        </div>
+                    </div>
                 </div>
-                
                 <div class="discount-section">
                     <h2 class="disabled"><i class="fas fa-times-circle"></i> 不可用折扣 (未達條件)</h2>
                     <div id="inapplicable-discounts-list" class="discount-list-container disabled">
-                         </div>
+                    </div>
                 </div>
             </div>
 
@@ -117,6 +134,45 @@
                     <span>結帳金額:</span>
                     <span id="modal-final-total">NT$ 0</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="alert-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="alert-modal-title">
+        <div class="modal-content small">
+            <h1 id="alert-modal-title">通知</h1>
+            <p id="alert-modal-message">這是一條訊息。</p>
+            <div class="modal-actions">
+                <button id="alert-modal-confirm" class="btn-primary">確認</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="checkout-success-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="success-modal-title">
+        <div class="modal-content success">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <h1 id="success-modal-title">結帳成功</h1>
+            <p id="success-order-id">訂單號碼: #0000</p>
+            
+            <div class="success-receipt">
+                <div class="summary-row">
+                    <span>應付金額:</span>
+                    <span id="success-total">NT$ 0</span>
+                </div>
+                <div class="summary-row">
+                    <span>支付金額:</span>
+                    <span id="success-paid">NT$ 0</span>
+                </div>
+                <div class="summary-row change">
+                    <span>找零金額:</span>
+                    <span id="success-change">NT$ 0</span>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="success-modal-confirm" class="btn-primary">完成 (Enter)</button>
             </div>
         </div>
     </div>
@@ -239,5 +295,5 @@
     </div> 
     
     <script src="js/frontend/main.js" type="module"></script>
-    </body> 
+</body> 
 </html>

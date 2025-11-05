@@ -1,10 +1,11 @@
 /*
  * ====================================================================
  * [V42.1] 後台 Realtime (realtime.js)
- * 包含：全局監聽、報表 10 秒刷新
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
 
+// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import { loadProducts } from './products.js';
 import { loadEmployees } from './employees.js';

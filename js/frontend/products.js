@@ -1,8 +1,10 @@
 /*
  * ====================================================================
  * [V42.3] 前台 商品模組 (products.js)
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import { supabase } from '../supabaseClient.js';
 import * as DOM from './dom.js';
 import * as State from './state.js';

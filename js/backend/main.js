@@ -1,21 +1,18 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V42.2 - 修正匯出功能)
-   - [V42.2] 修正 DOMContentLoaded 中的匯出按鈕綁定
+   後台管理 (Backend) 邏輯 (V43.2 - 修正模組路徑)
    ==================================================================== */
 
-// 匯入共用
-import { supabase as db } from './js/supabaseClient.js';
-import * as DOM from './js/backend/dom.js';
-import { setupNavigation, setupReportTabs, showProductModal, hideProductModal, showEmployeeModal, hideEmployeeModal, showDiscountModal, hideDiscountModal } from './js/backend/ui.js';
-import { setupGlobalRealtime, refreshReportData } from './js/backend/realtime.js';
-
-// 匯入功能模組
-import { loadProducts, handleProductFormSubmit, handleProductTableClick } from './js/backend/products.js';
-import { handleEmployeeFormSubmit, handleEmployeeTableClick } from './js/backend/employees.js';
-import { loadAllOrdersForSequence, handleOrderTableClick, handleDeleteAllOrders, setupOrderFilters } from './js/backend/orders.js';
-import { handleDiscountFormSubmit, handleDiscountTableClick } from './js/backend/discounts.js';
-import { handleStocktakeInputChange, handleUpdateAllStock } from './js/backend/stocktake.js';
-import { handleExportProducts, handleExportOrders } from './js/backend/exports.js'; // [V42.2]
+// [V43.2] 修正 import 路徑
+import { supabase as db } from '../supabaseClient.js';
+import * as DOM from './dom.js';
+import { setupNavigation, setupReportTabs, showProductModal, hideProductModal, showEmployeeModal, hideEmployeeModal, showDiscountModal, hideDiscountModal } from './ui.js';
+import { setupGlobalRealtime, refreshReportData } from './realtime.js';
+import { loadProducts, handleProductFormSubmit, handleProductTableClick } from './products.js';
+import { handleEmployeeFormSubmit, handleEmployeeTableClick } from './employees.js';
+import { loadAllOrdersForSequence, handleOrderTableClick, handleDeleteAllOrders, setupOrderFilters } from './orders.js';
+import { handleDiscountFormSubmit, handleDiscountTableClick } from './discounts.js';
+import { handleStocktakeInputChange, handleUpdateAllStock } from './stocktake.js';
+import { handleExportProducts, handleExportOrders } from './exports.js';
 
 
 // 頁面載入完成後
@@ -31,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. 啟動即時功能
     setupGlobalRealtime(); 
     setInterval(refreshReportData, 10000); // 10秒報表刷新
-    console.log("[V42.2] 後台模組化已啟動 (含匯出修正)。");
+    console.log("[V43.2] 後台模組化已啟動 (路徑已修正)。");
     
     // 4. 綁定頂層事件
     DOM.backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });

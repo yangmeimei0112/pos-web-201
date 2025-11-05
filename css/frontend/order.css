@@ -1,0 +1,363 @@
+/* ====================================================================
+   [V43.0] 前台 CSS - 訂單明細 (order.css)
+   ==================================================================== */
+
+/* ---------------------------------
+   訂單明細表格 (Order Items Table)
+   --------------------------------- */
+.order-items-list-container {
+    flex-grow: 1;
+    overflow-y: auto; 
+    margin-bottom: 10px; 
+    min-height: 0;
+}
+.order-items-list-container table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; 
+    font-size: 0.95em;
+}
+.order-items-list-container th:nth-child(1),
+.order-items-list-container td:nth-child(1) { width: auto; } 
+.order-items-list-container th:nth-child(2),
+.order-items-list-container td:nth-child(2) { width: 60px; } 
+.order-items-list-container th:nth-child(3),
+.order-items-list-container td:nth-child(3) { width: 95px; } 
+.order-items-list-container th:nth-child(4),
+.order-items-list-container td:nth-child(4) { width: 70px; } 
+.order-items-list-container th:nth-child(5),
+.order-items-list-container td:nth-child(5) { width: 35px; } 
+
+.order-items-list-container th {
+    padding: 10px 8px;
+    background-color: var(--secondary-color-light); 
+    color: var(--secondary-color);
+    font-weight: 700;
+    position: sticky; top: 0; z-index: 10; 
+    border-bottom: 2px solid var(--border-color);
+    text-align: center;
+}
+.order-items-list-container th:nth-child(1) { text-align: left; } 
+.order-items-list-container th:nth-child(2),
+.order-items-list-container th:nth-child(4) { text-align: right; } 
+
+.order-items-list-container td {
+    padding: var(--row-padding) 8px; 
+    vertical-align: middle; 
+    border-bottom: 1px solid var(--soft-border); 
+}
+.order-items-list-container tbody tr:last-child td {
+    border-bottom: none; 
+}
+.order-item-row td:nth-child(1) {
+    text-align: left; 
+    vertical-align: top;
+    padding-top: 12px;
+}
+.order-item-row td:nth-child(2), 
+.order-item-row td:nth-child(4) { 
+    text-align: right; 
+    font-family: 'Roboto Mono', monospace; 
+    font-weight: 500;
+}
+.order-item-row td:nth-child(3), 
+.order-item-row td:nth-child(5) { 
+    text-align: center; 
+}
+
+.item-name-display {
+    font-weight: 700;
+    color: var(--secondary-color);
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    display: block;
+    margin-bottom: 5px; 
+}
+
+.order-item-row .item-total {
+    font-weight: 700;
+    color: var(--danger-color); 
+    font-size: 1.1em;
+}
+.empty-order-message {
+    text-align: center;
+    font-style: italic;
+    color: var(--text-color-light);
+    padding: 20px;
+}
+
+/* ---------------------------------
+   數量控制元件 (Item Quantity Controls)
+   --------------------------------- */
+.item-controls {
+    display: flex;
+    align-items: stretch; 
+    justify-content: center;
+    gap: 0;
+    width: 90px;
+    margin: 0 auto;
+    border: 1px solid var(--primary-color-light); 
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.item-qty-input {
+    width: 30px;
+    text-align: center;
+    padding: 5px 0;
+    border: none;
+    border-radius: 0;
+    -moz-appearance: textfield; 
+    font-size: 1em;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 700;
+    color: var(--primary-color);
+    background-color: white;
+}
+.item-qty-input::-webkit-outer-spin-button,
+.item-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.qty-btn {
+    background: var(--button-bg-light);
+    color: var(--primary-color);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    line-height: 1;
+    font-size: 1.2em;
+    transition: background 0.2s, color 0.2s;
+    width: 30px;
+    height: 35px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+.item-controls .qty-btn:first-child {
+    border-right: 1px solid var(--primary-color-light);
+}
+.item-controls .qty-btn:last-child {
+    border-left: 1px solid var(--primary-color-light);
+}
+.qty-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.item-remove .remove-item-btn {
+    background: none;
+    color: var(--text-color-light); 
+    border: none;
+    cursor: pointer;
+    font-size: 1.3em;
+    transition: color 0.2s;
+    padding: 5px;
+}
+.item-remove .remove-item-btn:hover {
+    color: var(--danger-color); 
+}
+
+/* ---------------------------------
+   訂單總計與結帳按鈕 (Order Totals)
+   --------------------------------- */
+.order-totals {
+    border-top: 1px dashed var(--border-color); 
+    padding-top: 5px; 
+    margin-bottom: 10px; 
+    flex-shrink: 0;
+}
+
+.total-row-quantity {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-color-dark);
+    padding: 2px 0;
+}
+.total-row-quantity dt {
+    font-weight: 700;
+    color: var(--text-color-light);
+}
+.total-row-quantity dd {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.2em;
+    color: var(--primary-color);
+    text-align: right;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    padding: 1px 0; 
+    font-size: 1.05em; 
+}
+.total-row dt {
+    color: var(--text-color-light);
+    font-weight: 300;
+    flex-basis: 40%; 
+    text-align: left;
+}
+.total-row dd {
+    font-weight: 700;
+    font-family: 'Roboto Mono', monospace;
+    flex-basis: 60%; 
+    text-align: right;
+}
+
+.final-total-row {
+    font-size: 1.8em; 
+    font-weight: bold;
+    color: var(--danger-color); 
+    border-top: 2px solid var(--secondary-color); 
+    margin-top: 8px; 
+    padding-top: 6px; 
+}
+.final-total-row dt {
+    font-size: 0.9em; 
+    font-weight: 700;
+    color: var(--danger-color);
+}
+.final-total-row dd {
+    font-size: 1em;
+}
+
+.discount-row {
+    align-items: center;
+}
+.discount-row dd {
+    flex-grow: 1;
+}
+
+.discount-button {
+    width: 100%;
+    background-color: white;
+    border: 1px dashed var(--warning-color);
+    color: var(--warning-color);
+    padding: 8px 10px;
+    border-radius: var(--border-radius);
+    font-size: 0.95em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+.discount-button i {
+    margin-right: 5px;
+}
+.discount-button:hover:not(:disabled) {
+    background-color: #fffaf0;
+    color: #e67e22;
+}
+.discount-button:disabled {
+    border-color: var(--border-color);
+    color: var(--border-color);
+    cursor: not-allowed;
+}
+.discount-summary-text {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--success-color);
+    text-align: right;
+    cursor: pointer;
+}
+.discount-summary-text:hover {
+    text-decoration: underline;
+}
+
+.checkout-area {
+    text-align: center;
+    flex-shrink: 0;
+    margin-top: auto; 
+}
+
+.checkout-button {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.5em;
+    font-weight: bold;
+    background-color: var(--success-color); 
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.checkout-button:hover:not(:disabled) {
+    background-color: #27ae60;
+}
+
+.checkout-button:disabled {
+    background-color: var(--border-color); 
+    cursor: not-allowed;
+}
+
+/* ---------------------------------
+   商品備註樣式 (V42.4)
+   --------------------------------- */
+
+.note-btn.add-note-btn {
+    background-color: #f0f0f0;
+    color: #555;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.85em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    display: inline-block; 
+    margin-top: 0;
+    text-decoration: none;
+}
+.note-btn.add-note-btn:hover {
+    background-color: #e0e0e0;
+    color: #000;
+}
+.note-btn.add-note-btn i {
+    margin-right: 4px;
+}
+.item-note-wrapper {
+    display: flex;
+    align-items: center;
+    background-color: #fffbe6; 
+    border: 1px solid #ffe58f;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+.item-note-display {
+    font-size: 0.9em;
+    color: #8a6d3b; 
+    font-weight: 700;
+    margin-top: 0;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1; 
+}
+.note-btn.edit-note-btn {
+    background: none;
+    border: none;
+    color: #8a6d3b;
+    cursor: pointer;
+    font-size: 1em;
+    padding: 0 0 0 8px; 
+    margin-top: 0;
+    display: block;
+    transition: color 0.2s;
+    flex-shrink: 0; 
+}
+.note-btn.edit-note-btn:hover {
+    color: #000;
+    text-decoration: none;
+}
+.note-btn.edit-note-btn i {
+    margin-right: 0;
+}

@@ -1,8 +1,10 @@
 /*
  * ====================================================================
  * [V42.3] 前台 折扣模組 (discounts.js)
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import { supabase } from '../supabaseClient.js';
 import * as DOM from './dom.js';
 import * as State from './state.js';
@@ -174,7 +176,8 @@ export function updateDiscountButton(totalDiscountAmount) {
                 <i class="fas fa-tags"></i> 套用折扣
             </button>
         `;
-        document.getElementById('open-discount-modal-btn').addEventListener('click', openDiscountModal);
+        // [V43.2] 修正：必須綁定到 DOM.orderDiscount 上才能抓到動態按鈕
+        DOM.orderDiscount.querySelector('#open-discount-modal-btn')?.addEventListener('click', openDiscountModal);
     }
 }
 

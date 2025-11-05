@@ -1,8 +1,10 @@
 /*
  * ====================================================================
  * [V42.1] 後台 折扣管理 (discounts.js)
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import { formatCurrency } from '../common/utils.js';
 import * as DOM from './dom.js';
@@ -95,7 +97,7 @@ export async function handleDiscountFormSubmit(e) {
         const { data, error } = response;
         if (error) { throw error; } 
         console.log('折扣儲存成功:', data);
-        DOM.discountModal.classList.remove('active'); // [V42.1] 直接呼叫
+        DOM.discountModal.classList.remove('active');
         DOM.discountForm.reset();
         await loadDiscounts(); 
     } catch (err) {

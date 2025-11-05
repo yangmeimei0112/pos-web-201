@@ -1,9 +1,10 @@
 /*
  * ====================================================================
  * [V42.2] 後台 商品管理 (products.js)
- * - [V42.2] 新增 export getCurrentProductList() 供匯出功能使用
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import { formatCurrency } from '../common/utils.js';
 import * as DOM from './dom.js';
@@ -11,7 +12,6 @@ import { showProductModal } from './ui.js';
 import { renderStocktakeTable } from './stocktake.js'; 
 
 let currentProductList = []; 
-// [V42.2] 新增 Getter 函數
 export function getCurrentProductList() {
     return currentProductList;
 }

@@ -1,8 +1,10 @@
 /*
  * ====================================================================
  * [V42.1] 後台 庫存盤點 (stocktake.js)
+ * [V43.2] 修正 import 路徑
  * ====================================================================
  */
+// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import * as DOM from './dom.js';
 
@@ -30,6 +32,7 @@ export async function loadStocktakeList(isRealtimeCall = false) {
         DOM.stocktakeListTbody.innerHTML = `<tr><td colspan="6" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
     }
 }
+// [V43.2] 修正：renderStocktakeTable 也必須 export 才能被 products.js 呼叫
 export function renderStocktakeTable(products) {
     if (!products || products.length === 0) {
         DOM.stocktakeListTbody.innerHTML = '<tr><td colspan="6" class="loading-message">沒有商品可供盤點。</td></tr>';

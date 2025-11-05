@@ -1,0 +1,51 @@
+/* ====================================================================
+   [V43.0] 後台 CSS - 庫存盤點 (stocktake.css)
+   ==================================================================== */
+
+.stocktake-instructions {
+    background-color: #e6f7ff;
+    border: 1px solid #b3e0ff;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+.stocktake-instructions p {
+    margin: 0;
+    color: #0056b3;
+}
+#stocktake-list-table {
+    min-width: 0; 
+}
+.stocktake-input {
+    width: 100px;
+    padding: 8px 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+.stocktake-input::-webkit-outer-spin-button,
+.stocktake-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.stocktake-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+    outline: none;
+}
+.stock-diff {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.stock-diff.positive {
+    color: #28a745; 
+}
+.stock-diff.negative {
+    color: #dc3545; 
+}
+.stock-diff.zero {
+    color: #6c757d; 
+}
