@@ -1,11 +1,11 @@
 /*
  * ====================================================================
- * [V42.1] 後台 UI 操作 (ui.js)
- * [V43.2] 修正 import 路徑
+ * [V50.2] 後台 UI 操作 (ui.js)
+ * - [V50.2] 將 V50.1 的商品門檻 (min_items_required) 邏輯
+ * 正確地合併回 showDiscountModal
  * ====================================================================
  */
 
-// [V43.2] 修正 import 路徑
 import * as DOM from './dom.js';
 import { loadProducts } from './products.js';
 import { loadEmployees } from './employees.js';
@@ -59,6 +59,7 @@ export function showEmployeeModal(employee = null) {
 }
 export function hideEmployeeModal() { DOM.employeeModal.classList.remove('active'); DOM.employeeForm.reset(); }
 
+// [V50.2] 修正此函數
 export function showDiscountModal(discount = null) {
     DOM.discountFormErrorMessage.textContent = ''; 
     DOM.discountForm.reset(); 
@@ -70,12 +71,16 @@ export function showDiscountModal(discount = null) {
         document.getElementById('discount-is-active').checked = discount.is_active;
         document.getElementById('discount-target-category').value = discount.target_category || '';
         document.getElementById('discount-target-product-id').value = discount.target_product_id || '';
+        // [V50.1] 載入新欄位
+        document.getElementById('discount-min-items').value = discount.min_items_required || '1';
     } else {
         DOM.discountModalTitle.textContent = '新增折扣';
         document.getElementById('discount-id').value = '';
         document.getElementById('discount-is-active').checked = true;
         document.getElementById('discount-target-category').value = '';
         document.getElementById('discount-target-product-id').value = '';
+        // [V50.1] 清空新欄位 (placeholder 會顯示預設 1)
+        document.getElementById('discount-min-items').value = '';
     }
     DOM.discountModal.classList.add('active');
 }

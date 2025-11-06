@@ -1,14 +1,14 @@
 /*
  * ====================================================================
- * [V42.1] 後台 折扣管理 (discounts.js)
- * [V43.2] 修正 import 路徑
+ * [V50.2] 後台 折扣管理 (discounts.js)
+ * - [V50.2] 修正 BUG: 移除 V50.1 中重複宣告的 showDiscountModal
+ * - (此函數已移至 ui.js)
  * ====================================================================
  */
-// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import { formatCurrency } from '../common/utils.js';
 import * as DOM from './dom.js';
-import { showDiscountModal } from './ui.js';
+import { showDiscountModal } from './ui.js'; // <-- 保留此 import
 
 export async function loadDiscounts(isRealtimeCall = false) {
     if (isRealtimeCall) {
@@ -22,18 +22,18 @@ export async function loadDiscounts(isRealtimeCall = false) {
     try {
         const { data, error } = await db
             .from('discounts')
-            .select('*')
+            .select('*') // [V50.1] select * 會自動包含新欄位 min_items_required
             .order('id', { ascending: true }); 
         if (error) throw error;
         renderDiscountTable(data); 
     } catch (err) {
         console.error("載入折扣時發生錯誤:", err);
-        DOM.discountTableBody.innerHTML = `<tr><td colspan="6" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
+        DOM.discountTableBody.innerHTML = `<tr><td colspan="7" class="loading-message error">資料載入失敗: ${err.message}</td></tr>`;
     }
 }
 export function renderDiscountTable(discounts) {
     if (!discounts || discounts.length === 0) {
-        DOM.discountTableBody.innerHTML = '<tr><td colspan="6" class="loading-message">目前沒有任何折扣。</td></tr>';
+        DOM.discountTableBody.innerHTML = '<tr><td colspan="7" class="loading-message">目前沒有任何折扣。</td></tr>'; // [V50.1] colspan 6 -> 7
         return;
     }
     DOM.discountTableBody.innerHTML = ''; 
@@ -48,6 +48,11 @@ export function renderDiscountTable(discounts) {
             targetText = `分類: ${item.target_category}`;
         }
 
+        // [V50.1] 產生商品門檻文字
+        const minItemsText = item.min_items_required > 1 
+            ? `每 ${item.min_items_required} 件` 
+            : '無 (1 件)';
+
         const toggleActiveButton = item.is_active
             ? `<button class="btn-secondary deactivate-discount-btn" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">停用</button>`
             : `<button class="btn-primary activate-discount-btn" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.9em; margin-right: 5px;">啟用</button>`;
@@ -57,7 +62,7 @@ export function renderDiscountTable(discounts) {
             <td>${item.name}</td>
             <td>${formatCurrency(item.amount)}</td>
             <td>${targetText}</td>
-            <td>${statusText}</td>
+            <td>${minItemsText}</td> <td>${statusText}</td>
             <td>
                 <button class="btn-secondary edit-discount-btn" data-id="${item.id}">編輯</button>
                 ${toggleActiveButton}
@@ -67,6 +72,9 @@ export function renderDiscountTable(discounts) {
         DOM.discountTableBody.appendChild(row);
     });
 }
+
+// [V50.2] 移除 V50.1 中錯誤貼上的 showDiscountModal 函數
+// export function showDiscountModal(discount = null) { ... }
 
 export async function handleDiscountFormSubmit(e) {
     e.preventDefault();
@@ -84,6 +92,12 @@ export async function handleDiscountFormSubmit(e) {
 
     discountData.target_category = discountData.target_category.trim() || null;
     discountData.target_product_id = parseInt(discountData.target_product_id, 10) || null;
+
+    // [V50.1] 處理新欄位，如果為空、0 或 NaN，則設為 1
+    discountData.min_items_required = parseInt(discountData.min_items_required, 10) || 1;
+    if (discountData.min_items_required < 1) {
+        discountData.min_items_required = 1;
+    }
 
     try {
         let response;
