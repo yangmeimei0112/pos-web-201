@@ -1,6 +1,7 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V49.0 - 5秒報表刷新)
-   - [V49.0] 將 setInterval 改為 5000 (5秒)
+   後台管理 (Backend) 邏輯 (V52.3 - 確保綁定)
+   - [V52.0] 將 setInterval 改為 2000 (2秒)
+   - [V52.3] 確保 handleDeleteAllOrders 和 setupOrderFilters 已綁定
    ==================================================================== */
 
 // [V43.2] 修正 import 路徑
@@ -21,15 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. 初始化介面
     setupNavigation();
     setupReportTabs(); 
-    setupOrderFilters();
+    setupOrderFilters(); // [V52.3] 確保此函數已匯入並執行
     
     // 2. 載入預設資料
     loadProducts(); 
     
     // 3. 啟動即時功能
     setupGlobalRealtime(); 
-    setInterval(refreshReportData, 5000); // [V49.0] 10000 -> 5000
-    console.log("[V49.0] 後台模組化已啟動 (5秒刷新)。"); // [V49.0] 修改日誌
+    setInterval(refreshReportData, 2000); // [V52.0]
+    console.log("[V52.3] 後台模組化已啟動 (2秒刷新/刪除修正)。"); 
     
     // 4. 綁定頂層事件
     DOM.backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 訂單表格點擊 (展開/刪除)
     DOM.orderListTableBody.addEventListener('click', handleOrderTableClick);
-    DOM.deleteAllOrdersBtn.addEventListener('click', handleDeleteAllOrders);
+    DOM.deleteAllOrdersBtn.addEventListener('click', handleDeleteAllOrders); // [V52.3] 確保此函數已匯入並綁定
 
     // 折扣 Modal 控制 & 表單 & 表格點擊
     DOM.addDiscountBtn.addEventListener('click', () => showDiscountModal(null));

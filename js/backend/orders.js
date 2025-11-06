@@ -1,7 +1,7 @@
 /*
  * ====================================================================
- * [V42.2] 後台 訂單管理 (orders.js)
- * [V43.2] 修正 import 路徑
+ * [V52.3] 後台 訂單管理 (orders.js)
+ * - [V52.2] 恢復被 V52.1 遺漏的 handleDeleteAllOrders 和 setupOrderFilters
  * ====================================================================
  */
 // [V43.2] 修正 import 路徑
@@ -62,7 +62,9 @@ export function renderOrderTable(ordersToRender) {
             <td>${empName}</td>
             <td>${formatCurrency(order.total_amount)}</td>
             <td>
-                <button class="btn-danger delete-order-btn" data-id="${order.id}">刪除</button>
+                <button class="btn-danger delete-order-btn" data-id="${order.id}">
+                    <i class="fas fa-trash-alt"></i> 刪除
+                </button>
             </td>
         `;
         DOM.orderListTableBody.appendChild(row);
@@ -159,23 +161,64 @@ export async function loadOrderDetails(orderId, targetTbody) {
         targetTbody.innerHTML = `<tr><td colspan="4" class="loading-message error">明細載入失敗: ${err.message}</td></tr>`; 
     }
 }
+
+// [V52.1] 修正此函數
 export async function handleOrderTableClick(e) { 
-    const target = e.target; const orderRow = target.closest('tr.order-row'); if (target.classList.contains('delete-order-btn')) { e.stopPropagation(); const id = target.dataset.id; await handleDeleteOrder(id); return; } if (orderRow) { const id = orderRow.dataset.id; const detailRow = DOM.orderListTableBody.querySelector(`tr.order-detail-row[data-id="${id}"]`); if (orderRow.classList.contains('expanded')) { orderRow.classList.remove('expanded'); detailRow.classList.remove('expanded'); orderRow.querySelector('.expand-arrow').style.transform = 'rotate(0deg)'; } else { orderRow.classList.add('expanded'); detailRow.classList.add('expanded'); orderRow.querySelector('.expand-arrow').style.transform = 'rotate(90deg)'; const detailTbody = detailRow.querySelector(`#order-details-tbody-${id}`); await loadOrderDetails(id, detailTbody); } }
+    const target = e.target;
+    
+    const deleteButton = target.closest('.delete-order-btn');
+    const orderRow = target.closest('tr.order-row');
+
+    if (deleteButton) { 
+        e.stopPropagation();
+        const id = deleteButton.dataset.id; 
+        if (id) {
+            await handleDeleteOrder(id);
+        }
+        return;
+    } 
+    
+    if (orderRow) { 
+        const id = orderRow.dataset.id; 
+        const detailRow = DOM.orderListTableBody.querySelector(`tr.order-detail-row[data-id="${id}"]`); 
+        if (orderRow.classList.contains('expanded')) { 
+            orderRow.classList.remove('expanded'); 
+            detailRow.classList.remove('expanded'); 
+            orderRow.querySelector('.expand-arrow').style.transform = 'rotate(0deg)'; 
+        } else { 
+            orderRow.classList.add('expanded'); 
+            detailRow.classList.add('expanded'); 
+            orderRow.querySelector('.expand-arrow').style.transform = 'rotate(90deg)'; 
+            const detailTbody = detailRow.querySelector(`#order-details-tbody-${id}`); 
+            await loadOrderDetails(id, detailTbody); 
+        } 
+    }
 }
+
 export async function handleDeleteOrder(id) { 
     if (!confirm(`您確定要「永久刪除」訂單 ID ${id} 嗎？\n\n警告：此操作無法復原，將一併刪除所有相關明細。`)) { return; } 
     try { const { data, error } = await db.rpc('delete_order_and_items', { order_id_to_delete: id }); if (error) throw error; console.log(data); alert(`訂單 ${id} 已刪除。`); 
         await loadAllOrdersForSequence();
     } catch (err) { console.error("刪除單筆訂單時發生錯誤:", err); alert(`刪除失败: ${err.message}`); }
 }
+
+// [V52.2] 恢復此函數
 export async function handleDeleteAllOrders() { 
-    if (!confirm("【極度危險】\n您確定要刪除「所有」訂單紀錄嗎？\n此操作將清空訂單和明細表。")) { return; } if (!confirm("【最終確認】\n此操作無法復原，所有銷售資料將被清除。是否繼續？")) { return; } 
-    try { const { data, error } = await db.rpc('delete_all_orders_and_items'); if (error) throw error; console.log(data); alert('所有訂單均已成功刪除。'); 
+    if (!confirm("【極度危險】\n您確定要刪除「所有」訂單紀錄嗎？\n此操作將清空訂單和明細表。")) { return; } 
+    if (!confirm("【最終確認】\n此操作無法復原，所有銷售資料將被清除。是否繼續？")) { return; } 
+    try { 
+        const { data, error } = await db.rpc('delete_all_orders_and_items'); 
+        if (error) throw error; 
+        console.log(data); 
+        alert('所有訂單均已成功刪除。'); 
         await loadAllOrdersForSequence();
-    } catch (err) { console.error("刪除所有訂單時發生錯誤:", err); alert(`刪除失敗: ${err.message}`); }
+    } catch (err) { 
+        console.error("刪除所有訂單時發生錯誤:", err); 
+        alert(`刪除失敗: ${err.message}`); 
+    }
 }
 
-// 篩選按鈕
+// [V52.2] 恢復此函數
 export function setupOrderFilters() {
     DOM.filterSearchBtn.addEventListener('click', () => {
         const seqNum = parseInt(DOM.filterSequenceNumber.value, 10);
