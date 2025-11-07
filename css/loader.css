@@ -1,0 +1,74 @@
+/*
+ * ====================================================================
+ * [V57.0] 載入動畫 (Loader) 樣式表 - 日式簡約風格
+ * - 移除所有舊動畫樣式 (音浪、浮動方塊、線條掃描、進度條)
+ * - 實作文字淡入及輕微上移效果，背景純色
+ * ====================================================================
+ */
+
+#loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f7f7f7; /* 柔和的淺灰色背景，營造日式質感 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    /* 動畫淡出，總時間約 2.5 秒，先顯示 1.5 秒，再淡出 1 秒 */
+    transition: opacity 1.0s ease-out 1.5s, visibility 1.0s ease-out 1.5s; 
+    opacity: 1;
+    visibility: visible;
+    overflow: hidden; 
+}
+
+/* 載入動畫淡出 */
+#loader-overlay.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-content {
+    text-align: center;
+    position: relative; 
+    z-index: 2;
+    /* 初始狀態，隱藏並下移 */
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInSlideUp 1.0s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* 緩入緩出 */
+    animation-delay: 0.3s; /* 延遲 0.3 秒後開始動畫 */
+}
+
+.loader-title {
+    font-family: 'Noto Sans TC', sans-serif; /* 日式風格，使用更簡潔的字體 */
+    font-size: 4rem; /* 略小一點，更內斂 */
+    font-weight: 500; /* 中等字重 */
+    color: #333; /* 柔和的深色文字 */
+    margin: 0;
+    letter-spacing: 0.05em; /* 略微的字間距 */
+}
+
+.loader-subtitle {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 1.1rem; /* 略小一點 */
+    font-weight: 300;
+    color: #666; /* 較淺的文字顏色 */
+    margin: 10px 0 0 0;
+    letter-spacing: 0.03em;
+    /* [V57.0] 讓副標題動畫延遲更久 */
+    animation: fadeInSlideUp 1.0s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+}
+
+/* 日式簡約 淡入上移 動畫 */
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

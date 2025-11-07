@@ -1,6 +1,7 @@
 /*
  * ====================================================================
  * [V42.3] 前台 全域狀態 (state.js)
+ * [優化] 移除 productLoadInterval (改用 Realtime)
  * ====================================================================
  */
 export const state = {
@@ -13,7 +14,7 @@ export const state = {
     heldOrders: [], 
     currentHeldOrderName: null, 
     lowStockItems: [], 
-    productLoadInterval: null
+    // 移除了 productLoadInterval: null
 };
 
 // --- State Setters ---
@@ -55,9 +56,7 @@ export function setLowStockItems(items) {
     state.lowStockItems = items;
 }
 
-export function setProductLoadInterval(interval) {
-    state.productLoadInterval = interval;
-}
+// 移除了 setProductLoadInterval 函數
 
 // --- State Getters (方便存取) ---
 

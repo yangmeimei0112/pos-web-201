@@ -1,6 +1,7 @@
 /* ====================================================================
    [V48.0] 前台 CSS - 基礎佈局 (layout.css)
    - [V48.0] 新增 @media 響應式佈局
+   - [動畫] 新增 Splash Screen 樣式
    ==================================================================== */
 
 /* [V42.0] 補回 body 背景色 (原在 common) */
@@ -188,4 +189,71 @@ body {
         padding: 6px 10px;
         font-size: 0.9em;
     }
+}
+
+/* ---------------------------------
+   [新增] 啟動動畫 (Splash Screen)
+   --------------------------------- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--secondary-color); /* 使用主題色 */
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    opacity: 1;
+    visibility: visible;
+    /* 動畫：0.5秒淡出 */
+    transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+}
+
+/* 用於隱藏 Splash Screen 的 class */
+#splash-screen.splash-hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.splash-content {
+    text-align: center;
+}
+
+.splash-content .fas {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    animation: fadeIn 1s ease 0.2s forwards;
+    opacity: 0;
+}
+
+.splash-content h1 {
+    font-size: 1.8rem;
+    opacity: 0;
+    color: white; /* 確保 h1 也是白色 */
+    /* 動畫：延遲 0.5 秒後淡入 */
+    animation: fadeIn 1s ease 0.5s forwards;
+}
+
+.splash-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    margin: 20px auto 0 auto;
+    opacity: 0;
+    /* 動畫：延遲 0.8 秒淡入，並開始旋轉 */
+    animation: fadeIn 1s ease 0.8s forwards, spin 1.2s linear 0.8s infinite;
 }

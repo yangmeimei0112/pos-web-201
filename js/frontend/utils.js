@@ -1,10 +1,9 @@
 /*
  * ====================================================================
- * [V42.3] 前台 工具函數 (utils.js)
- * [V43.2] 修正 import 路徑
+ * [V57.0] 前台 工具函數 (utils.js)
+ * - [V57.0] 移除 'random' 函數
  * ====================================================================
  */
-// [V43.2] 修正 import 路徑
 import * as DOM from './dom.js';
 
 export const formatCurrency = (amount) => {
@@ -23,3 +22,5 @@ export function updateClock() {
         DOM.currentTimeDisplay.textContent = `${dateString} ${timeString}`;
     }
 }
+
+// [V57.0] 移除 random 函數

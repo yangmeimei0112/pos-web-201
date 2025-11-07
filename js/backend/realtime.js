@@ -1,7 +1,7 @@
 /*
  * ====================================================================
- * [V49.0] 後台 Realtime (realtime.js)
- * - [V49.0] 報表刷新日誌改為 5 秒
+ * [V52.0] 後台 Realtime (realtime.js)
+ * - [V52.0] 報表刷新日誌改為 2 秒
  * ====================================================================
  */
 
@@ -18,13 +18,13 @@ export let autoRefreshInterval = null;
 
 export function refreshReportData() {
     if (document.querySelector('.modal.active')) {
-        console.log("[V49.0] Modal 開啟中，跳過報表刷新。");
+        console.log("[V52.0] Modal 開啟中，跳過報表刷新。");
         return;
     }
     
     const activeSection = document.querySelector('.management-section.active');
     if (activeSection && activeSection.id === 'reports-section') {
-        console.log("[V49.0] 5秒自動刷新: 報表"); // [V49.0] 修改
+        console.log("[V52.0] 2秒自動刷新: 報表"); // [V52.0] 修改
         loadDashboardData();
         loadTopSellingProducts();
         loadEmployeeSalesStats();

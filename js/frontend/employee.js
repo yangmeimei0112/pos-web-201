@@ -2,12 +2,13 @@
  * ====================================================================
  * [V46.0] 前台 員工模組 (employee.js)
  * - [V46.0] 修正 V45.0 遺漏的 loadProducts 匯入
+ * - [優化] 移除 setInterval (改用 Realtime)
  * ====================================================================
  */
 import { supabase } from '../supabaseClient.js';
 import * as DOM from './dom.js';
 import * as State from './state.js';
-import { loadProducts } from './products.js'; // [V46.0] 修正：匯入 loadProducts
+import { loadProducts } from './products.js'; 
 import { loadDiscounts } from './discounts.js';
 
 export function selectEmployee(id, name) {
@@ -26,11 +27,8 @@ export function selectEmployee(id, name) {
         loadDiscounts(); 
     }
 
-    if (!State.state.productLoadInterval) {
-        const interval = setInterval(loadProducts, 1000); // [V46.0] 現在 loadProducts 已定義
-        State.setProductLoadInterval(interval);
-        console.log("[V42.3] 1秒庫存自動刷新已啟動。");
-    }
+    // [優化] 移除了啟動 setInterval 的區塊
+    // console.log("[V42.3] 1秒庫存自動刷新已啟動。");
 }
 
 export async function loadEmployees() {
@@ -85,11 +83,8 @@ export function handleEmployeeSwitch(clearOrderFn) {
     DOM.posMainApp.classList.add('hidden');
     DOM.employeeModal.classList.add('active');
     
-    if (State.state.productLoadInterval) {
-        clearInterval(State.state.productLoadInterval);
-        State.setProductLoadInterval(null);
-        console.log("[V42.3] 庫存自動刷新已停止。");
-    }
+    // [優化] 移除了停止 clearInterval 的區塊
+    // console.log("[V42.3] 庫存自動刷新已停止。");
 
     loadEmployees();
 }

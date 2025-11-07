@@ -4,8 +4,11 @@
  * - [V45.0] 匯入並綁定 showCustomAlert
  * - [V46.0] 匯入並綁定 結帳成功 Modal
  * - [V46.0] 修正 V45.0 的 loadProducts 匯入錯誤
+ * - [優化] 移除 setInterval，改用 Realtime
+ * - [動畫] 新增 3 秒 Splash Screen 邏輯
  * ====================================================================
  */
+import { supabase } from '../supabaseClient.js'; // [優化] 匯入 supabase
 import * as DOM from './dom.js';
 import * as State from './state.js';
 import { updateClock } from './utils.js';
@@ -19,27 +22,55 @@ import { setupWarningBell } from './warnings.js';
 import { setupAlertModal, closeAlert } from './alert.js';
 import { loadProducts } from './products.js'; // [V46.0] 修正：在頂層匯入
 
+/**
+ * [優化] 設置前台 Supabase Realtime 監聽
+ * 監聽商品資料表的任何變更 (新增、刪除、更新)
+ * 當變更發生時 (例如庫存變動)，自動觸發 loadProducts()
+ */
+function setupFrontendRealtime() {
+    console.log("✅ [Realtime] 啟動前台商品庫存即時監聽...");
+    
+    supabase.channel('public:products')
+        .on('postgres_changes', { 
+            event: '*', // 監聽所有事件
+            schema: 'public', 
+            table: 'products' 
+        },
+        (payload) => {
+            console.log('🔄 [Realtime] 偵測到商品資料變更，重新載入...');
+            // 呼叫 loadProducts，它會更新 State 並重新渲染商品列表
+            loadProducts(); 
+        }
+    ).subscribe();
+}
+
 function initializeApp() {
-    // 1. 啟動基礎功能
+    // [動畫] 找到 Splash Screen
+    const splashScreen = document.getElementById('splash-screen');
+
+    // 1. 啟動基礎功能 (這些功能應立即啟動，不受動畫影響)
     updateClock();
     setInterval(updateClock, 1000);
     loadHeldOrdersFromStorage(); 
     setupWarningBell(); 
     setupAlertModal(); 
+    setupFrontendRealtime(); // [優化] 啟動 Realtime 監聽
     
-    // 2. 檢查登入狀態
-    if (!State.state.currentEmployee) {
-        initializeEmployeeModule();
-    } else {
-        DOM.posMainApp.classList.remove('hidden');
-        if (!State.state.productLoadInterval) {
-            // [V46.0] 修正 V45.0 錯誤
-            const interval = setInterval(loadProducts, 1000); 
-            State.setProductLoadInterval(interval);
+    // [動畫] 設置 3 秒後隱藏 Splash Screen，並啟動 APP
+    setTimeout(() => {
+        if (splashScreen) {
+            splashScreen.classList.add('splash-hidden');
         }
-    }
-    
-    // 3. 綁定主要 DOM 事件
+        
+        // 2. 檢查登入狀態 (動畫結束後才執行)
+        if (!State.state.currentEmployee) {
+            initializeEmployeeModule(); // 這會顯示員工 modal
+        } else {
+            DOM.posMainApp.classList.remove('hidden');
+        }
+    }, 3000); // 3000ms = 3 秒
+
+    // 3. 綁定主要 DOM 事件 (這些可以先綁定，不受動畫影響)
     DOM.goToBackendBtn.onclick = () => { window.location.href = 'backend.html'; };
     DOM.changeEmployeeBtn.onclick = () => handleEmployeeSwitch(clearOrder);
     DOM.clearOrderBtn.addEventListener('click', () => clearOrder());
@@ -160,7 +191,7 @@ function initializeApp() {
     renderOrderItems();
     updateOrderTotals(); 
 
-    console.log('🚀 POS 系統腳本 (V46.0) 已啟動。');
+    console.log('🚀 POS 系統腳本 (V46.0 + Realtime 優化 + 3秒動畫) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化

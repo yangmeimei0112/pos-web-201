@@ -1,10 +1,16 @@
 /*
  * ====================================================================
- * [V47.0] 前台 DOM 元素 (dom.js)
- * - [V46.0] 新增 Checkout Success Modal DOM
- * - [V47.0] 確認 Alert Modal DOM (無變更)
+ * [V58.1] 前台 DOM 元素 (dom.js)
+ * - [V58.1] 新增 Loader Title 和 Subtitle
  * ====================================================================
  */
+export const loaderOverlay = document.getElementById('loader-overlay');
+export const loaderProgressBar = document.getElementById('loader-progress-bar');
+// [V58.1] 新增
+export const loaderTitle = document.querySelector('.loader-title');
+export const loaderSubtitle = document.querySelector('.loader-subtitle');
+
+
 export const employeeModal = document.getElementById('employee-selection-modal');
 export const employeeList = document.getElementById('employee-list');
 export const loadingMessage = document.getElementById('loading-message');
@@ -63,13 +69,11 @@ export const modalSubtotal = document.getElementById('modal-subtotal');
 export const modalDiscountTotal = document.getElementById('modal-discount-total');
 export const modalFinalTotal = document.getElementById('modal-final-total');
 
-// [V45.0] 自訂提示 (Alert) Modal DOM
 export const alertModal = document.getElementById('alert-modal');
 export const alertModalTitle = document.getElementById('alert-modal-title');
 export const alertModalMessage = document.getElementById('alert-modal-message');
 export const alertModalConfirm = document.getElementById('alert-modal-confirm');
 
-// [V46.0] 結帳成功 Modal DOM
 export const checkoutSuccessModal = document.getElementById('checkout-success-modal');
 export const successOrderId = document.getElementById('success-order-id');
 export const successTotal = document.getElementById('success-total');

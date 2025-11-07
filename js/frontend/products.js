@@ -1,10 +1,9 @@
 /*
  * ====================================================================
- * [V42.3] 前台 商品模組 (products.js)
- * [V43.2] 修正 import 路徑
+ * [V51.0] 前台 商品模組 (products.js)
+ * - [V51.0] 修改 loadProducts 支援 isRealtimeCall 參數
  * ====================================================================
  */
-// [V43.2] 修正 import 路徑
 import { supabase } from '../supabaseClient.js';
 import * as DOM from './dom.js';
 import * as State from './state.js';
@@ -12,7 +11,7 @@ import { formatCurrency } from './utils.js';
 import { addItemToOrder } from './order.js';
 import { updateStockWarningBell } from './warnings.js';
 
-export async function loadProducts() {
+export async function loadProducts(isRealtimeCall = false) {
     const isInitialLoad = State.state.allProducts.length === 0;
     
     if (isInitialLoad) {
@@ -35,7 +34,8 @@ export async function loadProducts() {
         }
         if (error) throw error;
         
-        if (!isInitialLoad && JSON.stringify(State.state.allProducts) === JSON.stringify(data)) {
+        // [V51.0] 如果不是 Realtime 呼叫 (即 1 秒輪詢)，才檢查快取
+        if (!isRealtimeCall && !isInitialLoad && JSON.stringify(State.state.allProducts) === JSON.stringify(data)) {
             return; 
         }
         
