@@ -1,7 +1,8 @@
 /*
  * ====================================================================
  * [V42.1] 後台 DOM 元素 (dom.js)
- * 集中管理所有 DOM 查詢
+ * [V-Confirm] 新增 Confirm Modal DOM
+ * [V-Alert] 新增 Alert Modal DOM
  * ====================================================================
  */
 
@@ -57,3 +58,19 @@ export const reportContentSections = document.querySelectorAll('.report-content'
 // 庫存盤點
 export const stocktakeListTbody = document.getElementById('stocktake-list-tbody');
 export const updateAllStockBtn = document.getElementById('update-all-stock-btn');
+
+// [V-Confirm] 自訂確認視窗
+export const confirmModal = document.getElementById('confirm-modal');
+export const confirmModalContent = document.getElementById('confirm-modal-content');
+export const confirmModalTitle = document.getElementById('confirm-modal-title');
+export const confirmModalMessage = document.getElementById('confirm-modal-message');
+export const confirmModalConfirm = document.getElementById('confirm-modal-confirm');
+export const confirmModalCancel = document.getElementById('confirm-modal-cancel');
+
+// [V-Alert] 自訂提示視窗
+export const alertModal = document.getElementById('alert-modal');
+export const alertModalContent = document.getElementById('alert-modal-content');
+export const alertModalIcon = document.getElementById('alert-modal-icon');
+export const alertModalTitle = document.getElementById('alert-modal-title');
+export const alertModalMessage = document.getElementById('alert-modal-message');
+export const alertModalConfirm = document.getElementById('alert-modal-confirm');

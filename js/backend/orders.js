@@ -1,13 +1,16 @@
 /*
  * ====================================================================
- * [V52.3] 後台 訂單管理 (orders.js)
- * - [V52.2] 恢復被 V52.1 遺漏的 handleDeleteAllOrders 和 setupOrderFilters
+ * [V-Alert] 改用 showCustomConfirm / showCustomAlert
  * ====================================================================
  */
-// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import { formatCurrency, formatDate } from '../common/utils.js';
 import * as DOM from './dom.js';
+// [V-Confirm] 匯入自訂確認視窗
+import { showCustomConfirm } from './confirmModal.js';
+// [V-Alert] 匯入自訂提示視窗
+import { showCustomAlert } from './alertModal.js';
+
 
 let allOrders = []; 
 export function getAllOrders() {
@@ -162,7 +165,6 @@ export async function loadOrderDetails(orderId, targetTbody) {
     }
 }
 
-// [V52.1] 修正此函數
 export async function handleOrderTableClick(e) { 
     const target = e.target;
     
@@ -196,35 +198,50 @@ export async function handleOrderTableClick(e) {
 }
 
 export async function handleDeleteOrder(id) { 
-    if (!confirm(`您確定要「永久刪除」訂單 ID ${id} 嗎？\n\n警告：此操作無法復原，將一併刪除所有相關明細。`)) { return; } 
-    try { const { data, error } = await db.rpc('delete_order_and_items', { order_id_to_delete: id }); if (error) throw error; console.log(data); alert(`訂單 ${id} 已刪除。`); 
+    const message = `您確定要「永久刪除」訂單 ID ${id} 嗎？\n\n警告：此操作無法復原，將一併刪除所有相關明細。`;
+    const confirmed = await showCustomConfirm(message, "刪除單筆訂單");
+    if (!confirmed) { return; } 
+
+    try { 
+        const { data, error } = await db.rpc('delete_order_and_items', { order_id_to_delete: id }); 
+        if (error) throw error; 
+        console.log(data); 
+        // [V-Alert] 替換 alert
+        await showCustomAlert(`訂單 ${id} 已刪除。`, "刪除成功", "success");
         await loadAllOrdersForSequence();
-    } catch (err) { console.error("刪除單筆訂單時發生錯誤:", err); alert(`刪除失败: ${err.message}`); }
+    } catch (err) { 
+        console.error("刪除單筆訂單時發生錯誤:", err); 
+        // [V-Alert] 替換 alert
+        await showCustomAlert(`刪除失败: ${err.message}`, "錯誤", "danger");
+    }
 }
 
-// [V52.2] 恢復此函數
 export async function handleDeleteAllOrders() { 
-    if (!confirm("【極度危險】\n您確定要刪除「所有」訂單紀錄嗎？\n此操作將清空訂單和明細表。")) { return; } 
-    if (!confirm("【最終確認】\n此操作無法復原，所有銷售資料將被清除。是否繼續？")) { return; } 
+    const message = "您確定要刪除「所有」訂單紀錄嗎？\n此操作將清空訂單和明細表。";
+    const confirmed = await showCustomConfirm(message, "【是否要刪除所有訂單】");
+    if (!confirmed) { return; } 
+    
     try { 
         const { data, error } = await db.rpc('delete_all_orders_and_items'); 
         if (error) throw error; 
         console.log(data); 
-        alert('所有訂單均已成功刪除。'); 
+        // [V-Alert] 替換 alert (這就是您圖片中的那則訊息)
+        await showCustomAlert('所有訂單均已成功刪除。', "刪除成功", "success"); 
         await loadAllOrdersForSequence();
     } catch (err) { 
         console.error("刪除所有訂單時發生錯誤:", err); 
-        alert(`刪除失敗: ${err.message}`); 
+        await showCustomAlert(`刪除失敗: ${err.message}`, "錯誤", "danger");
     }
 }
 
-// [V52.2] 恢復此函數
 export function setupOrderFilters() {
-    DOM.filterSearchBtn.addEventListener('click', () => {
+    // [V-Alert] 將監聽器改為 async
+    DOM.filterSearchBtn.addEventListener('click', async () => {
         const seqNum = parseInt(DOM.filterSequenceNumber.value, 10);
         const total = allOrders.length;
         if (isNaN(seqNum) || seqNum < 1 || seqNum > total) {
-            alert(`請輸入有效的數字 (1 到 ${total} 之間)。`);
+            // [V-Alert] 替換 alert
+            await showCustomAlert(`請輸入有效的數字 (1 到 ${total} 之間)。`, "查詢錯誤", "danger");
             renderOrderTable(allOrders); 
             return;
         }

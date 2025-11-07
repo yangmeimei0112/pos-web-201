@@ -1,7 +1,7 @@
 /* ====================================================================
-   後台管理 (Backend) 邏輯 (V52.3 - 確保綁定)
-   - [V52.0] 將 setInterval 改為 2000 (2秒)
-   - [V52.3] 確保 handleDeleteAllOrders 和 setupOrderFilters 已綁定
+   後台管理 (Backend) 邏輯
+   - [V-Confirm] 匯入並初始化 confirmModal
+   - [V-Alert] 匯入並初始化 alertModal
    ==================================================================== */
 
 // [V43.2] 修正 import 路徑
@@ -15,6 +15,10 @@ import { loadAllOrdersForSequence, handleOrderTableClick, handleDeleteAllOrders,
 import { handleDiscountFormSubmit, handleDiscountTableClick } from './discounts.js';
 import { handleStocktakeInputChange, handleUpdateAllStock } from './stocktake.js';
 import { handleExportProducts, handleExportOrders } from './exports.js';
+// [V-Confirm] 匯入
+import { setupConfirmModal } from './confirmModal.js';
+// [V-Alert] 匯入
+import { setupAlertModal } from './alertModal.js';
 
 
 // 頁面載入完成後
@@ -22,15 +26,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. 初始化介面
     setupNavigation();
     setupReportTabs(); 
-    setupOrderFilters(); // [V52.3] 確保此函數已匯入並執行
+    setupOrderFilters(); 
+    
+    // [V-Confirm] 初始化自訂確認視窗
+    setupConfirmModal({
+        modal: DOM.confirmModal,
+        content: DOM.confirmModalContent,
+        title: DOM.confirmModalTitle,
+        message: DOM.confirmModalMessage,
+        confirmBtn: DOM.confirmModalConfirm,
+        cancelBtn: DOM.confirmModalCancel
+    });
+
+    // [V-Alert] 初始化自訂提示視窗
+    setupAlertModal({
+        modal: DOM.alertModal,
+        content: DOM.alertModalContent,
+        title: DOM.alertModalTitle,
+        message: DOM.alertModalMessage,
+        icon: DOM.alertModalIcon,
+        confirmBtn: DOM.alertModalConfirm
+    });
     
     // 2. 載入預設資料
     loadProducts(); 
     
     // 3. 啟動即時功能
     setupGlobalRealtime(); 
-    setInterval(refreshReportData, 2000); // [V52.0]
-    console.log("[V52.3] 後台模組化已啟動 (2秒刷新/刪除修正)。"); 
+    setInterval(refreshReportData, 2000); 
+    console.log("[V-Alert] 後台模組化已啟動 (含 Alert/Confirm)。"); 
     
     // 4. 綁定頂層事件
     DOM.backToPosBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
@@ -53,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 訂單表格點擊 (展開/刪除)
     DOM.orderListTableBody.addEventListener('click', handleOrderTableClick);
-    DOM.deleteAllOrdersBtn.addEventListener('click', handleDeleteAllOrders); // [V52.3] 確保此函數已匯入並綁定
+    DOM.deleteAllOrdersBtn.addEventListener('click', handleDeleteAllOrders); 
 
     // 折扣 Modal 控制 & 表單 & 表格點擊
     DOM.addDiscountBtn.addEventListener('click', () => showDiscountModal(null));
@@ -73,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.updateAllStockBtn.addEventListener('click', handleUpdateAllStock);
     }
 
-    // [V42.2] 修正匯出按鈕綁定
+    // 匯出按鈕綁定
     if (DOM.exportProductsBtn) {
         DOM.exportProductsBtn.addEventListener('click', handleExportProducts);
     }

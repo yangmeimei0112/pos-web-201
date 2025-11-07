@@ -1,6 +1,7 @@
 /* ====================================================================
    [V48.0] 後台 CSS - 基礎佈局 (layout.css)
    - [V48.0] 新增 @media 響應式佈局
+   - [V-Confirm] 新增 Confirm Modal 樣式
    ==================================================================== */
 
 /* ---------------------------------
@@ -203,4 +204,105 @@ body {
     #discount-modal .form-grid {
         grid-template-columns: 1fr; /* 垂直堆疊 */
     }
+}
+
+/* ---------------------------------
+   [V-Confirm] 自訂確認視窗樣式
+   --------------------------------- */
+#confirm-modal-content {
+    max-width: 450px;
+}
+#confirm-modal-content.danger #confirm-modal-title {
+    color: var(--danger-color); /* 紅色標題 */
+}
+#confirm-modal-message {
+    font-size: 1.1em;
+    color: var(--text-color-dark);
+    line-height: 1.6;
+    white-space: pre-wrap; /* 支援 \n 換行 */
+    margin: 10px 0;
+    text-align: left;
+}
+/* ====================================================================
+   [V48.0] 後台 CSS - 基礎佈局 (layout.css)
+   - [V-Confirm] 新增 Confirm Modal 樣式
+   - [V-Alert] 新增 Alert Modal 樣式
+   ==================================================================== */
+
+/* ... (省略檔案頂部到 .backend-app 的所有 CSS) ... */
+
+/* ---------------------------------
+   [V-Confirm] 自訂確認視窗樣式
+   --------------------------------- */
+#confirm-modal-content {
+    max-width: 450px;
+}
+#confirm-modal-content.danger #confirm-modal-title {
+    color: var(--danger-color); /* 紅色標題 */
+}
+#confirm-modal-message {
+    font-size: 1.1em;
+    color: var(--text-color-dark);
+    line-height: 1.6;
+    white-space: pre-wrap; /* 支援 \n 換行 */
+    margin: 10px 0;
+    text-align: left;
+}
+
+/* ---------------------------------
+   [V-Alert] 自訂提示視窗樣式
+   --------------------------------- */
+#alert-modal-content {
+    max-width: 420px;
+    text-align: center;
+}
+.alert-icon-container {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px auto;
+    font-size: 2.2em;
+    color: white;
+}
+
+/* 成功樣式 (預設) */
+#alert-modal-content.success .alert-icon-container {
+    background-color: var(--success-color); /* 綠色 */
+}
+#alert-modal-content.success #alert-modal-title {
+    color: var(--success-color);
+}
+#alert-modal-content.success #alert-modal-confirm {
+    background-color: var(--primary-color); /* 藍色按鈕 */
+}
+#alert-modal-content.success #alert-modal-confirm:hover {
+    background-color: #0056b3;
+}
+
+
+/* 錯誤樣式 */
+#alert-modal-content.danger .alert-icon-container {
+    background-color: var(--danger-color); /* 紅色 */
+}
+#alert-modal-content.danger #alert-modal-title {
+    color: var(--danger-color);
+}
+#alert-modal-content.danger #alert-modal-confirm {
+    background-color: var(--danger-color); /* 紅色按鈕 */
+}
+#alert-modal-content.danger #alert-modal-confirm:hover {
+    background-color: #c82333;
+}
+
+
+#alert-modal-message {
+    font-size: 1.1em;
+    color: var(--text-color-dark);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin: 10px 0;
+    text-align: center;
 }
