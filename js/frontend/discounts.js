@@ -2,10 +2,8 @@
  * ====================================================================
  * [V50.3] 前台 折扣模組 (discounts.js)
  * - [V50.3] 支援 min_items_required (商品門檻) 邏輯
- * - [V50.3] loadDiscounts: 讀取 min_items_required
- * - [V50.3] renderAvailableDiscounts: 重寫，計算 maxUsable 並禁用 "+"
- * - [V50.3] validateAppliedDiscounts: 重寫，自動校正折扣數量
- * - [V50.3] handleDiscountAdd: 新增 maxUsable 檢查
+ * - [優化] 新增 checkDiscountEligibility 函數
+ * - [優化] updateDiscountButton 依賴 checkDiscountEligibility 的結果
  * ====================================================================
  */
 import { supabase } from '../supabaseClient.js';
@@ -84,6 +82,38 @@ export function isDiscountApplicable(discount, applicableItemCount, subtotal) {
 }
 
 /**
+ * [優化] [新增]
+ * 在不開啟 Modal 的情況下，檢查是否有 "任何" 可用的折扣
+ * @param {number} subtotal - 訂單小計
+ * @returns {boolean} - true: 至少有一項可用, false: 全部不可用
+ */
+export function checkDiscountEligibility(subtotal) {
+    if (State.state.orderItems.length === 0) {
+        return false;
+    }
+
+    // 檢查所有可用折扣
+    for (const discount of State.state.availableDiscounts) {
+        const applicableItemCount = calculateApplicableItemCount(discount);
+        const { applicable } = isDiscountApplicable(discount, applicableItemCount, subtotal);
+        
+        if (applicable) {
+            // 適用，還需檢查是否滿足門檻 (maxUsable > 0)
+            const minItems = discount.min_items_required || 1;
+            const maxUsable = Math.floor(applicableItemCount / minItems);
+            
+            if (maxUsable > 0) {
+                return true; // 找到至少一個可用的，立刻回傳 true
+            }
+        }
+    }
+    
+    // 迴圈結束，找不到任何可用的
+    return false;
+}
+
+
+/**
  * [V50.3] (核心邏輯重寫)
  * 重新渲染折扣 Modal 內的列表
  */
@@ -136,7 +166,7 @@ export function renderAvailableDiscounts() {
             </div>
         `;
 
-        if (applicable) {
+        if (applicable && maxUsable > 0) { // [優化] 只有 maxUsable > 0 才算可用
             DOM.applicableDiscountsList.innerHTML += itemHtml;
         } else {
             DOM.inapplicableDiscountsList.innerHTML += itemHtml;
@@ -267,8 +297,9 @@ export function validateAppliedDiscounts(subtotal) {
 
 /**
  * 更新主畫面的折扣按鈕
+ * [優化] 增加 areAnyDiscountsApplicable 參數
  */
-export function updateDiscountButton(totalDiscountAmount) {
+export function updateDiscountButton(totalDiscountAmount, areAnyDiscountsApplicable = false) {
     if (totalDiscountAmount > 0) {
         DOM.orderDiscount.innerHTML = `
             <span id="discount-summary-text" class="discount-summary-text" title="點擊以編輯折扣">
@@ -277,8 +308,11 @@ export function updateDiscountButton(totalDiscountAmount) {
         `;
         DOM.orderDiscount.querySelector('#discount-summary-text')?.addEventListener('click', openDiscountModal);
     } else {
+        // [優化] 只有在 areAnyDiscountsApplicable 為 true 時才啟用按鈕
+        const isDisabled = !areAnyDiscountsApplicable;
+        
         DOM.orderDiscount.innerHTML = `
-            <button id="open-discount-modal-btn" class="discount-button" ${State.state.orderItems.length === 0 ? 'disabled' : ''}>
+            <button id="open-discount-modal-btn" class="discount-button" ${isDisabled ? 'disabled' : ''}>
                 <i class="fas fa-tags"></i> 套用折扣
             </button>
         `;
@@ -288,8 +322,15 @@ export function updateDiscountButton(totalDiscountAmount) {
 
 /**
  * 開啟折扣 Modal
+ * [優化] 增加 isDisabled 檢查
  */
 export function openDiscountModal() {
+    // [優化] 檢查按鈕是否被禁用
+    const btn = DOM.orderDiscount.querySelector('#open-discount-modal-btn');
+    if (btn && btn.disabled) {
+        return; // 如果按鈕是禁用的，不執行任何操作
+    }
+
     if (State.state.orderItems.length === 0) {
         alert("請先加入商品");
         return;

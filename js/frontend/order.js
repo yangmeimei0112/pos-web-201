@@ -2,13 +2,15 @@
  * ====================================================================
  * [V42.4] 前台 訂單模組 (order.js)
  * [V43.2] 修正 import 路徑
+ * [優化] 匯入並使用 checkDiscountEligibility
  * ====================================================================
  */
 // [V43.2] 修正 import 路徑
 import * as DOM from './dom.js';
 import * as State from './state.js';
 import { formatCurrency } from './utils.js';
-import { openDiscountModal, validateAppliedDiscounts, updateDiscountButton } from './discounts.js';
+// [優化] 匯入 checkDiscountEligibility
+import { openDiscountModal, validateAppliedDiscounts, updateDiscountButton, checkDiscountEligibility } from './discounts.js';
 
 // --- Private Helper ---
 function getProductStock(productId) {
@@ -124,7 +126,7 @@ export function renderOrderItems() {
     if (State.state.orderItems.length === 0) {
         DOM.orderItemsTableBody.innerHTML = `<tr><td colspan="5" class="empty-order-message">尚未加入商品</td></tr>`;
         DOM.checkoutBtn.disabled = true;
-        updateDiscountButton(0); 
+        updateDiscountButton(0, false); // [優化] 傳入 false
         return;
     }
     DOM.checkoutBtn.disabled = false;
@@ -194,7 +196,12 @@ export function updateOrderTotals() {
     DOM.orderItemCount.textContent = totalItems;
     DOM.orderSubtotal.textContent = formatCurrency(subtotal);
     
-    updateDiscountButton(totalDiscountAmount); 
+    // [優化] 
+    // 1. 檢查是否有任何折扣可用
+    const areAnyDiscountsApplicable = checkDiscountEligibility(subtotal);
+    // 2. 將結果傳遞給 updateDiscountButton
+    updateDiscountButton(totalDiscountAmount, areAnyDiscountsApplicable); 
+    
     updateFinalTotalDisplay(subtotal, totalDiscountAmount);
 }
 
