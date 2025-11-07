@@ -2,6 +2,7 @@
  * ====================================================================
  * [V42.1] 後台 報表 (reports.js)
  * [V43.2] 修正 import 路徑
+ * [V-BugFix] 修正 loadDashboardData 讀取 RPC 回傳值的方式
  * ====================================================================
  */
 // [V43.2] 修正 import 路徑
@@ -22,15 +23,26 @@ export async function loadDashboardData() {
 
         if (error) throw error;
         
-        const stats = data;
-        const totalOrders = stats.total_orders;
-        const totalSales = stats.total_sales;
-        const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-        const totalCost = stats.total_cost;
-        const totalProfit = stats.total_profit;
+        // [關鍵修正] 
+        // RPC 回傳的是一個陣列 (Array)，我們必須取出第一個元素 data[0]
+        if (!data || data.length === 0) {
+            throw new Error("fn_get_dashboard_stats RPC 回傳了空資料陣列。");
+        }
+        const stats = data[0]; // <-- 修正點
+
+        // [健壯性修正]
+        // 使用 (?? 0) 確保 stats 物件中的值如果是 null 或 undefined，
+        // 也會被當作 0 來計算，避免 NaN。
+        const totalOrders = stats.total_orders ?? 0;
+        const totalSales = stats.total_sales ?? 0;
+        const avgOrderValue = totalOrders > 0 ? (totalSales / totalOrders) : 0;
+        const totalCost = stats.total_cost ?? 0;
+        const totalProfit = stats.total_profit ?? 0;
         
         const animDuration = 1000; 
         
+        // [健壯性修正]
+        // 確保動畫的起始值也是有效的數字 (使用 || 0)
         const currentTotalSales = parseFloat(DOM.dashboardTotalSales.textContent.replace(/[^0-9.-]+/g,"")) || 0;
         const currentTotalOrders = parseFloat(DOM.dashboardTotalOrders.textContent) || 0;
         const currentAvgOrderValue = parseFloat(DOM.dashboardAvgOrderValue.textContent.replace(/[^0-9.-]+/g,"")) || 0;
