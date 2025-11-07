@@ -238,15 +238,12 @@
                 <div class="order-header">
                     <h2><i class="fas fa-receipt"></i> 訂單明細</h2>
                     <div class="order-header-actions">
-                        <div class="system-buttons">
-                            <button id="hold-order-btn" class="system-button">
-                                <i class="fas fa-pause-circle"></i> 暫掛
-                            </button>
-                            <button id="retrieve-order-btn" class="system-button">
-                                <i class="fas fa-play-circle"></i> 取單
-                                <span id="held-order-count" class="held-order-count hidden">0</span>
-                            </button>
-                        </div>
+                        
+                        <button id="open-hold-modal-btn" class="system-button">
+                            <i class="fas fa-tasks"></i> 暫掛/取單
+                            <span id="held-order-count" class="held-order-count hidden">0</span>
+                        </button>
+                        
                         <button id="clear-order-btn" class="clear-button" title="清空訂單" aria-label="清空目前訂單">
                             <i class="fas fa-trash-alt"></i> 清空
                         </button>

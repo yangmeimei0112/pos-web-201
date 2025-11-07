@@ -1,9 +1,8 @@
 /*
  * ====================================================================
  * [V46.0] 前台 主入口 (main.js)
- * - [優化] 移除 setInterval，改用 Realtime
- * - [動畫] 新增 3 秒 Splash Screen 邏輯
  * - [優化] 新增 sessionStorage 檢查，跳過動畫
+ * - [優化] 合併 暫掛/取單 按鈕監聽
  * ====================================================================
  */
 import { supabase } from '../supabaseClient.js'; 
@@ -156,8 +155,10 @@ function initializeApp() {
     });
 
     // 暫掛/取單 Modal
-    DOM.holdOrderBtn.addEventListener('click', openHoldRetrieveModal);
-    DOM.retrieveOrderBtn.addEventListener('click', openHoldRetrieveModal);
+    // [修改] 改為監聽單一按鈕
+    DOM.openHoldModalBtn.addEventListener('click', openHoldRetrieveModal);
+    // DOM.holdOrderBtn.addEventListener('click', openHoldRetrieveModal); // 移除
+    // DOM.retrieveOrderBtn.addEventListener('click', openHoldRetrieveModal); // 移除
     DOM.closeHoldRetrieveModalBtn.addEventListener('click', closeHoldRetrieveModal);
     DOM.heldOrderListContainer.addEventListener('click', handleRetrieveModalClick); 
     DOM.saveHeldOrderBtn.addEventListener('click', handleSaveHeldOrderClick); 
@@ -210,7 +211,7 @@ function initializeApp() {
     renderOrderItems();
     updateOrderTotals(); 
 
-    console.log('🚀 POS 系統腳本 (V46.0 + Realtime + Session) 已啟動。');
+    console.log('🚀 POS 系統腳బ్ (V46.0 + Realtime + Session) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化
