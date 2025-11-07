@@ -1,44 +1,39 @@
 /*
  * ====================================================================
  * [V46.0] 前台 主入口 (main.js)
- * - [V45.0] 匯入並綁定 showCustomAlert
- * - [V46.0] 匯入並綁定 結帳成功 Modal
- * - [V46.0] 修正 V45.0 的 loadProducts 匯入錯誤
  * - [優化] 移除 setInterval，改用 Realtime
  * - [動畫] 新增 3 秒 Splash Screen 邏輯
+ * - [優化] 新增 sessionStorage 檢查，跳過動畫
  * ====================================================================
  */
-import { supabase } from '../supabaseClient.js'; // [優化] 匯入 supabase
+import { supabase } from '../supabaseClient.js'; 
 import * as DOM from './dom.js';
 import * as State from './state.js';
 import { updateClock } from './utils.js';
-import { initializeEmployeeModule, handleEmployeeSwitch } from './employee.js';
+// [優化] 匯入 selectEmployee
+import { initializeEmployeeModule, handleEmployeeSwitch, selectEmployee } from './employee.js';
 import { renderOrderItems, updateOrderTotals, clearOrder, increaseItemQuantity, decreaseItemQuantity, handleQuantityChange, handleEditNote, removeItem } from './order.js';
-// [V46.0] 匯入新函數
 import { showCheckoutModal, handlePaymentInput, processCheckout, closeCheckoutSuccess } from './checkout.js'; 
 import { openDiscountModal, closeDiscountModal, handleDiscountAdd, handleDiscountRemove } from './discounts.js';
 import { loadHeldOrdersFromStorage, openHoldRetrieveModal, closeHoldRetrieveModal, handleSaveHeldOrderClick, handleRetrieveModalClick } from './hold.js';
 import { setupWarningBell } from './warnings.js';
 import { setupAlertModal, closeAlert } from './alert.js';
-import { loadProducts } from './products.js'; // [V46.0] 修正：在頂層匯入
+import { loadProducts } from './products.js'; 
 
 /**
  * [優化] 設置前台 Supabase Realtime 監聽
- * 監聽商品資料表的任何變更 (新增、刪除、更新)
- * 當變更發生時 (例如庫存變動)，自動觸發 loadProducts()
  */
 function setupFrontendRealtime() {
     console.log("✅ [Realtime] 啟動前台商品庫存即時監聽...");
     
     supabase.channel('public:products')
         .on('postgres_changes', { 
-            event: '*', // 監聽所有事件
+            event: '*', 
             schema: 'public', 
             table: 'products' 
         },
         (payload) => {
             console.log('🔄 [Realtime] 偵測到商品資料變更，重新載入...');
-            // 呼叫 loadProducts，它會更新 State 並重新渲染商品列表
             loadProducts(); 
         }
     ).subscribe();
@@ -54,21 +49,48 @@ function initializeApp() {
     loadHeldOrdersFromStorage(); 
     setupWarningBell(); 
     setupAlertModal(); 
-    setupFrontendRealtime(); // [優化] 啟動 Realtime 監聽
+    setupFrontendRealtime(); 
     
-    // [動畫] 設置 3 秒後隱藏 Splash Screen，並啟動 APP
-    setTimeout(() => {
-        if (splashScreen) {
-            splashScreen.classList.add('splash-hidden');
-        }
+    // [優化] 檢查 Session Storage 是否已有登入資訊
+    const storedEmployeeJSON = sessionStorage.getItem('currentPOS_Employee');
+    
+    if (storedEmployeeJSON && splashScreen) {
+        // --- 情況 A: 已經登入 (例如從後台返回) ---
+        console.log("偵測到已登入的員工，正在快速載入...");
         
-        // 2. 檢查登入狀態 (動畫結束後才執行)
-        if (!State.state.currentEmployee) {
-            initializeEmployeeModule(); // 這會顯示員工 modal
-        } else {
-            DOM.posMainApp.classList.remove('hidden');
+        // 1. 立即隱藏 Splash Screen
+        splashScreen.classList.add('splash-hidden');
+        
+        // 2. 立即恢復員工狀態
+        try {
+            const employee = JSON.parse(storedEmployeeJSON);
+            // 呼叫 selectEmployee，這會更新狀態、載入商品並顯示主介面
+            selectEmployee(employee.id, employee.name); 
+        } catch (e) {
+            console.error("解析 sessionStorage 失敗:", e);
+            // 如果解析失敗，退回到情況 B
+            sessionStorage.removeItem('currentPOS_Employee');
+            initializeApp(); // 重新執行，但這次 storedEmployeeJSON 會是 null
         }
-    }, 3000); // 3000ms = 3 秒
+
+    } else {
+        // --- 情況 B: 尚未登入 (新工作階段) ---
+        console.log("新工作階段，準備 3 秒動畫...");
+        
+        // [動畫] 設置 3 秒後隱藏 Splash Screen，並啟動 APP
+        setTimeout(() => {
+            if (splashScreen) {
+                splashScreen.classList.add('splash-hidden');
+            }
+            
+            // 2. 檢查登入狀態 (動畫結束後才執行)
+            if (!State.state.currentEmployee) {
+                initializeEmployeeModule(); // 這會顯示員工 modal
+            } else {
+                DOM.posMainApp.classList.remove('hidden');
+            }
+        }, 3000); // 3000ms = 3 秒
+    }
 
     // 3. 綁定主要 DOM 事件 (這些可以先綁定，不受動畫影響)
     DOM.goToBackendBtn.onclick = () => { window.location.href = 'backend.html'; };
@@ -81,7 +103,7 @@ function initializeApp() {
     DOM.paidAmountInput.addEventListener('input', handlePaymentInput);
     DOM.finalConfirmBtn.addEventListener('click', processCheckout);
     
-    // [V46.0] 結帳成功 Modal
+    // 結帳成功 Modal
     DOM.successModalConfirm.addEventListener('click', closeCheckoutSuccess);
 
     // 折扣 Modal
@@ -144,14 +166,12 @@ function initializeApp() {
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return; 
         
-        // [V46.0] 檢查結帳成功視窗
         if (DOM.checkoutSuccessModal.classList.contains('active')) {
             e.preventDefault();
             closeCheckoutSuccess();
             return;
         }
 
-        // [V45.0] 檢查 Alert 視窗
         if (DOM.alertModal.classList.contains('active')) {
             e.preventDefault();
             closeAlert();
@@ -171,7 +191,6 @@ function initializeApp() {
             }
             return; 
         }
-        // [V46.0] 更新判斷
         if (isEmployeeActive || isRetrieveActive || isWarningActive || isDiscountActive) { 
             return;
         }
@@ -191,7 +210,7 @@ function initializeApp() {
     renderOrderItems();
     updateOrderTotals(); 
 
-    console.log('🚀 POS 系統腳本 (V46.0 + Realtime 優化 + 3秒動畫) 已啟動。');
+    console.log('🚀 POS 系統腳本 (V46.0 + Realtime + Session) 已啟動。');
 }
 
 // 確保 DOM 完全載入後再執行初始化

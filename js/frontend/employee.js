@@ -3,6 +3,7 @@
  * [V46.0] 前台 員工模組 (employee.js)
  * - [V46.0] 修正 V45.0 遺漏的 loadProducts 匯入
  * - [優化] 移除 setInterval (改用 Realtime)
+ * - [優化] 新增 sessionStorage 儲存登入狀態
  * ====================================================================
  */
 import { supabase } from '../supabaseClient.js';
@@ -13,6 +14,14 @@ import { loadDiscounts } from './discounts.js';
 
 export function selectEmployee(id, name) {
     State.setCurrentEmployee({ id, name });
+    
+    // [優化] 將登入狀態存入 sessionStorage，以便從後台返回時讀取
+    try {
+        const employeeData = JSON.stringify({ id, name });
+        sessionStorage.setItem('currentPOS_Employee', employeeData);
+    } catch (e) {
+        console.error("無法寫入 sessionStorage:", e);
+    }
     
     DOM.currentEmployeeDisplay.innerHTML = `<i class="fas fa-id-card-alt"></i> ${name} 值班中`;
     DOM.employeeModal.classList.remove('active');
@@ -26,9 +35,6 @@ export function selectEmployee(id, name) {
     if (State.state.availableDiscounts.length === 0) {
         loadDiscounts(); 
     }
-
-    // [優化] 移除了啟動 setInterval 的區塊
-    // console.log("[V42.3] 1秒庫存自動刷新已啟動。");
 }
 
 export async function loadEmployees() {
@@ -79,17 +85,19 @@ export function handleEmployeeSwitch(clearOrderFn) {
     clearOrderFn(true); 
     State.setCurrentEmployee(null);
     
+    // [優化] 清除 sessionStorage 中的登入狀態
+    sessionStorage.removeItem('currentPOS_Employee');
+    
     DOM.currentEmployeeDisplay.innerHTML = '<i class="fas fa-user-circle"></i> 請先選擇值班人員';
     DOM.posMainApp.classList.add('hidden');
     DOM.employeeModal.classList.add('active');
     
-    // [優化] 移除了停止 clearInterval 的區塊
-    // console.log("[V42.3] 庫存自動刷新已停止。");
-
     loadEmployees();
 }
 
 export function initializeEmployeeModule() {
+    // [優化] 確保在顯示選擇畫面時，舊的 sessionStorage (如果有的話) 被清除
+    sessionStorage.removeItem('currentPOS_Employee');
     loadEmployees();
     DOM.employeeModal.classList.add('active');
 }
