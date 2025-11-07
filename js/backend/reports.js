@@ -1,24 +1,24 @@
 /*
  * ====================================================================
- * [V42.1] 後台 報表 (reports.js)
- * [V43.2] 修正 import 路徑
  * [V-BugFix] 修正 loadDashboardData 讀取 RPC 回傳值的方式
+ * [修改] 將總覽報表改為查詢 "全部" 時間
  * ====================================================================
  */
-// [V43.2] 修正 import 路徑
 import { supabase as db } from '../supabaseClient.js';
 import { formatCurrency, animateValue } from '../common/utils.js';
 import * as DOM from './dom.js';
 
 export async function loadDashboardData() {
     try {
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
-        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+        // [修改] 將日期範圍從 "本日" 改為 "全部"
+        // p_start_date: 設為一個很早的日期 (1970年)
+        const allTimeStart = new Date(0).toISOString(); 
+        // p_end_date: 設為現在 (確保包含所有已發生的訂單)
+        const allTimeEnd = new Date().toISOString();
 
         const { data, error } = await db.rpc('fn_get_dashboard_stats', {
-            p_start_date: todayStart,
-            p_end_date: todayEnd
+            p_start_date: allTimeStart, // [修改]
+            p_end_date: allTimeEnd     // [修改]
         });
 
         if (error) throw error;

@@ -1,0 +1,197 @@
+/*
+ * ====================================================================
+ * [V-Redesign] 後台全新樣式 (redesign.css)
+ * - [Fix] 將金額相關的統計數字改為紅色
+ * ====================================================================
+ */
+
+:root {
+    /* 定義一些新變數 */
+    --redesign-bg: #f8f9fa;       /* 主要背景色 (淺灰) */
+    --redesign-card-bg: #ffffff;    /* 卡片/表格背景 (白) */
+    --redesign-nav-bg: #343a40;      /* 導航欄背景 (深灰) */
+    --redesign-nav-text: #adb5bd;    /* 導航欄文字 */
+    --redesign-nav-hover-bg: #495057; /* 導航欄懸停 */
+    --redesign-border-color: #e9ecef; /* 更淺的邊框 */
+}
+
+/* --- 1. 基礎佈局 (Layout) --- */
+
+/* 讓 body 背景色與內容區一致 */
+body {
+    background-color: var(--redesign-bg);
+}
+
+/* 頂部標頭：移除陰影，使其更扁平 */
+.pos-header {
+    box-shadow: none;
+    border-bottom: 1px solid var(--redesign-nav-hover-bg);
+}
+
+/* 側邊導航欄 (核心改變) */
+.backend-nav {
+    background-color: var(--redesign-nav-bg); /* 改為深色 */
+    border-right: none; /* 移除右邊框 */
+    padding-top: 10px;
+}
+
+/* 導航連結 */
+.backend-nav li a {
+    color: var(--redesign-nav-text);
+    border-bottom: none; /* 移除連結間的底線 */
+    padding: 14px 24px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* 導航連結懸停 */
+.backend-nav li a:hover {
+    background-color: var(--redesign-nav-hover-bg);
+    color: #ffffff;
+}
+
+/* 導航連結 (啟用中) */
+.backend-nav li.active a {
+    background-color: var(--primary-color); /* 使用您現有的主色調 */
+    color: white;
+    border-left: none; /* 移除舊的左邊框 */
+    padding-left: 24px;
+    font-weight: 600;
+}
+
+/* RWD (手機版)：也套用深色 */
+@media (max-width: 768px) {
+    .backend-nav {
+        background-color: var(--redesign-nav-bg);
+        border-bottom: 1px solid var(--redesign-nav-hover-bg);
+    }
+    .backend-nav li a {
+        border-right: 1px solid var(--redesign-nav-hover-bg);
+    }
+    .backend-nav li.active a {
+        border-left: none;
+        border-bottom: 4px solid var(--primary-color); /* 保留底線提示 */
+    }
+}
+
+
+/* --- 2. 內容區 (Content) --- */
+
+/* 內容區標頭：移除底線，增加下方間距 */
+.content-header {
+    border-bottom: none;
+    margin-bottom: 32px;
+}
+.content-header h1 {
+    font-weight: 700;
+    color: #212529;
+}
+
+
+/* --- 3. 報表 (Reports) --- */
+
+/* 統計卡片：移除邊框，使用更柔和的陰影 */
+.stat-card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+}
+
+/* [修改] 預設統計數值顏色 (非金額) */
+.stat-card-value {
+    color: var(--primary-color); /* 讓數字更突出 (預設藍色) */
+}
+
+/* 報表分頁：移除底線 */
+.report-sub-nav {
+    border-bottom: none;
+}
+.report-sub-nav button {
+    padding: 10px 4px; /* 縮小一點點 */
+    margin-right: 20px;
+    color: #6c757d;
+}
+
+
+/* --- 4. 容器與表格 (Tables) --- */
+
+/* 容器：移除邊框和陰影，讓它「消失」 */
+.table-container {
+    background-color: transparent; /* 透明背景 */
+    border: none;
+    box-shadow: none;
+    overflow: hidden; /* 配合下方 table 的圓角 */
+}
+
+/* 訂單過濾條：移除邊框，改用柔和背景 */
+.filter-bar {
+    border: none;
+    background-color: var(--redesign-card-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* 表格本體：改用圓角，並用卡片背景色 */
+table {
+    border-collapse: separate; /* 為了圓角必須分離 */
+    border-spacing: 0;
+    min-width: 100%; /* 讓它在小螢幕上自然滾動 */
+    background-color: var(--redesign-card-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* 表格標頭 */
+table th {
+    background-color: #f9fafb; /* 非常淺的灰色 */
+    border-bottom: 2px solid var(--redesign-border-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+/* 左上角圓角 */
+table th:first-child {
+    border-top-left-radius: 8px;
+}
+/* 右上角圓角 */
+table th:last-child {
+    border-top-right-radius: 8px;
+}
+
+/* 表格儲存格 */
+table td {
+    padding: 16px 18px; /* 增加垂直空間 */
+    border-bottom: 1px solid var(--redesign-border-color);
+}
+/* 移除最後一行的底線 */
+table tr:last-child td {
+    border-bottom: none;
+}
+/* 懸停效果 */
+table tbody tr:hover {
+    background-color: #fcfcfd;
+}
+
+/* 排序按鈕 */
+.sort-btn {
+    background-color: var(--redesign-border-color);
+}
+.sort-btn:hover {
+    background-color: #dee2e6;
+}
+
+/* * --- 5. [新增] 報表金額顏色調整 ---
+ * * 覆蓋 .stat-card-value 的預設藍色
+ * 將「金額」相關的欄位改為紅色
+ */
+#dashboard-total-sales,
+#dashboard-avg-order-value,
+#dashboard-total-cost,
+#dashboard-total-profit {
+    color: var(--danger-color); /* 紅色 */
+}
+
+/* (dashboard-total-orders (訂單總數) 將維持預設的藍色) */

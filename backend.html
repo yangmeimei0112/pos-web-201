@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="css/backend/reports.css">
     <link rel="stylesheet" href="css/backend/stocktake.css">
     
+    <link rel="stylesheet" href="css/backend/redesign.css">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -162,26 +164,26 @@
                     <h1>報表分析</h1>
                     </div>
                 
-                <h2>營運總覽 (本日)</h2>
+                <h2>營運總覽 (全部)</h2>
                 <div class="dashboard-stats-grid">
                     <div class="stat-card">
-                        <div class="stat-card-title">本日銷售總額</div>
+                        <div class="stat-card-title">銷售總額</div>
                         <div class="stat-card-value" id="dashboard-total-sales">N/A</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-card-title">本日訂單總數</div>
+                        <div class="stat-card-title">訂單總數</div>
                         <div class="stat-card-value" id="dashboard-total-orders">N/A</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-card-title">本日平均客單價</div>
+                        <div class="stat-card-title">平均客單價</div>
                         <div class="stat-card-value" id="dashboard-avg-order-value">N/A</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-card-title">本日總成本</div>
+                        <div class="stat-card-title">總成本</div>
                         <div class="stat-card-value" id="dashboard-total-cost">N/A</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-card-title">本日預估毛利</div>
+                        <div class="stat-card-title">預估毛利</div>
                         <div class="stat-card-value" id="dashboard-total-profit">N/A</div>
                     </div>
                 </div>
@@ -359,7 +361,7 @@
                     <label for="discount-is-active">保持啟用狀態 (勾選=前台可見)</label>
                 </div>
 
-                <div class="form-actions">
+                <div class_actions">
                     <button type="button" class="btn-secondary cancel-btn">取消</button>
                     <button type="submit" id="save-discount-btn" class="btn-primary">儲存</button>
                 </div>
@@ -367,7 +369,8 @@
             </form>
         </div>
     </div>
-<div id="alert-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="alert-modal-title">
+
+    <div id="alert-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="alert-modal-title">
         <div class="modal-content" id="alert-modal-content">
             <div class="alert-icon-container">
                 <i id="alert-modal-icon" class="fas fa-check-circle"></i>
@@ -380,7 +383,8 @@
             </div>
         </div>
     </div>
-<div id="confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+
+    <div id="confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
         <div class="modal-content" id="confirm-modal-content">
             <h1 id="confirm-modal-title">確認操作</h1>
             <p id="confirm-modal-message">您確定要執行此操作嗎？</p>
@@ -391,6 +395,7 @@
             </div>
         </div>
     </div>
+
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="js/backend/main.js" type="module"></script>
 </body>
